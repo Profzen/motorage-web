@@ -1,0 +1,39 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" version="29.2.10" pages="2">
+  <diagram name="usecases" id="Usar45fQ9IiTG0iF_6zh">
+    <mxGraphModel dx="825" dy="656" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="pvDn-rmeoMyfhvCNEeWV-1" parent="1" style="swimlane;whiteSpace=wrap;html=1;startSize=23;" value="Système MOTORAGE" vertex="1">
+          <mxGeometry height="550" width="900" x="100" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="pvDn-rmeoMyfhvCNEeWV-2" parent="pvDn-rmeoMyfhvCNEeWV-1" style="swimlane;startSize=0;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;glass=0;fillColor=default;strokeColor=#d6b656;" value="" vertex="1">
+          <mxGeometry height="330" width="390" x="470" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="pvDn-rmeoMyfhvCNEeWV-3" parent="pvDn-rmeoMyfhvCNEeWV-2" style="text;align=center;fontStyle=1;verticalAlign=middle;spacingLeft=3;spacingRight=3;strokeColor=none;rotatable=1;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;html=1;movable=1;resizable=1;deletable=1;editable=1;locked=0;connectable=1;" value="&amp;lt;&amp;lt;Motos&amp;gt;&amp;gt;&lt;br&gt;Module Gestion Motos" vertex="1">
+          <mxGeometry height="30" width="140" x="140" y="10" as="geometry" />
+        </mxCell>
+        <mxCell id="pvDn-rmeoMyfhvCNEeWV-4" parent="pvDn-rmeoMyfhvCNEeWV-2" style="ellipse;whiteSpace=wrap;html=1;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="Consulter mes motos" vertex="1">
+          <mxGeometry height="70" width="140" x="20" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="pvDn-rmeoMyfhvCNEeWV-5" parent="pvDn-rmeoMyfhvCNEeWV-2" style="ellipse;whiteSpace=wrap;html=1;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="Ajouter une moto" vertex="1">
+          <mxGeometry height="70" width="140" x="200" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="pvDn-rmeoMyfhvCNEeWV-10" parent="pvDn-rmeoMyfhvCNEeWV-2" style="ellipse;whiteSpace=wrap;html=1;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="Modifier une moto" vertex="1">
+          <mxGeometry height="70" width="140" x="30" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="pvDn-rmeoMyfhvCNEeWV-11" parent="pvDn-rmeoMyfhvCNEeWV-2" style="ellipse;whiteSpace=wrap;html=1;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="Supprimer une moto" vertex="1">
+          <mxGeometry height="70" width="140" x="210" y="200" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="bHQ6vJGsX2N5a0sUGyG8" name="Page-2">
+    <mxGraphModel dx="825" dy="656" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
