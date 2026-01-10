@@ -19,6 +19,7 @@ cache:
 stages:
   - install
   - verify
+  - test
   - build
   - deploy
 
@@ -41,6 +42,17 @@ lint:
     - corepack enable
     - corepack prepare pnpm@latest --activate
     - pnpm lint
+  dependencies:
+    - install
+
+
+# Étape 2.5 : Tests unitaires
+test:
+  stage: test
+  script:
+    - corepack enable
+    - corepack prepare pnpm@latest --activate
+    - pnpm test
   dependencies:
     - install
 
