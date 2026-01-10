@@ -3,9 +3,6 @@ image: node:20-slim
 # Configuration du cache pour pnpm
 variables:
   PNPM_CACHE_DIR: .pnpm-store
-  VERCEL_TOKEN: $VERCEL_TOKEN
-  VERCEL_ORG_ID: $VERCEL_ORG_ID
-  VERCEL_PROJECT_ID: $VERCEL_PROJECT_ID
   GIT_STRATEGY: clone # Force un clone complet pour éviter les erreurs de "remote ref"
   GIT_DEPTH: 0
 
