@@ -6,6 +6,8 @@ variables:
   VERCEL_TOKEN: $VERCEL_TOKEN
   VERCEL_ORG_ID: $VERCEL_ORG_ID
   VERCEL_PROJECT_ID: $VERCEL_PROJECT_ID
+  GIT_STRATEGY: clone # Force un clone complet pour éviter les erreurs de "remote ref"
+  GIT_DEPTH: 0
 
 cache:
   key:
@@ -79,6 +81,6 @@ deploy_production:
     - corepack prepare pnpm@latest --activate
     - pnpm dlx vercel deploy --prod --token=$VERCEL_TOKEN --scope=$VERCEL_ORG_ID --yes
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "develop"
   dependencies:
     - build
