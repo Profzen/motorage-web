@@ -1,3 +1,5 @@
+'use client';
+
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -6,13 +8,55 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { User, Mail, Lock, AlertCircle, CheckCircle } from "lucide-react";
-
-export const metadata = {
-  title: "Inscription | MOTORAGE",
-  description: "Créez votre compte MOTORAGE",
-};
+import { useState } from "react";
+import { useAuthStore } from "@/lib/store";
+import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const router = useRouter();
+  const register = useAuthStore((state) => state.register);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      if (!name || !email || !password || !confirmPassword) {
+        setError("Veuillez remplir tous les champs");
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        setError("Les mots de passe ne correspondent pas");
+        return;
+      }
+
+      if (password.length < 8) {
+        setError("Le mot de passe doit contenir au moins 8 caractères");
+        return;
+      }
+
+      if (!termsAccepted) {
+        setError("Vous devez accepter les conditions d'utilisation");
+        return;
+      }
+
+      await register(name, email, password);
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err.message || "Erreur lors de l'inscription");
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
@@ -36,7 +80,17 @@ export default function RegisterPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form className="space-y-4">
+                <form className="space-y-4" onSubmit={handleSubmit}>
+                  {/* Error Message */}
+                  {error && (
+                    <div className="flex gap-3 p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-900">
+                      <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-red-700 dark:text-red-300">
+                        {error}
+                      </p>
+                    </div>
+                  )}
+
                   {/* Full Name Field */}
                   <div className="space-y-2">
                     <Label htmlFor="name" className="text-sm font-medium">
@@ -48,6 +102,8 @@ export default function RegisterPage() {
                         id="name"
                         placeholder="Jean Dupont"
                         className="pl-10"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
                         required
                       />
                     </div>
@@ -65,6 +121,8 @@ export default function RegisterPage() {
                         type="email"
                         placeholder="etudiant@univ-lome.tg"
                         className="pl-10"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                         required
                       />
                     </div>
@@ -82,6 +140,8 @@ export default function RegisterPage() {
                         type="password"
                         placeholder="Minimum 8 caractères"
                         className="pl-10"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
                         required
                       />
                     </div>
@@ -99,6 +159,8 @@ export default function RegisterPage() {
                         type="password"
                         placeholder="Confirmez votre mot de passe"
                         className="pl-10"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
                         required
                       />
                     </div>
@@ -118,6 +180,8 @@ export default function RegisterPage() {
                       id="terms"
                       type="checkbox"
                       className="mt-1 h-4 w-4 rounded border-border"
+                      checked={termsAccepted}
+                      onChange={(e) => setTermsAccepted(e.target.checked)}
                       required
                     />
                     <label htmlFor="terms" className="text-xs text-muted-foreground leading-tight">
@@ -126,8 +190,12 @@ export default function RegisterPage() {
                   </div>
 
                   {/* Submit Button */}
-                  <Button type="submit" className="w-full h-10 font-medium">
-                    Créer mon compte
+                  <Button 
+                    type="submit" 
+                    className="w-full h-10 font-medium"
+                    disabled={loading}
+                  >
+                    {loading ? "Création en cours..." : "Créer mon compte"}
                   </Button>
                 </form>
               </CardContent>

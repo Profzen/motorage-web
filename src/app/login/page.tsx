@@ -1,3 +1,5 @@
+'use client';
+
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -6,13 +8,37 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { Mail, Lock, AlertCircle } from "lucide-react";
-
-export const metadata = {
-  title: "Connexion | MOTORAGE",
-  description: "Connectez-vous à votre compte MOTORAGE",
-};
+import { useState } from "react";
+import { useAuthStore } from "@/lib/store";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const router = useRouter();
+  const login = useAuthStore((state) => state.login);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      if (!email || !password) {
+        setError("Veuillez remplir tous les champs");
+        return;
+      }
+
+      await login(email, password);
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err.message || "Erreur lors de la connexion");
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
@@ -36,7 +62,17 @@ export default function LoginPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form className="space-y-4">
+                <form className="space-y-4" onSubmit={handleSubmit}>
+                  {/* Error Message */}
+                  {error && (
+                    <div className="flex gap-3 p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-900">
+                      <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-red-700 dark:text-red-300">
+                        {error}
+                      </p>
+                    </div>
+                  )}
+
                   {/* Email Field */}
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-sm font-medium">
@@ -49,6 +85,8 @@ export default function LoginPage() {
                         type="email"
                         placeholder="etudiant@univ-lome.tg"
                         className="pl-10"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                         required
                       />
                     </div>
@@ -71,6 +109,8 @@ export default function LoginPage() {
                         type="password"
                         placeholder="••••••••"
                         className="pl-10"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
                         required
                       />
                     </div>
@@ -85,8 +125,12 @@ export default function LoginPage() {
                   </div>
 
                   {/* Submit Button */}
-                  <Button type="submit" className="w-full h-10 font-medium">
-                    Se connecter
+                  <Button 
+                    type="submit" 
+                    className="w-full h-10 font-medium"
+                    disabled={loading}
+                  >
+                    {loading ? "Connexion en cours..." : "Se connecter"}
                   </Button>
 
                   {/* Divider */}

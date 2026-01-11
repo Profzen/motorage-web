@@ -34,6 +34,11 @@ export function Hero() {
                 Découvrir comment ça marche
               </Button>
             </Link>
+            <Link href="/search" className="w-full sm:w-auto">
+              <Button size="lg" variant="secondary" className="h-13 px-8 w-full text-base font-semibold">
+                Demander une aide moto
+              </Button>
+            </Link>
           </div>
 
           {/* Quick features badges */}
