@@ -32,6 +32,7 @@ export default function SearchPage() {
   const user = useAuthStore((state) => state.user);
   const userLocation = useLocationStore((s) => s.location);
   const locationStatus = useLocationStore((s) => s.status);
+  const requestLocation = useLocationStore((s) => s.requestLocation);
   const [departure, setDeparture] = useState("");
   const [arrival, setArrival] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
@@ -108,6 +109,20 @@ export default function SearchPage() {
     setFlash({ text: "Demande envoyée", type: "success" });
     setTimeout(() => setFlash(null), 2500);
   };
+
+  const nearestRoutesWithDistance = userLocation
+    ? routes
+        .map((r) => ({
+          route: r,
+          distance: distanceKm({ lat: r.departure.lat, lng: r.departure.lng }, userLocation),
+        }))
+        .sort((a, b) => a.distance - b.distance)
+    : [];
+
+  const closestRoutes = nearestRoutesWithDistance.slice(0, 3).map((item) => item.route);
+  const displayRoutesMap = userLocation
+    ? Array.from(new Map([...filteredRoutes, ...closestRoutes].map((r) => [r.id, r]))).map(([, r]) => r)
+    : filteredRoutes;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -217,12 +232,23 @@ export default function SearchPage() {
                     </Button>
                   </div>
                 </div>
-                {locationStatus === "denied" && (
-                  <p className="text-xs text-red-600 mt-2">Accès à la localisation refusé : certains trajets peuvent ne pas apparaître.</p>
-                )}
-                {locationStatus === "granted" && userLocation && (
-                  <p className="text-xs text-muted-foreground mt-2">Filtré autour de votre position (~{radiusKm} km).</p>
-                )}
+                <div className="flex flex-col gap-2 mt-3 text-xs">
+                  {locationStatus === "denied" && (
+                    <div className="text-red-600">Accès à la localisation refusé : certains trajets peuvent ne pas apparaître.</div>
+                  )}
+                  {locationStatus === "error" && (
+                    <div className="text-red-600">Impossible d'obtenir votre position. Réessayez.</div>
+                  )}
+                  {locationStatus === "granted" && userLocation && (
+                    <div className="text-muted-foreground">Filtré autour de votre position (~{radiusKm} km).</div>
+                  )}
+                  <div className="flex gap-2 items-center">
+                    <Button variant="outline" size="sm" onClick={requestLocation}>
+                      {locationStatus === "prompting" ? "Localisation en cours..." : "Mettre à jour ma position"}
+                    </Button>
+                    <span className="text-muted-foreground">Statut : {locationStatus}</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
@@ -233,7 +259,7 @@ export default function SearchPage() {
                 <CardDescription>Visualisez les départs des trajets filtrés</CardDescription>
               </CardHeader>
               <CardContent>
-                <MapView routes={filteredRoutes} userLocation={userLocation} center={userLocation || undefined} />
+                <MapView routes={displayRoutesMap} userLocation={userLocation} center={userLocation || undefined} />
               </CardContent>
             </Card>
 
@@ -358,6 +384,26 @@ export default function SearchPage() {
                       </CardContent>
                     </Card>
                   ))
+                )}
+
+                {userLocation && nearestRoutesWithDistance.length > 0 && (
+                  <Card className="border-0 shadow-sm">
+                    <CardHeader>
+                      <CardTitle className="text-base">Les plus proches de vous</CardTitle>
+                      <CardDescription>Top 3 des départs autour de votre position</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {nearestRoutesWithDistance.slice(0, 3).map(({ route, distance }) => (
+                        <div key={route.id} className="flex items-center justify-between text-sm">
+                          <div>
+                            <p className="font-medium">{route.departure.name} → {route.arrival.name}</p>
+                            <p className="text-muted-foreground">{distance.toFixed(1)} km</p>
+                          </div>
+                          <Button size="sm" onClick={() => handleRequestRide(route)}>Choisir</Button>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
                 )}
               </div>
 

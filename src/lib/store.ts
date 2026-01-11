@@ -111,6 +111,7 @@ interface LocationStore {
   setLocation: (coords: { lat: number; lng: number }) => void;
   setStatus: (status: LocationStatus) => void;
   setError: (message: string | null) => void;
+  requestLocation: () => void;
   reset: () => void;
 }
 
@@ -282,6 +283,114 @@ export const useRoutesStore = create<RoutesStore>()((set, get) => ({
       },
       createdAt: new Date().toISOString(),
     },
+    {
+      id: '3',
+      driverId: 'driver3',
+      driver: {
+        id: 'driver3',
+        name: 'Awa Mensah',
+        email: 'awa@univ-lome.tg',
+        role: 'driver',
+        verified: true,
+        location: { lat: 6.1415, lng: 1.2220 },
+      },
+      departure: {
+        name: 'Adidogomé',
+        lat: 6.1950,
+        lng: 1.1380,
+      },
+      arrival: {
+        name: 'Campus Principal',
+        lat: 6.1256,
+        lng: 1.2317,
+      },
+      departureTime: '06:50',
+      arrivalTime: '07:25',
+      daysOfWeek: [1, 2, 3, 4, 5],
+      availableSeats: 1,
+      moto: {
+        id: '3',
+        driverId: 'driver3',
+        brand: 'Suzuki',
+        model: 'Gixxer',
+        year: 2021,
+        licensePlate: 'TG-2021-077',
+        capacity: 2,
+      },
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: '4',
+      driverId: 'driver4',
+      driver: {
+        id: 'driver4',
+        name: 'Kodjo Amévi',
+        email: 'kodjo@univ-lome.tg',
+        role: 'driver',
+        verified: true,
+        location: { lat: 6.1570, lng: 1.2560 },
+      },
+      departure: {
+        name: 'Hédzranawoé',
+        lat: 6.1780,
+        lng: 1.2150,
+      },
+      arrival: {
+        name: 'Campus Principal',
+        lat: 6.1256,
+        lng: 1.2317,
+      },
+      departureTime: '08:10',
+      arrivalTime: '08:35',
+      daysOfWeek: [1, 2, 3, 4, 5],
+      availableSeats: 2,
+      moto: {
+        id: '4',
+        driverId: 'driver4',
+        brand: 'Kawasaki',
+        model: 'Ninja 300',
+        year: 2020,
+        licensePlate: 'TG-2020-099',
+        capacity: 2,
+      },
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: '5',
+      driverId: 'driver1',
+      driver: {
+        id: 'driver1',
+        name: 'Jean Dupont',
+        email: 'jean@univ-lome.tg',
+        role: 'driver',
+        verified: true,
+        location: { lat: 6.1256, lng: 1.2317 },
+      },
+      departure: {
+        name: 'Agoè',
+        lat: 6.2300,
+        lng: 1.2000,
+      },
+      arrival: {
+        name: 'Centre Ville',
+        lat: 6.1300,
+        lng: 1.2400,
+      },
+      departureTime: '18:00',
+      arrivalTime: '18:40',
+      daysOfWeek: [1, 2, 3, 4, 5],
+      availableSeats: 1,
+      moto: {
+        id: '1',
+        driverId: 'driver1',
+        brand: 'Honda',
+        model: 'CB150',
+        year: 2022,
+        licensePlate: 'TG-2022-001',
+        capacity: 2,
+      },
+      createdAt: new Date().toISOString(),
+    },
   ],
   addRoute: (route) => {
     set((state) => ({
@@ -327,13 +436,27 @@ export const useRoutesStore = create<RoutesStore>()((set, get) => ({
     return get().routes.filter((r) => r.driverId === driverId);
   },
   createRoute: (data) => {
+    const coordsBook: Record<string, { lat: number; lng: number }> = {
+      'campus principal': { lat: 6.1256, lng: 1.2317 },
+      'centre ville': { lat: 6.1300, lng: 1.2400 },
+      'gare routiere': { lat: 6.1200, lng: 1.2350 },
+      'adidogome': { lat: 6.1950, lng: 1.1380 },
+      'hedzranawoe': { lat: 6.1780, lng: 1.2150 },
+      'agoe': { lat: 6.2300, lng: 1.2000 },
+    };
+
+    const resolve = (name: string) => {
+      const key = name.trim().toLowerCase();
+      return coordsBook[key] ?? { lat: 6.1256, lng: 1.2317 };
+    };
+
     const mockDriver = {
       id: data.driverId,
       name: 'Nouvel Conducteur',
       email: 'driver@univ-lome.tg',
       role: 'driver' as const,
       verified: true,
-      location: { lat: 6.1256, lng: 1.2317 },
+      location: resolve(data.departure),
     };
 
     const mockMoto = {
@@ -352,13 +475,11 @@ export const useRoutesStore = create<RoutesStore>()((set, get) => ({
       driver: mockDriver,
       departure: {
         name: data.departure,
-        lat: 6.1256,
-        lng: 1.2317,
+        ...resolve(data.departure),
       },
       arrival: {
         name: data.arrival,
-        lat: 6.1300,
-        lng: 1.2400,
+        ...resolve(data.arrival),
       },
       departureTime: data.time,
       arrivalTime: data.time,
@@ -409,5 +530,26 @@ export const useLocationStore = create<LocationStore>()((set) => ({
   setLocation: (coords) => set({ location: coords }),
   setStatus: (status) => set({ status }),
   setError: (message) => set({ error: message }),
+  requestLocation: () => {
+    if (typeof window === 'undefined' || !navigator?.geolocation) {
+      set({ status: 'error', error: 'Géolocalisation non disponible' });
+      return;
+    }
+    set({ status: 'prompting', error: null });
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        set({
+          location: { lat: pos.coords.latitude, lng: pos.coords.longitude },
+          status: 'granted',
+          error: null,
+        });
+      },
+      (err) => {
+        const denied = err.code === err.PERMISSION_DENIED;
+        set({ status: denied ? 'denied' : 'error', error: err.message });
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+    );
+  },
   reset: () => set({ location: null, status: 'idle', error: null }),
 }));
