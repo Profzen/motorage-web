@@ -34,7 +34,7 @@ const roles = [
       "Décrivez votre panne",
       "Connectez-vous à un conducteur étudiant",
       "Partagez des outils",
-      "Recevez de l'aide gratuitement ",
+      "Recevez de l'aide gratuitement",
     ],
     color: "accent",
   },
