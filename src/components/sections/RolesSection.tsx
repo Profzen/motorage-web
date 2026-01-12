@@ -32,7 +32,7 @@ const roles = [
     icon: Navigation2,
     features: [
       "Décrivez votre panne",
-      "Connectez-vous à un mécanicien étudiant",
+      "Connectez-vous à un conducteur étudiant",
       "Partagez des outils",
       "Recevez de l'aide gratuitement",
     ],
