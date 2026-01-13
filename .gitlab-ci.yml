@@ -1,17 +1,15 @@
 image: node:20-slim
 
-# Configuration du cache pour pnpm
+# Configuration du cache pour npm
 variables:
-  PNPM_CACHE_DIR: .pnpm-store
   GIT_STRATEGY: clone # Force un clone complet pour éviter les erreurs de "remote ref"
   GIT_DEPTH: 0
 
 cache:
   key:
     files:
-      - pnpm-lock.yaml
+      - package-lock.json
   paths:
-    - .pnpm-store
     - node_modules/
     - .next/cache/
 
@@ -26,10 +24,7 @@ stages:
 install:
   stage: install
   script:
-    - corepack enable
-    - corepack prepare pnpm@latest --activate
-    - pnpm config set store-dir $PNPM_CACHE_DIR
-    - pnpm install --frozen-lockfile
+    - npm ci
   artifacts:
     paths:
       - node_modules/
@@ -38,9 +33,7 @@ install:
 lint:
   stage: verify
   script:
-    - corepack enable
-    - corepack prepare pnpm@latest --activate
-    - pnpm lint
+    - npm run lint
   dependencies:
     - install
 
@@ -49,9 +42,7 @@ lint:
 test:
   stage: test
   script:
-    - corepack enable
-    - corepack prepare pnpm@latest --activate
-    - pnpm test
+    - npm run test
   dependencies:
     - install
 
@@ -59,9 +50,7 @@ test:
 build:
   stage: build
   script:
-    - corepack enable
-    - corepack prepare pnpm@latest --activate
-    - pnpm build
+    - npm run build
   artifacts:
     paths:
       - .next/
@@ -74,9 +63,7 @@ build:
 deploy_production:
   stage: deploy
   script:
-    - corepack enable
-    - corepack prepare pnpm@latest --activate
-    - pnpm dlx vercel deploy --prod --token=$VERCEL_TOKEN --scope=$VERCEL_ORG_ID --project=$VERCEL_PROJECT_ID --yes
+    - npx vercel deploy --prod --token=$VERCEL_TOKEN --scope=$VERCEL_ORG_ID --project=$VERCEL_PROJECT_ID --yes
   rules:
     - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "develop"
   dependencies:
