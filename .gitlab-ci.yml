@@ -43,7 +43,6 @@ lint:
     - pnpm lint
   dependencies:
     - install
-  allow_failure: true
 
 
 # Étape 2.5 : Tests unitaires
@@ -55,7 +54,6 @@ test:
     - pnpm test
   dependencies:
     - install
-  allow_failure: true
 
 # Étape 3 : Build de l'application (Vérifie que la compilation réussit)
 build:
