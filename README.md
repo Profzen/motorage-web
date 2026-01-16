@@ -2,7 +2,7 @@
 
 MOTORAGE est une plateforme web moderne et performante conçue pour faciliter l''entraide et le partage de trajets à moto entre les membres de la communauté de l''Université de Lomé (UL).
 
-![MOTORAGE Banner](https://motorage.com/og-image.png)
+![MOTORAGE Banner](/public/screenshots/screenshot-landing.png)
 
 ## 🌟 Fonctionnalités Clés
 
