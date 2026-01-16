@@ -10,10 +10,10 @@ type RequestModalProps = {
   open: boolean;
   onClose: () => void;
   onConfirm: (requestedSeats: number) => void;
-  routeTitle?: string;
+  trajetTitle?: string;
 };
 
-export function RequestModal({ open, onClose, onConfirm, routeTitle }: RequestModalProps) {
+export function RequestModal({ open, onClose, onConfirm, trajetTitle }: RequestModalProps) {
   const [seats, setSeats] = React.useState("1");
 
   if (!open) return null;
@@ -26,8 +26,8 @@ export function RequestModal({ open, onClose, onConfirm, routeTitle }: RequestMo
           <CardTitle>Demander ce trajet</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {routeTitle && (
-            <p className="text-sm text-muted-foreground">{routeTitle}</p>
+          {trajetTitle && (
+            <p className="text-sm text-muted-foreground">{trajetTitle}</p>
           )}
           <div className="space-y-2">
             <Label htmlFor="seats">Nombre de places</Label>

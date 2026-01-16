@@ -1,39 +1,37 @@
-# MOTORAGE WEB - Plateauforme d'Entraide Moto
+# MOTORAGE - Plateforme d'Entraide Moto
 
-MOTORAGE est une plateforme web moderne conçue pour faciliter l'entraide entre les étudiants motocyclistes de l'Université de Lomé (UL).
+MOTORAGE est une plateforme web moderne et performante conçue pour faciliter l'entraide et le partage de trajets à moto entre les membres de la communauté de l'Université de Lomé (UL).
 
-![Landing Page Screenshot](public/screenshots/screenshot-landing.png)
+![MOTORAGE Banner](/public/screenshots/screenshot-landing.png)
 
-## Stack Technique
+## 🌟 Fonctionnalités Clés
 
-- **Framework** : Next.js 16 (App Router)
-- **Styling** : Tailwind CSS 4
-- **Langage** : TypeScript (Strict Mode)
-- **Composants UI** : shadcn/ui
-- **Icônes** : Lucide React
+- **Tableau de Bord SaaS Moderne** : Une interface utilisateur sophistiquée, réactive et optimisée pour la gestion quotidienne.
+  - Sidebar rétractable avec mode icônes et tooltips.
+  - Navigation dynamique filtrée par rôle (Passager vs Conducteur).
+  - Thème clair, sombre et système (Glassmorphism & Radix UI).
+- **Gestion de Profil Complète** : Mise à jour des informations personnelles et suppression sécurisée du compte.
+- **Système de Notifications en Temps Réel** : Alertes centralisées pour les réservations, confirmations et mises à jour système.
+- **Historique de Réservations** : Suivi détaillé de l'état des trajets pour les passagers (en attente, confirmé, terminé, annulé).
+- **Gestion de Garage (Conducteurs)** : Ajout et gestion du parc moto personnel.
+- **Géolocalisation intelligente** : Suggestion automatique des points de départ et d'arrivée basés sur les zones clés de l'université.
+- **Documentation API Interactive** : Swagger/OpenAPI intégré pour faciliter le développement et l'intégration.
 
-## Structure du Projet
+## 🛠 Stack Technique
 
-```text
-src/
-├── app/                  # Routes (Pages)
-│   ├── about/            # Page À propos
-│   ├── contact/          # Page Contact
-│   ├── dashboard/        # Dashboard (Placeholder)
-│   ├── login/            # Connexion (Placeholder)
-│   ├── register/         # Inscription (Placeholder)
-│   └── page.tsx          # Landing Page
-├── components/           # Composants réutilisables
-│   ├── layout/           # Header, Footer, etc.
-│   ├── sections/         # Sections de la Landing Page
-│   └── ui/               # Composants shadcn/ui
-├── lib/                  # Utilitaires (utils.ts)
-└── app/globals.css       # Configuration Tailwind 4 & Palette de couleurs
-```
+- **Framework** : [Next.js 16 (App Router)](https://nextjs.org/)
+- **Bibliothèque UI** : [React 19](https://react.dev/)
+- **Styling** : [Tailwind CSS 4](https://tailwindcss.com/)
+- **Composants** : [Radix UI](https://www.radix-ui.com/) & [Lucide Icons](https://lucide.dev/)
+- **Animations** : [Framer Motion](https://www.framer.com/motion/)
+- **Gestion d'état** : [Zustand](https://github.com/pmndrs/zustand)
+- **Base de données** : [Turso (SQLite)](https://turso.tech/) avec [Drizzle ORM](https://orm.drizzle.team/)
+- **Documentation API** : [Swagger UI](https://swagger.io/) & [OpenAPI 3.0](https://www.openapis.org/)
+- **Tests** : [Vitest](https://vitest.dev/) & [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/)
 
-## Installation et Démarrage
+## 🚀 Installation et Configuration
 
-1. **Cloner le projet**
+1. **Cloner le dépôt**
    ```bash
    git clone <repository-url>
    cd projet-motorage-web
@@ -41,30 +39,69 @@ src/
 
 2. **Installer les dépendances**
    ```bash
-   npm install
+   pnpm install
    ```
 
 3. **Configurer les variables d'environnement**
-   ```bash
-   cp .env.local.example .env.local
+   Créez un fichier `.env` à la racine :
+   ```env
+   # Database (Turso)
+   TURSO_DATABASE_URL=libsql://your-db-name.turso.io
+   TURSO_AUTH_TOKEN=your-auth-token
+
+   # Authentication (JWT)
+   JWT_SECRET=your-secure-secret-key
+   JWT_REFRESH_SECRET=your-secure-refresh-key
+   JWT_EXPIRES_IN=15m
+   JWT_REFRESH_EXPIRES_IN=7d
    ```
 
-4. **Lancer le serveur de développement**
+4. **Synchroniser la base de données**
    ```bash
-   npm dev
+   pnpm db:push
    ```
-   L'application sera accessible sur [http://localhost:3000](http://localhost:3000).
 
-## Scripts Disponibles
+5. **Lancer le serveur de développement**
+   ```bash
+   pnpm dev
+   ```
+   Accédez à [http://localhost:3000](http://localhost:3000).
 
-- `npm run dev` : Lance le serveur en mode développement.
-- `npm run build` : Prépare l'application pour la production.
-- `npm run start` : Lance l'application construite.
-- `npm run lint` : Vérifie la qualité du code avec ESLint.
+## 📖 Documentation API
 
-## Prochaines Étapes (Sprint 2)
+L'application expose une documentation interactive Swagger pour explorer et tester les endpoints API :
+- **URL** : `http://localhost:3000/api-docs`
 
-- Configuration de Firebase Auth & Firestore
-- Logique d'authentification complète
-- Création du système d'annonces
-- Espace utilisateur fonctionnel
+## 📁 Structure du Projet
+
+```text
+src/
+├── app/                  # Routes Next.js (Pages & API)
+│   ├── api/              # Endpoints API (Auth, Trajets, etc.)
+│   ├── api-docs/         # Documentation Swagger UI
+│   ├── dashboard/        # Layout et Pages du Tableau de bord
+│   └── page.tsx          # Page d'accueil (Landing Page)
+├── components/           # Composants UI, Layout et Sections
+│   ├── ui/               # Composants atomiques (Radix/Shadcn)
+│   ├── layout/           # Sidebar, Header, Footer
+│   └── dashboard/        # Composants spécifiques au dashboard
+├── lib/                  # Utilitaires et Logique
+│   ├── db/               # Schéma Drizzle et DB config
+│   └── store.ts          # Orchestration d'état Zustand
+└── app/globals.css       # Tailwind CSS 4 & Thèmes
+```
+
+## 🧪 Tests et Qualité
+
+- Lancer les tests unitaires : `pnpm test`
+- Vérifier le linting : `pnpm lint`
+- Ouvrir Drizzle Studio : `pnpm db:studio`
+
+## 📈 État d'avancement
+
+- [x] Sprint 1 : Cadrage, Maquettage et Base technique.
+- [x] Sprint 2 : Authentification, Dashboard SaaS, Notifications et Profil.
+- [ ] Sprint 3 (En cours) : Logique de Matching avancée, Messagerie et Évaluations.
+
+---
+Conçu avec ❤️ pour les étudiants de l'Université de Lomé.

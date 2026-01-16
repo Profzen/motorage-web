@@ -3,9 +3,9 @@ import { Header } from "@/components/layout/Header";
 import { describe, expect, it } from "vitest";
 
 describe("Header Component", () => {
-  it("affiche le logo MOTORAGE", () => {
+  it("affiche le logo Miyi Ðekae", () => {
     render(<Header />);
-    expect(screen.getByText(/MOTORAGE/i)).toBeInTheDocument();
+    expect(screen.getByText(/Miyi Ðekae/i)).toBeInTheDocument();
   });
 
   it("contient les liens de navigation", () => {

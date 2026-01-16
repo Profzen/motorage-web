@@ -1,6 +1,12 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@layer utilities {
+  .glassmorphism {
+    @apply bg-background/60 backdrop-blur-xl border border-white/10 shadow-xl;
+  }
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -48,39 +54,39 @@
 }
 
 :root {
-  --radius: 0.5rem;
+  --radius: 0.75rem;
   --background: #ffffff;
-  --foreground: #111827;
+  --foreground: #0f172a;
   --card: #ffffff;
-  --card-foreground: #111827;
+  --card-foreground: #0f172a;
   --popover: #ffffff;
-  --popover-foreground: #111827;
+  --popover-foreground: #0f172a;
   --primary: #2563eb;
   --primary-foreground: #ffffff;
   --secondary: #f59e0b;
   --secondary-foreground: #ffffff;
-  --muted: #f3f4f6;
-  --muted-foreground: #6b7280;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
   --accent: #10b981;
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #e5e7eb;
-  --input: #e5e7eb;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
   --ring: #2563eb;
-  --surface: #f9fafb;
+  --surface: #f8fafc;
   --chart-1: #2563eb;
   --chart-2: #10b981;
   --chart-3: #f59e0b;
-  --chart-4: #6b7280;
+  --chart-4: #64748b;
   --chart-5: #3b82f6;
-  --sidebar: #f9fafb;
-  --sidebar-foreground: #111827;
+  --sidebar: #f8fafc;
+  --sidebar-foreground: #0f172a;
   --sidebar-primary: #2563eb;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f3f4f6;
+  --sidebar-accent: #f1f5f9;
   --sidebar-accent-foreground: #2563eb;
-  --sidebar-border: #e5e7eb;
+  --sidebar-border: #e2e8f0;
   --sidebar-ring: #2563eb;
 }
 
