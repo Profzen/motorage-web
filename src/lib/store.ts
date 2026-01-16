@@ -3,68 +3,66 @@ import { persist } from 'zustand/middleware';
 
 export interface User {
   id: string;
-  name: string;
+  nom: string;
+  prenom: string;
   email: string;
-  role: 'passenger' | 'driver' | 'both';
+  role: 'visiteur' | 'passager' | 'conducteur' | 'administrateur';
+  statut: string;
   avatar?: string;
-  location?: {
-    lat: number;
-    lng: number;
-  };
   phone?: string;
-  verified: boolean;
+}
+
+export interface Notification {
+  id: string;
+  userId: string;
+  titre: string;
+  message: string;
+  lu: boolean;
+  type: 'info' | 'success' | 'warning' | 'error';
+  createdAt: string;
 }
 
 export interface Moto {
   id: string;
-  driverId: string;
-  brand: string;
-  model: string;
-  year: number;
-  licensePlate: string;
-  photo?: string;
-  capacity: number;
+  proprietaireId: string;
+  marque: string;
+  modele: string;
+  immatriculation: string;
+  disponibilite: boolean;
 }
 
-export interface Route {
+export interface Trajet {
   id: string;
-  driverId: string;
-  driver: User;
-  departure: {
-    name: string;
-    lat: number;
-    lng: number;
-  };
-  arrival: {
-    name: string;
-    lat: number;
-    lng: number;
-  };
-  departureTime: string;
-  arrivalTime: string;
-  daysOfWeek: number[];
-  availableSeats: number;
-  moto: Moto;
+  conducteurId: string;
+  conducteur: User;
+  pointDepart: string;
+  destination: string;
+  dateHeure: string;
+  placesDisponibles: number;
+  statut: string;
+  departureLat?: number;
+  departureLng?: number;
+  arrivalLat?: number;
+  arrivalLng?: number;
   createdAt: string;
 }
 
-export interface RideRequest {
+export interface Reservation {
   id: string;
-  passengerId: string;
-  routeId: string;
-  status: 'pending' | 'accepted' | 'rejected' | 'completed' | 'cancelled';
-  requestedSeats: number;
+  trajetId: string;
+  etudiantId: string;
+  status: 'en_attente' | 'confirmé' | 'refusé' | 'terminé' | 'annulé';
   createdAt: string;
-  respondedAt?: string;
 }
 
 interface AuthStore {
   user: User | null;
   isLoggedIn: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (nom: string, prenom: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   updateUser: (user: Partial<User>) => void;
+  deleteAccount: (id: string) => void;
 }
 
 interface MotosStore {
@@ -75,31 +73,37 @@ interface MotosStore {
   getMotosByDriver: (driverId: string) => Moto[];
 }
 
-interface RoutesStore {
-  routes: Route[];
-  addRoute: (route: Route) => void;
-  createRoute: (data: {
-    departure: string;
-    arrival: string;
-    day: string;
-    time: string;
-    availableSeats: number;
-    price: number;
-    description: string;
-    driverId: string;
+interface TrajetsStore {
+  trajets: Trajet[];
+  addTrajet: (trajet: Trajet) => void;
+  createTrajet: (data: {
+    pointDepart: string;
+    destination: string;
+    dateHeure: string;
+    placesDisponibles: number;
+    conducteurId: string;
   }) => void;
-  getRoutes: (filters?: any) => Route[];
-  updateRoute: (id: string, route: Partial<Route>) => void;
-  deleteRoute: (id: string) => void;
-  getRoutesByDriver: (driverId: string) => Route[];
+  getTrajets: (filters?: { pointDepart?: string; destination?: string }) => Trajet[];
+  updateTrajet: (id: string, trajet: Partial<Trajet>) => void;
+  deleteTrajet: (id: string) => void;
+  getTrajetsByDriver: (driverId: string) => Trajet[];
 }
 
-interface RideRequestsStore {
-  requests: RideRequest[];
-  addRequest: (request: RideRequest) => void;
-  updateRequestStatus: (id: string, status: RideRequest['status']) => void;
-  getRequestsByPassenger: (passengerId: string) => RideRequest[];
-  getRequestsByDriver: (driverId: string) => RideRequest[];
+interface ReservationsStore {
+  reservations: Reservation[];
+  addReservation: (reservation: Reservation) => void;
+  updateReservationStatus: (id: string, status: Reservation['status']) => void;
+  getReservationsByPassenger: (passengerId: string) => Reservation[];
+  getReservationsByDriver: (driverId: string) => Reservation[];
+}
+
+interface NotificationsStore {
+  notifications: Notification[];
+  addNotification: (notification: Omit<Notification, 'id' | 'createdAt' | 'lu'>) => void;
+  markAsRead: (id: string) => void;
+  markAllAsRead: (userId: string) => void;
+  deleteNotification: (id: string) => void;
+  getNotificationsByUser: (userId: string) => Notification[];
 }
 
 type LocationStatus = 'idle' | 'prompting' | 'granted' | 'denied' | 'error';
@@ -122,32 +126,24 @@ export const useAuthStore = create<AuthStore>()(
       user: null,
       isLoggedIn: false,
       login: async (email: string, password: string) => {
-        // Pour la démo, on mappe l'utilisateur sur driver1 afin de voir trajets/motos/demandes
         const mockUser: User = {
           id: 'driver1',
-          name: email.split('@')[0],
+          nom: email.split('@')[0],
+          prenom: 'Conducteur',
           email,
-          role: 'driver',
-          verified: true,
-          location: {
-            lat: 6.1256,
-            lng: 1.2317,
-          },
+          role: 'conducteur',
+          statut: 'actif',
         };
         set({ user: mockUser, isLoggedIn: true });
       },
-      register: async (name: string, email: string, password: string) => {
-        // Pour la démo, on mappe aussi sur driver1 pour accéder aux données mock
+      register: async (nom: string, prenom: string, email: string, password: string) => {
         const mockUser: User = {
           id: 'driver1',
-          name,
+          nom,
+          prenom,
           email,
-          role: 'driver',
-          verified: true,
-          location: {
-            lat: 6.1256,
-            lng: 1.2317,
-          },
+          role: 'passager',
+          statut: 'actif',
         };
         set({ user: mockUser, isLoggedIn: true });
       },
@@ -157,6 +153,12 @@ export const useAuthStore = create<AuthStore>()(
       updateUser: (userData) => {
         set((state) => ({
           user: state.user ? { ...state.user, ...userData } : null,
+        }));
+      },
+      deleteAccount: (id) => {
+        set((state) => ({
+          user: state.user?.id === id ? null : state.user,
+          isLoggedIn: state.user?.id === id ? false : state.isLoggedIn,
         }));
       },
     }),
@@ -171,21 +173,19 @@ export const useMotosStore = create<MotosStore>()((set, get) => ({
   motos: [
     {
       id: '1',
-      driverId: 'driver1',
-      brand: 'Honda',
-      model: 'CB150',
-      year: 2022,
-      licensePlate: 'TG-2022-001',
-      capacity: 2,
+      proprietaireId: 'driver1',
+      marque: 'Honda',
+      modele: 'CB150',
+      immatriculation: 'TG-2022-001',
+      disponibilite: true,
     },
     {
       id: '2',
-      driverId: 'driver2',
-      brand: 'Yamaha',
-      model: 'YZF-R3',
-      year: 2023,
-      licensePlate: 'TG-2023-045',
-      capacity: 2,
+      proprietaireId: 'driver2',
+      marque: 'Yamaha',
+      modele: 'YZF-R3',
+      immatriculation: 'TG-2023-045',
+      disponibilite: true,
     },
   ],
   addMoto: (moto) => {
@@ -204,245 +204,79 @@ export const useMotosStore = create<MotosStore>()((set, get) => ({
     }));
   },
   getMotosByDriver: (driverId) => {
-    return get().motos.filter((m) => m.driverId === driverId);
+    return get().motos.filter((m) => m.proprietaireId === driverId);
   },
 }));
 
 // Store des trajets
-export const useRoutesStore = create<RoutesStore>()((set, get) => ({
-  routes: [
+export const useTrajetsStore = create<TrajetsStore>()((set, get) => ({
+  trajets: [
     {
       id: '1',
-      driverId: 'driver1',
-      driver: {
+      conducteurId: 'driver1',
+      conducteur: {
         id: 'driver1',
-        name: 'Jean Dupont',
+        nom: 'Dupont',
+        prenom: 'Jean',
         email: 'jean@univ-lome.tg',
-        role: 'driver',
-        verified: true,
-        location: { lat: 6.1256, lng: 1.2317 },
+        role: 'passager',
+        statut: 'actif',
       },
-      departure: {
-        name: 'Campus Principal',
-        lat: 6.1256,
-        lng: 1.2317,
-      },
-      arrival: {
-        name: 'Centre Ville',
-        lat: 6.1300,
-        lng: 1.2400,
-      },
-      departureTime: '07:30',
-      arrivalTime: '08:00',
-      daysOfWeek: [1, 2, 3, 4, 5],
-      availableSeats: 1,
-      moto: {
-        id: '1',
-        driverId: 'driver1',
-        brand: 'Honda',
-        model: 'CB150',
-        year: 2022,
-        licensePlate: 'TG-2022-001',
-        capacity: 2,
-      },
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: '2',
-      driverId: 'driver2',
-      driver: {
-        id: 'driver2',
-        name: 'Marie Koffi',
-        email: 'marie@univ-lome.tg',
-        role: 'driver',
-        verified: true,
-        location: { lat: 6.1200, lng: 1.2350 },
-      },
-      departure: {
-        name: 'Gare Routière',
-        lat: 6.1200,
-        lng: 1.2350,
-      },
-      arrival: {
-        name: 'Campus Principal',
-        lat: 6.1256,
-        lng: 1.2317,
-      },
-      departureTime: '17:00',
-      arrivalTime: '17:30',
-      daysOfWeek: [1, 2, 3, 4, 5],
-      availableSeats: 2,
-      moto: {
-        id: '2',
-        driverId: 'driver2',
-        brand: 'Yamaha',
-        model: 'YZF-R3',
-        year: 2023,
-        licensePlate: 'TG-2023-045',
-        capacity: 2,
-      },
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: '3',
-      driverId: 'driver3',
-      driver: {
-        id: 'driver3',
-        name: 'Awa Mensah',
-        email: 'awa@univ-lome.tg',
-        role: 'driver',
-        verified: true,
-        location: { lat: 6.1415, lng: 1.2220 },
-      },
-      departure: {
-        name: 'Adidogomé',
-        lat: 6.1950,
-        lng: 1.1380,
-      },
-      arrival: {
-        name: 'Campus Principal',
-        lat: 6.1256,
-        lng: 1.2317,
-      },
-      departureTime: '06:50',
-      arrivalTime: '07:25',
-      daysOfWeek: [1, 2, 3, 4, 5],
-      availableSeats: 1,
-      moto: {
-        id: '3',
-        driverId: 'driver3',
-        brand: 'Suzuki',
-        model: 'Gixxer',
-        year: 2021,
-        licensePlate: 'TG-2021-077',
-        capacity: 2,
-      },
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: '4',
-      driverId: 'driver4',
-      driver: {
-        id: 'driver4',
-        name: 'Kodjo Amévi',
-        email: 'kodjo@univ-lome.tg',
-        role: 'driver',
-        verified: true,
-        location: { lat: 6.1570, lng: 1.2560 },
-      },
-      departure: {
-        name: 'Hédzranawoé',
-        lat: 6.1780,
-        lng: 1.2150,
-      },
-      arrival: {
-        name: 'Campus Principal',
-        lat: 6.1256,
-        lng: 1.2317,
-      },
-      departureTime: '08:10',
-      arrivalTime: '08:35',
-      daysOfWeek: [1, 2, 3, 4, 5],
-      availableSeats: 2,
-      moto: {
-        id: '4',
-        driverId: 'driver4',
-        brand: 'Kawasaki',
-        model: 'Ninja 300',
-        year: 2020,
-        licensePlate: 'TG-2020-099',
-        capacity: 2,
-      },
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: '5',
-      driverId: 'driver1',
-      driver: {
-        id: 'driver1',
-        name: 'Jean Dupont',
-        email: 'jean@univ-lome.tg',
-        role: 'driver',
-        verified: true,
-        location: { lat: 6.1256, lng: 1.2317 },
-      },
-      departure: {
-        name: 'Agoè',
-        lat: 6.2300,
-        lng: 1.2000,
-      },
-      arrival: {
-        name: 'Centre Ville',
-        lat: 6.1300,
-        lng: 1.2400,
-      },
-      departureTime: '18:00',
-      arrivalTime: '18:40',
-      daysOfWeek: [1, 2, 3, 4, 5],
-      availableSeats: 1,
-      moto: {
-        id: '1',
-        driverId: 'driver1',
-        brand: 'Honda',
-        model: 'CB150',
-        year: 2022,
-        licensePlate: 'TG-2022-001',
-        capacity: 2,
-      },
+      pointDepart: 'Campus Principal',
+      destination: 'Centre Ville',
+      dateHeure: '2026-01-16T07:30:00',
+      placesDisponibles: 1,
+      statut: 'ouvert',
+      departureLat: 6.1256,
+      departureLng: 1.2317,
+      arrivalLat: 6.1300,
+      arrivalLng: 1.2400,
       createdAt: new Date().toISOString(),
     },
   ],
-  addRoute: (route) => {
+  addTrajet: (trajet) => {
     set((state) => ({
-      routes: [...state.routes, route],
+      trajets: [...state.trajets, trajet],
     }));
   },
-  getRoutes: (filters) => {
-    let filtered = get().routes;
-    
-    if (filters?.departure) {
+  getTrajets: (filters) => {
+    let filtered = get().trajets;
+
+    if (filters?.pointDepart) {
+      const search = filters.pointDepart.toLowerCase();
       filtered = filtered.filter((r) =>
-        r.departure.name.toLowerCase().includes(filters.departure.toLowerCase())
+        r.pointDepart.toLowerCase().includes(search)
       );
     }
-    
-    if (filters?.arrival) {
+
+    if (filters?.destination) {
+      const search = filters.destination.toLowerCase();
       filtered = filtered.filter((r) =>
-        r.arrival.name.toLowerCase().includes(filters.arrival.toLowerCase())
+        r.destination.toLowerCase().includes(search)
       );
     }
-    
-    if (filters?.dayOfWeek) {
-      filtered = filtered.filter((r) =>
-        r.daysOfWeek.includes(filters.dayOfWeek)
-      );
-    }
-    
+
     return filtered;
   },
-  updateRoute: (id, routeData) => {
+  updateTrajet: (id, trajetData) => {
     set((state) => ({
-      routes: state.routes.map((r) =>
-        r.id === id ? { ...r, ...routeData } : r
+      trajets: state.trajets.map((r) =>
+        r.id === id ? { ...r, ...trajetData } : r
       ),
     }));
   },
-  deleteRoute: (id) => {
+  deleteTrajet: (id) => {
     set((state) => ({
-      routes: state.routes.filter((r) => r.id !== id),
+      trajets: state.trajets.filter((r) => r.id !== id),
     }));
   },
-  getRoutesByDriver: (driverId) => {
-    return get().routes.filter((r) => r.driverId === driverId);
+  getTrajetsByDriver: (driverId) => {
+    return get().trajets.filter((r) => r.conducteurId === driverId);
   },
-  createRoute: (data) => {
+  createTrajet: (data) => {
     const coordsBook: Record<string, { lat: number; lng: number }> = {
       'campus principal': { lat: 6.1256, lng: 1.2317 },
       'centre ville': { lat: 6.1300, lng: 1.2400 },
-      'gare routiere': { lat: 6.1200, lng: 1.2350 },
-      'adidogome': { lat: 6.1950, lng: 1.1380 },
-      'hedzranawoe': { lat: 6.1780, lng: 1.2150 },
-      'agoe': { lat: 6.2300, lng: 1.2000 },
     };
 
     const resolve = (name: string) => {
@@ -450,75 +284,97 @@ export const useRoutesStore = create<RoutesStore>()((set, get) => ({
       return coordsBook[key] ?? { lat: 6.1256, lng: 1.2317 };
     };
 
-    const mockDriver = {
-      id: data.driverId,
-      name: 'Nouvel Conducteur',
-      email: 'driver@univ-lome.tg',
-      role: 'driver' as const,
-      verified: true,
-      location: resolve(data.departure),
-    };
-
-    const mockMoto = {
-      id: `moto-${Date.now()}`,
-      driverId: data.driverId,
-      brand: 'Moto',
-      model: 'Standard',
-      year: 2024,
-      licensePlate: 'TG-2024-001',
-      capacity: 2,
-    };
-
-    const newRoute: Route = {
-      id: `route-${Date.now()}`,
-      driverId: data.driverId,
-      driver: mockDriver,
-      departure: {
-        name: data.departure,
-        ...resolve(data.departure),
-      },
-      arrival: {
-        name: data.arrival,
-        ...resolve(data.arrival),
-      },
-      departureTime: data.time,
-      arrivalTime: data.time,
-      daysOfWeek: [1, 2, 3, 4, 5],
-      availableSeats: data.availableSeats,
-      moto: mockMoto,
+    const newTrajet: Trajet = {
+      id: `trajet-${Date.now()}`,
+      conducteurId: data.conducteurId,
+      conducteur: useAuthStore.getState().user!,
+      pointDepart: data.pointDepart,
+      destination: data.destination,
+      dateHeure: data.dateHeure,
+      placesDisponibles: data.placesDisponibles,
+      statut: 'ouvert',
+      ...resolve(data.pointDepart),
       createdAt: new Date().toISOString(),
     };
 
     set((state) => ({
-      routes: [...state.routes, newRoute],
+      trajets: [...state.trajets, newTrajet],
     }));
   },
 }));
 
-// Store des demandes de trajet
-export const useRideRequestsStore = create<RideRequestsStore>()((set, get) => ({
-  requests: [],
-  addRequest: (request) => {
+// Store des réservations
+export const useReservationsStore = create<ReservationsStore>()((set, get) => ({
+  reservations: [],
+  addReservation: (reservation) => {
     set((state) => ({
-      requests: [...state.requests, request],
+      reservations: [...state.reservations, reservation],
     }));
   },
-  updateRequestStatus: (id, status) => {
+  updateReservationStatus: (id, status) => {
     set((state) => ({
-      requests: state.requests.map((r) =>
-        r.id === id ? { ...r, status, respondedAt: new Date().toISOString() } : r
+      reservations: state.reservations.map((r) =>
+        r.id === id ? { ...r, status } : r
       ),
     }));
   },
-  getRequestsByPassenger: (passengerId) => {
-    return get().requests.filter((r) => r.passengerId === passengerId);
+  getReservationsByPassenger: (passengerId) => {
+    return get().reservations.filter((r) => r.etudiantId === passengerId);
   },
-  getRequestsByDriver: (driverId) => {
-    const allRequests = get().requests;
-    const driverRoutes = useRoutesStore.getState().routes.filter((r: Route) => r.driverId === driverId);
-    return allRequests.filter((r) =>
-      driverRoutes.some((route: Route) => route.id === r.routeId)
-    );
+  getReservationsByDriver: (driverId) => {
+    const allTrajets = useTrajetsStore.getState().trajets;
+    const driverTrajetsIds = allTrajets
+      .filter((t) => t.conducteurId === driverId)
+      .map((t) => t.id);
+    return get().reservations.filter((r) => driverTrajetsIds.includes(r.trajetId));
+  },
+}));
+
+// Store des notifications
+export const useNotificationsStore = create<NotificationsStore>()((set, get) => ({
+  notifications: [
+    {
+      id: '1',
+      userId: 'driver1',
+      titre: 'Bienvenue',
+      message: 'Bienvenue sur la plateforme Miyi Ðekae !',
+      lu: false,
+      type: 'info',
+      createdAt: new Date().toISOString(),
+    }
+  ],
+  addNotification: (notif) => {
+    const newNotif: Notification = {
+      ...notif,
+      id: `notif-${Date.now()}`,
+      lu: false,
+      createdAt: new Date().toISOString(),
+    };
+    set((state) => ({
+      notifications: [newNotif, ...state.notifications],
+    }));
+  },
+  markAsRead: (id) => {
+    set((state) => ({
+      notifications: state.notifications.map((n) =>
+        n.id === id ? { ...n, lu: true } : n
+      ),
+    }));
+  },
+  markAllAsRead: (userId) => {
+    set((state) => ({
+      notifications: state.notifications.map((n) =>
+        n.userId === userId ? { ...n, lu: true } : n
+      ),
+    }));
+  },
+  deleteNotification: (id) => {
+    set((state) => ({
+      notifications: state.notifications.filter((n) => n.id !== id),
+    }));
+  },
+  getNotificationsByUser: (userId) => {
+    return get().notifications.filter((n) => n.userId === userId);
   },
 }));
 
@@ -553,3 +409,26 @@ export const useLocationStore = create<LocationStore>()((set) => ({
   },
   reset: () => set({ location: null, status: 'idle', error: null }),
 }));
+
+interface SidebarStore {
+  isOpen: boolean;
+  isCollapsed: boolean;
+  toggle: () => void;
+  setOpen: (open: boolean) => void;
+  setCollapsed: (collapsed: boolean) => void;
+}
+
+export const useSidebarStore = create<SidebarStore>()(
+  persist(
+    (set) => ({
+      isOpen: false,
+      isCollapsed: false,
+      toggle: () => set((state) => ({ isOpen: !state.isOpen })),
+      setOpen: (open) => set({ isOpen: open }),
+      setCollapsed: (collapsed) => set({ isCollapsed: collapsed }),
+    }),
+    {
+      name: 'sidebar-storage',
+    }
+  )
+);

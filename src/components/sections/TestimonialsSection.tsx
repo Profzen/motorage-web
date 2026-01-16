@@ -5,7 +5,7 @@ const testimonials = [
   {
     name: "Amara K.",
     role: "Étudiante, année 2",
-    message: "Grâce à MOTORAGE, j'ai trouvé un trajet en 5 minutes. C'est tellement pratique !",
+    message: "Grâce à Miyi Ðekae, j'ai trouvé un trajet en 5 minutes. C'est tellement pratique !",
     rating: 5,
   },
   {
@@ -17,7 +17,7 @@ const testimonials = [
   {
     name: "Awa D.",
     role: "Étudiante, année 1",
-    message: "Pas besoin de taxi coûteux. MOTORAGE m'a sauvé la vie académique plusieurs fois.",
+    message: "Pas besoin de taxi coûteux. Miyi Ðekae m'a sauvé la vie académique plusieurs fois.",
     rating: 5,
   },
   {

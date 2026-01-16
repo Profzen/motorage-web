@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { LocationRequester } from "@/components/LocationRequester";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,12 +15,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MOTORAGE - Plateforme d'Entraide Moto | Université de Lomé",
+  title: "Miyi Ðekae - Plateforme d'Entraide Moto | Université de Lomé",
   description: "La première plateforme d'entraide moto entre étudiants de l'Université de Lomé. Trouvez des trajets, demandez de l'aide, et rejoignez une communauté de motards passionnés et bienveillants.",
   keywords: ["moto", "entraide", "covoiturage", "étudiants", "Université de Lomé", "Togo"],
-  authors: [{ name: "MOTORAGE" }],
-  creator: "MOTORAGE",
-  publisher: "MOTORAGE",
+  authors: [{ name: "Miyi Ðekae" }],
+  creator: "Miyi Ðekae",
+  publisher: "Miyi Ðekae",
   formatDetection: {
     email: false,
     address: false,
@@ -28,16 +29,16 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "fr_FR",
-    url: "https://motorage.com",
-    siteName: "MOTORAGE",
-    title: "MOTORAGE - Plateforme d'Entraide Moto",
+    url: "https://miyi-dekae.tg",
+    siteName: "Miyi Ðekae",
+    title: "Miyi Ðekae - Plateforme d'Entraide Moto",
     description: "Connectez-vous, partagez et roulez en confiance avec la communauté moto de l'UL",
     images: [
       {
-        url: "https://motorage.com/og-image.png",
+        url: "https://miyi-dekae.tg/og-image.png",
         width: 1200,
         height: 630,
-        alt: "MOTORAGE - Plateforme d'Entraide Moto",
+        alt: "Miyi Ðekae - Plateforme d'Entraide Moto",
         type: "image/png",
       },
     ],
@@ -65,12 +66,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="fr" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <LocationRequester />
-        {children}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <LocationRequester />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

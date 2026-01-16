@@ -1,682 +1,395 @@
-"use client";
+'use client';
 
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import Link from "next/link";
-import { Bike, Users, Plus, LogOut, Calendar, Clock, MapPinIcon, Star, Pencil, Trash2, Save, X, MapPin } from "lucide-react";
-import { useAuthStore } from "@/lib/store";
-import { useRoutesStore } from "@/lib/store";
-import { useMotosStore } from "@/lib/store";
-import { useRideRequestsStore } from "@/lib/store";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from 'react';
+import { useAuthStore, useTrajetsStore, useMotosStore, useReservationsStore, useNotificationsStore } from '@/lib/store';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import {
+  UserIcon,
+  Bike,
+  History as HistoryIcon,
+  LogOut,
+  Trash2,
+  CheckCircle2,
+  AlertCircle,
+  Calendar,
+  Settings,
+  MapPin,
+  Bell,
+  Plus,
+  Edit
+} from 'lucide-react';
+import { HistoriquePassager } from '@/components/dashboard/HistoriquePassager';
+import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+
 
 export default function DashboardPage() {
+  const { user, logout, updateUser, deleteAccount } = useAuthStore();
+  const { getTrajetsByDriver } = useTrajetsStore();
+  const { getMotosByDriver } = useMotosStore();
+  const { notifications, markAsRead, markAllAsRead } = useNotificationsStore();
   const router = useRouter();
-  const user = useAuthStore((state) => state.user);
-  const logout = useAuthStore((state) => state.logout);
-  const routes = useRoutesStore((state) => state.routes);
-  const updateRouteStore = useRoutesStore((state) => state.updateRoute);
-  const deleteRouteStore = useRoutesStore((state) => state.deleteRoute);
-  const motos = useMotosStore((state) => state.motos);
-  const addMoto = useMotosStore((state) => state.addMoto);
-  const removeMoto = useMotosStore((state) => state.removeMoto);
-  const updateMoto = useMotosStore((state) => state.updateMoto);
-  const requests = useRideRequestsStore((state) => state.requests);
-  const updateRequestStatus = useRideRequestsStore((state) => state.updateRequestStatus);
   const [mounted, setMounted] = useState(false);
-  const [requestFilter, setRequestFilter] = useState<"all" | "pending" | "accepted" | "rejected">("all");
-  const [flash, setFlash] = useState<{ text: string; type: "success" | "error" } | null>(null);
-  const [showMotoForm, setShowMotoForm] = useState(false);
-  const [editingMotoId, setEditingMotoId] = useState<string | null>(null);
-  const [motoForm, setMotoForm] = useState({
-    brand: "",
-    model: "",
-    year: "2024",
-    licensePlate: "",
-    capacity: "2",
-  });
-  const [editingRouteId, setEditingRouteId] = useState<string | null>(null);
-  const [routeForm, setRouteForm] = useState({
-    departure: "",
-    arrival: "",
-    time: "",
-    availableSeats: "1",
-  });
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileData, setProfileData] = useState({
+    nom: user?.nom || '',
+    prenom: user?.prenom || '',
+    email: user?.email || '',
+  });
+
+  // Pour le conducteur
+  const rides = mounted && user?.id ? getTrajetsByDriver(user.id) : [];
+  const motos = mounted && user?.id ? getMotosByDriver(user.id) : [];
+
+  useEffect(() => {
     if (!user) {
-      router.push("/login");
+      router.push('/login');
     }
   }, [user, router]);
 
-  if (!mounted || !user) {
-    return null;
-  }
+  if (!user) return null;
 
-  const userRoutes = routes.filter(r => r.driverId === user.id);
-  const userMotos = motos.filter(m => m.driverId === user.id);
-  const userRouteIds = new Set(userRoutes.map((r) => r.id));
-  const driverRequests = requests
-    .filter((r) => userRouteIds.has(r.routeId))
-    .map((req) => ({
-      req,
-      route: routes.find((r) => r.id === req.routeId),
-    }));
-  const pendingCount = driverRequests.filter(({ req }) => req.status === "pending").length;
-  const filteredDriverRequests = driverRequests.filter(({ req }) =>
-    requestFilter === "all" ? true : req.status === requestFilter
-  );
+  const handleUpdateProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateUser(profileData);
+    setIsEditingProfile(false);
+  };
 
-  const statusBadge = (status: string) => {
-    const map: Record<string, string> = {
-      pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-200",
-      accepted: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200",
-      rejected: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-200",
+  const handleDeleteAccount = () => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.')) {
+      deleteAccount(user.id);
+      logout();
+      router.push('/');
+    }
+  };
+
+  const getRoleLabel = (role: string) => {
+    const roles: Record<string, string> = {
+      conducteur: 'Conducteur',
+      passager: 'Passager',
+      administrateur: 'Admin',
     };
-    return map[status] ?? "bg-muted text-foreground";
+    return roles[role] || role;
   };
 
-  const handleLogout = () => {
-    logout();
-    router.push("/");
-  };
-
-  const showFlash = (text: string, type: "success" | "error") => {
-    setFlash({ text, type });
-    setTimeout(() => setFlash(null), 2500);
-  };
-
-  const resetMotoForm = () => {
-    setMotoForm({ brand: "", model: "", year: "2024", licensePlate: "", capacity: "2" });
-    setEditingMotoId(null);
-  };
-
-  const handleMotoSubmit = () => {
-    if (!motoForm.brand || !motoForm.model || !motoForm.licensePlate) {
-      showFlash("Merci de renseigner marque, modèle et immatriculation", "error");
-      return;
-    }
-
-    const payload = {
-      brand: motoForm.brand,
-      model: motoForm.model,
-      year: parseInt(motoForm.year || "2024", 10),
-      licensePlate: motoForm.licensePlate,
-      capacity: parseInt(motoForm.capacity || "1", 10),
-      driverId: user.id,
-    };
-
-    if (editingMotoId) {
-      updateMoto(editingMotoId, payload);
-      showFlash("Moto mise à jour", "success");
-    } else {
-      addMoto({
-        id: `moto-${Date.now()}`,
-        ...payload,
-      });
-      showFlash("Moto ajoutée", "success");
-    }
-
-    resetMotoForm();
-    setShowMotoForm(false);
-  };
-
-  const handleMotoEdit = (motoId: string) => {
-    const moto = userMotos.find((m) => m.id === motoId);
-    if (!moto) return;
-    setMotoForm({
-      brand: moto.brand,
-      model: moto.model,
-      year: moto.year.toString(),
-      licensePlate: moto.licensePlate,
-      capacity: moto.capacity.toString(),
-    });
-    setEditingMotoId(moto.id);
-    setShowMotoForm(true);
-  };
-
-  const handleMotoDelete = (motoId: string) => {
-    if (window.confirm("Supprimer cette moto ?")) {
-      removeMoto(motoId);
-      showFlash("Moto supprimée", "success");
-    }
-  };
-
-  const handleRouteEdit = (routeId: string) => {
-    const route = userRoutes.find((r) => r.id === routeId);
-    if (!route) return;
-    setRouteForm({
-      departure: route.departure.name,
-      arrival: route.arrival.name,
-      time: route.departureTime,
-      availableSeats: route.availableSeats.toString(),
-    });
-    setEditingRouteId(routeId);
-  };
-
-  const handleRouteSave = () => {
-    if (!editingRouteId) return;
-    const route = routes.find((r) => r.id === editingRouteId);
-    if (!route) return;
-    updateRouteStore(editingRouteId, {
-      departure: { ...route.departure, name: routeForm.departure },
-      arrival: { ...route.arrival, name: routeForm.arrival },
-      departureTime: routeForm.time,
-      arrivalTime: routeForm.time,
-      availableSeats: parseInt(routeForm.availableSeats || "1", 10),
-    });
-    setEditingRouteId(null);
-    showFlash("Trajet mis à jour", "success");
-  };
-
-  const handleRouteDelete = (routeId: string) => {
-    if (window.confirm("Supprimer ce trajet ?")) {
-      deleteRouteStore(routeId);
-      showFlash("Trajet supprimé", "success");
-    }
-  };
   return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-      <main className="flex-grow py-20 md:py-32 bg-surface/50">
-        <div className="container mx-auto px-4">
-          {flash && (
-            <div className={`mb-4 p-3 rounded-lg border text-sm ${flash.type === "success" ? "bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-100" : "bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-100"}`}>
-              {flash.text}
-            </div>
+    <div className="container mx-auto py-8 px-4 space-y-10 max-w-6xl">
+      {/* Header Minimaliste */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b pb-8">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-black tracking-tight">Tableau de bord</h1>
+          <p className="text-muted-foreground font-medium">
+            Bonjour <span className="text-foreground font-bold">{user.prenom}</span>, ravi de vous revoir sur Miyi Ðekae.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={() => setIsEditingProfile(!isEditingProfile)} className="rounded-xl font-bold">
+            <Settings className="w-4 h-4 mr-2" /> Profil
+          </Button>
+          <Button variant="ghost" onClick={logout} className="rounded-xl text-destructive hover:bg-destructive/10 font-bold">
+            <LogOut className="w-4 h-4 mr-2" /> Déconnexion
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        {/* Colonne de Gauche : Résumé & Activité */}
+        <div className="lg:col-span-2 space-y-10">
+          {/* Quick Stats Minimalistes */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <Card className="border shadow-sm rounded-2xl bg-card/30 backdrop-blur-sm">
+              <CardContent className="p-6 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                  <MapPin className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="text-2xl font-black">{rides.length}</div>
+                  <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Trajets publiés</div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border shadow-sm rounded-2xl bg-card/30 backdrop-blur-sm">
+              <CardContent className="p-6 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center text-green-600">
+                  <CheckCircle2 className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="text-2xl font-black">4.9</div>
+                  <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Note globale</div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {isEditingProfile && (
+            <Card className="border-0 shadow-2xl bg-primary/5 backdrop-blur-md ring-1 ring-primary/20 animate-in fade-in zoom-in-95 duration-500">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3 text-primary text-2xl">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Edit className="w-6 h-6" />
+                  </div>
+                  Modifier mon profil
+                </CardTitle>
+                <CardDescription className="pl-11">Mettez à jour vos informations personnelles pour rester connecté.</CardDescription>
+              </CardHeader>
+              <CardContent className="pl-11 pr-6 pb-8">
+                <form onSubmit={handleUpdateProfile} className="space-y-6 max-w-2xl">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="prenom" className="text-sm font-semibold">Prénom</Label>
+                      <Input
+                        id="prenom"
+                        className="h-11 bg-background/50"
+                        value={profileData.prenom}
+                        onChange={e => setProfileData({ ...profileData, prenom: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="nom" className="text-sm font-semibold">Nom</Label>
+                      <Input
+                        id="nom"
+                        className="h-11 bg-background/50"
+                        value={profileData.nom}
+                        onChange={e => setProfileData({ ...profileData, nom: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-sm font-semibold">Email Universitaire</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      className="h-11 bg-background/50"
+                      value={profileData.email}
+                      onChange={e => setProfileData({ ...profileData, email: e.target.value })}
+                    />
+                  </div>
+                  <div className="pt-6 flex flex-wrap gap-4 border-t border-primary/10 mt-6">
+                    <Button type="submit" className="h-11 px-8 rounded-xl font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-all">Enregistrer les modifications</Button>
+                    <Button type="button" variant="outline" onClick={() => setIsEditingProfile(false)} className="h-11 px-6 rounded-xl">Annuler</Button>
+                    <div className="flex-grow"></div>
+                    <Button type="button" variant="ghost" className="text-destructive hover:bg-destructive/10 h-11 px-4 rounded-xl transition-all" onClick={handleDeleteAccount}>
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Supprimer le compte
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
           )}
-          <div className="space-y-8">
-            {/* Welcome Section */}
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div>
-                <h1 className="text-4xl font-bold mb-2">Bienvenue, {user.name}</h1>
-                <p className="text-muted-foreground">
-                  Gérez vos trajets, demandes et profil en un seul endroit
-                </p>
-              </div>
-              <Link href="/search">
-                <Button size="lg" className="gap-2">
-                  <MapPinIcon className="h-4 w-4" />
-                  Demander une moto
-                </Button>
-              </Link>
-            </div>
 
-            {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card className="border-0 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Mes trajets</p>
-                    <p className="text-2xl font-bold">{userRoutes.length}</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Mes motos</p>
-                    <p className="text-2xl font-bold">{userMotos.length}</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Demandes en attente</p>
-                    <p className="text-2xl font-bold">{pendingCount}</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Trajets réussis</p>
-                    <p className="text-2xl font-bold">12</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Left Column - Actions */}
-              <div className="md:col-span-2 space-y-6">
-                {/* Demandes reçues */}
-                <Card className="border-0 shadow-lg">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                    <div>
-                      <CardTitle>Demandes reçues</CardTitle>
-                      <CardDescription>
-                        {driverRequests.length > 0 ? `${driverRequests.length} en attente` : "Aucune demande"}
-                      </CardDescription>
-                    </div>
-                    <div className="flex gap-2 text-xs">
-                      <Button
-                        size="sm"
-                        variant={requestFilter === "all" ? "default" : "outline"}
-                        onClick={() => setRequestFilter("all")}
-                      >
-                        Toutes
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={requestFilter === "pending" ? "default" : "outline"}
-                        onClick={() => setRequestFilter("pending")}
-                      >
-                        En attente
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={requestFilter === "accepted" ? "default" : "outline"}
-                        onClick={() => setRequestFilter("accepted")}
-                      >
-                        Acceptées
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={requestFilter === "rejected" ? "default" : "outline"}
-                        onClick={() => setRequestFilter("rejected")}
-                      >
-                        Refusées
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {filteredDriverRequests.length === 0 ? (
-                      <div className="text-center py-10 rounded-lg bg-muted/50">
-                        <p className="text-sm text-muted-foreground">Aucune demande pour vos trajets</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {filteredDriverRequests.map(({ req, route }) => (
-                          <div key={req.id} className="p-4 border rounded-lg bg-muted/30">
-                            <div className="flex items-start justify-between">
-                              <div className="space-y-1">
-                                <p className="font-medium">{route?.departure.name} → {route?.arrival.name}</p>
-                                <p className="text-xs text-muted-foreground">Places demandées : {req.requestedSeats}</p>
-                                <span className={`inline-flex items-center gap-2 px-2 py-1 rounded-full text-[11px] font-medium ${statusBadge(req.status)}`}>
-                                  <span className="h-2 w-2 rounded-full bg-current" />
-                                  {req.status === "pending" ? "En attente" : req.status === "accepted" ? "Acceptée" : "Refusée"}
-                                </span>
-                              </div>
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => { updateRequestStatus(req.id, "accepted"); showFlash("Demande acceptée", "success"); }}
-                                  disabled={req.status !== "pending"}
-                                >
-                                  Accepter
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => { updateRequestStatus(req.id, "rejected"); showFlash("Demande refusée", "error"); }}
-                                  disabled={req.status !== "pending"}
-                                >
-                                  Refuser
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Trajets Section */}
-                <Card className="border-0 shadow-lg">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                    <div>
-                      <CardTitle>Mes trajets</CardTitle>
-                      <CardDescription>
-                        {userRoutes.length > 0 ? `${userRoutes.length} trajet(s) proposé(s)` : "Vous n'avez pas de trajets"}
-                      </CardDescription>
-                    </div>
-                    <Link href="/create-route">
-                      <Button size="sm" className="gap-2">
-                        <Plus className="h-4 w-4" />
-                        Nouveau trajet
-                      </Button>
-                    </Link>
-                  </CardHeader>
-                  <CardContent>
-                    {userRoutes.length === 0 ? (
-                      <div className="text-center py-12 rounded-lg bg-muted/50">
-                        <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
-                        <p className="text-muted-foreground mb-4">Aucun trajet pour le moment</p>
-                        <Link href="/create-route">
-                          <Button variant="outline" size="sm">
-                            Créer votre premier trajet
-                          </Button>
-                        </Link>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {userRoutes.map((route) => (
-                          <div key={route.id} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                            <div className="flex items-start justify-between mb-2">
-                              <div>
-                                <p className="font-medium">{route.departure.name} → {route.arrival.name}</p>
-                                <div className="flex gap-4 text-sm text-muted-foreground mt-1">
-                                  <span className="flex items-center gap-1">
-                                    <Calendar className="h-3 w-3" />
-                                    {new Date(route.createdAt).toLocaleDateString('fr-FR')}
-                                  </span>
-                                  <span className="flex items-center gap-1">
-                                    <Clock className="h-3 w-3" />
-                                    {route.departureTime}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-8 px-3"
-                                  onClick={() => handleRouteEdit(route.id)}
-                                >
-                                  <Pencil className="h-3 w-3 mr-1" />
-                                  Modifier
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-8 px-3 text-destructive"
-                                  onClick={() => handleRouteDelete(route.id)}
-                                >
-                                  <Trash2 className="h-3 w-3 mr-1" />
-                                  Supprimer
-                                </Button>
-                              </div>
-                            </div>
-                            {editingRouteId === route.id ? (
-                              <div className="mt-3 space-y-3">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                  <div className="space-y-1">
-                                    <Label className="text-xs">Départ</Label>
-                                    <Input
-                                      value={routeForm.departure}
-                                      onChange={(e) => setRouteForm({ ...routeForm, departure: e.target.value })}
-                                      placeholder="Départ"
-                                    />
-                                  </div>
-                                  <div className="space-y-1">
-                                    <Label className="text-xs">Arrivée</Label>
-                                    <Input
-                                      value={routeForm.arrival}
-                                      onChange={(e) => setRouteForm({ ...routeForm, arrival: e.target.value })}
-                                      placeholder="Arrivée"
-                                    />
-                                  </div>
-                                  <div className="space-y-1">
-                                    <Label className="text-xs">Heure</Label>
-                                    <Input
-                                      value={routeForm.time}
-                                      onChange={(e) => setRouteForm({ ...routeForm, time: e.target.value })}
-                                      type="time"
-                                    />
-                                  </div>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                  <div className="space-y-1">
-                                    <Label className="text-xs">Places</Label>
-                                    <Input
-                                      value={routeForm.availableSeats}
-                                      onChange={(e) => setRouteForm({ ...routeForm, availableSeats: e.target.value })}
-                                      type="number"
-                                      min={1}
-                                      max={3}
-                                    />
-                                  </div>
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button size="sm" className="gap-2" onClick={handleRouteSave}>
-                                    <Save className="h-4 w-4" />
-                                    Enregistrer
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="gap-2"
-                                    onClick={() => setEditingRouteId(null)}
-                                  >
-                                    <X className="h-4 w-4" />
-                                    Annuler
-                                  </Button>
-                                </div>
-                              </div>
-                            ) : (
-                              <p className="text-xs text-muted-foreground">Trajet régulier</p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Mes Motos Section */}
-                <Card className="border-0 shadow-lg">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                    <div>
-                      <CardTitle>Mes motos</CardTitle>
-                      <CardDescription>
-                        {userMotos.length > 0 ? `${userMotos.length} moto(s) enregistrée(s)` : "Aucune moto"}
-                      </CardDescription>
-                    </div>
-                    <Button
-                      size="sm"
-                      className="gap-2"
-                      variant={showMotoForm ? "secondary" : "default"}
-                      onClick={() => setShowMotoForm((v) => !v)}
-                    >
-                      <Plus className="h-4 w-4" />
-                      {showMotoForm ? "Fermer" : "Ajouter une moto"}
-                    </Button>
-                  </CardHeader>
-                  <CardContent>
-                    {showMotoForm && (
-                      <div className="mb-6 p-4 border rounded-lg bg-muted/40 space-y-3">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          <div className="space-y-1">
-                            <Label className="text-xs">Marque</Label>
-                            <Input
-                              value={motoForm.brand}
-                              onChange={(e) => setMotoForm({ ...motoForm, brand: e.target.value })}
-                              placeholder="Honda, Yamaha..."
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs">Modèle</Label>
-                            <Input
-                              value={motoForm.model}
-                              onChange={(e) => setMotoForm({ ...motoForm, model: e.target.value })}
-                              placeholder="CB150, YZF-R3..."
-                            />
-                          </div>
+          <div className="grid grid-cols-1 gap-8">
+            {/* Liste d'activité récente minimaliste */}
+            <Card className="border shadow-sm bg-card/30 backdrop-blur-sm rounded-2xl overflow-hidden">
+              <CardHeader className="p-6 border-b border-border/50">
+                <CardTitle className="text-lg font-black tracking-tight flex items-center gap-2">
+                  <HistoryIcon className="w-5 h-5 text-primary" />
+                  Dernière activité
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="divide-y divide-border/30">
+                  {rides.slice(0, 3).map((r, i) => (
+                    <div key={i} className="p-4 flex items-center justify-between hover:bg-primary/5 transition-colors">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-muted/40 flex items-center justify-center">
+                          <MapPin className="w-5 h-5 text-muted-foreground" />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                          <div className="space-y-1">
-                            <Label className="text-xs">Année</Label>
-                            <Input
-                              type="number"
-                              value={motoForm.year}
-                              onChange={(e) => setMotoForm({ ...motoForm, year: e.target.value })}
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs">Immatriculation</Label>
-                            <Input
-                              value={motoForm.licensePlate}
-                              onChange={(e) => setMotoForm({ ...motoForm, licensePlate: e.target.value })}
-                              placeholder="TG-2024-001"
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs">Places</Label>
-                            <Input
-                              type="number"
-                              min={1}
-                              max={3}
-                              value={motoForm.capacity}
-                              onChange={(e) => setMotoForm({ ...motoForm, capacity: e.target.value })}
-                            />
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" className="gap-2" onClick={handleMotoSubmit}>
-                            <Save className="h-4 w-4" />
-                            {editingMotoId ? "Mettre à jour" : "Ajouter"}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="gap-2"
-                            onClick={() => { resetMotoForm(); setShowMotoForm(false); }}
-                          >
-                            <X className="h-4 w-4" />
-                            Annuler
-                          </Button>
+                        <div>
+                          <p className="text-sm font-bold tracking-tight">{r.pointDepart} → {r.destination}</p>
+                          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest">{new Date(r.dateHeure).toLocaleDateString()}</p>
                         </div>
                       </div>
-                    )}
-                    {userMotos.length === 0 ? (
-                      <div className="text-center py-12 rounded-lg bg-muted/50">
-                        <Bike className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
-                        <p className="text-muted-foreground mb-4">Aucune moto enregistrée</p>
-                        <Button variant="outline" size="sm" onClick={() => setShowMotoForm(true)}>
-                          Enregistrer votre moto
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {userMotos.map((moto) => (
-                          <div key={moto.id} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <p className="font-medium">{moto.brand} {moto.model}</p>
-                                <p className="text-sm text-muted-foreground">{moto.licensePlate}</p>
-                              </div>
-                              <div className="flex gap-2">
-                                <Button size="sm" variant="outline" className="h-8 px-3" onClick={() => handleMotoEdit(moto.id)}>
-                                  <Pencil className="h-3 w-3 mr-1" />
-                                  Modifier
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-8 px-3 text-destructive"
-                                  onClick={() => handleMotoDelete(moto.id)}
-                                >
-                                  <Trash2 className="h-3 w-3 mr-1" />
-                                  Supprimer
-                                </Button>
-                              </div>
-                            </div>
-                            <p className="text-xs text-muted-foreground">Capacité: {moto.capacity} place(s) • {moto.year}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Right Column - Sidebar */}
-              <div className="space-y-6">
-                {/* Profile Card */}
-                <Card className="border-0 shadow-lg">
-                  <CardHeader>
-                    <CardTitle>Mon profil</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Users className="h-8 w-8 text-primary" />
+                      <Badge variant="outline" className="text-[10px] font-bold border-primary/20 text-primary">CONDUCTEUR</Badge>
                     </div>
-                    <div>
-                      <p className="font-medium">{user.name}</p>
-                      <p className="text-sm text-muted-foreground">{user.email}</p>
-                      <div className="flex items-center gap-1 mt-2">
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        <span className="text-sm font-medium">5.0</span>
-                      </div>
+                  ))}
+                  {rides.length === 0 && (
+                    <div className="p-10 text-center">
+                      <p className="text-sm text-muted-foreground italic">Aucun trajet récent à afficher.</p>
                     </div>
-                    <Button variant="outline" className="w-full">
-                      Éditer le profil
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                {/* Demandes reçues (rappel) */}
-                <Card className="border-0 shadow-lg">
-                  <CardHeader>
-                    <CardTitle>Demandes reçues</CardTitle>
-                    <CardDescription>
-                      {driverRequests.length > 0 ? `${driverRequests.length} en attente` : "Aucune demande"}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {driverRequests.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">Aucune demande pour vos trajets</p>
-                    ) : (
-                      driverRequests.map(({ req, route }) => (
-                        <div key={req.id} className="p-3 rounded-lg border bg-muted/40">
-                          <p className="text-sm font-medium">{route?.departure.name} → {route?.arrival.name}</p>
-                          <p className="text-xs text-muted-foreground mt-1">Places demandées: {req.requestedSeats}</p>
-                          <span className={`inline-flex items-center gap-2 px-2 py-1 rounded-full text-[11px] font-medium ${statusBadge(req.status)}`}>
-                            <span className="h-2 w-2 rounded-full bg-current" />
-                            {req.status === "pending" ? "En attente" : req.status === "accepted" ? "Acceptée" : "Refusée"}
-                          </span>
-                        </div>
-                      ))
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Quick Links */}
-                <Card className="border-0 shadow-lg">
-                  <CardHeader>
-                    <CardTitle className="text-base">Raccourcis</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <Link href="/create-route" className="flex items-center gap-2 p-2 rounded hover:bg-muted transition-colors text-sm">
-                      <Plus className="h-4 w-4" />
-                      <span>Créer un trajet</span>
-                    </Link>
-                    <Link href="/search" className="flex items-center gap-2 p-2 rounded hover:bg-muted transition-colors text-sm">
-                      <MapPinIcon className="h-4 w-4" />
-                      <span>Chercher un trajet</span>
-                    </Link>
-                    <Link href="/about" className="flex items-center gap-2 p-2 rounded hover:bg-muted transition-colors text-sm">
-                      <span>À propos</span>
-                    </Link>
-                    <Link href="/contact" className="flex items-center gap-2 p-2 rounded hover:bg-muted transition-colors text-sm">
-                      <span>Contacter le support</span>
-                    </Link>
-                    <button 
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-2 p-2 rounded hover:bg-muted transition-colors text-sm text-destructive"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      <span>Se déconnecter</span>
-                    </button>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
-      </main>
-      <Footer />
+
+        {/* Colonne de Droite : Profil & Notifications Simplifiées */}
+        <div className="space-y-8">
+          <Card className="border shadow-sm bg-card/30 backdrop-blur-sm rounded-2xl overflow-hidden text-center p-8">
+            <div className="flex flex-col items-center gap-4">
+              <Avatar className="h-20 w-20 border-4 border-background shadow-lg">
+                <AvatarFallback className="bg-primary/10 text-primary text-xl font-black">
+                  {mounted ? user.prenom[0] : 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="space-y-1">
+                <h2 className="text-xl font-black tracking-tight">{mounted ? `${user.prenom} ${user.nom}` : 'Profil'}</h2>
+                <Badge variant="secondary" className="font-bold text-[10px] tracking-widest uppercase">
+                  {mounted ? getRoleLabel(user.role) : '...'}
+                </Badge>
+              </div>
+            </div>
+          </Card>
+          <Card className="border shadow-sm bg-card/30 backdrop-blur-sm rounded-2xl overflow-hidden">
+            <CardHeader className="p-6 border-b border-border/50">
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <Bell className="w-4 h-4 text-primary" />
+                Notifications
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {notifications.length === 0 ? (
+                <div className="text-center py-10 px-6">
+                  <p className="text-xs font-bold text-muted-foreground/50 italic">Aucune notification</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-border/30">
+                  {notifications.slice(0, 3).map(notif => (
+                    <div
+                      key={notif.id}
+                      className={cn(
+                        "p-4 transition-all cursor-pointer hover:bg-primary/5",
+                        !notif.lu ? 'bg-primary/5 border-l-2 border-l-primary' : 'bg-transparent'
+                      )}
+                      onClick={() => markAsRead(notif.id)}
+                    >
+                      <div className="flex justify-between items-start mb-1">
+                        <div className="font-bold text-xs tracking-tight">{notif.titre}</div>
+                        <span className="text-[10px] text-muted-foreground font-medium uppercase">
+                          {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-muted-foreground leading-relaxed line-clamp-1">
+                        {notif.message}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+            <CardFooter className="p-2 border-t">
+              <Button variant="ghost" className="w-full h-8 text-[10px] font-bold uppercase tracking-widest">
+                Tout voir
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </div>
+
+      {/* Section Rôle (Bas du dashboard) */}
+      <div className="space-y-8 pt-4">
+        {!mounted ? (
+          <div className="h-20 flex items-center justify-center">
+            <p className="text-muted-foreground animate-pulse font-bold tracking-widest uppercase text-xs">Synchronisation des données...</p>
+          </div>
+        ) : user.role === 'conducteur' ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {rides.length === 0 ? (
+                <Card className="md:col-span-2 border-dashed border-2 bg-muted/10 rounded-2xl">
+                  <CardContent className="py-12 text-center">
+                    <h3 className="text-lg font-bold mb-2">Aucun trajet publié</h3>
+                    <p className="text-muted-foreground mb-6 max-w-sm mx-auto text-sm">Commencez à partager vos trajets Moto pour aider d'autres étudiants.</p>
+                    <Button variant="default" className="rounded-xl px-8" onClick={() => router.push('/trajets')}>Publier mon premier trajet</Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                rides.map(r => (
+                  <Card key={r.id} className="overflow-hidden border shadow-sm bg-card/50 hover:border-primary/50 transition-all rounded-2xl group">
+                    <CardHeader className="pb-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <Badge variant={r.statut === 'ouvert' ? 'default' : 'secondary'} className="rounded-full px-3 py-0.5 font-bold uppercase text-[10px]">
+                          {r.statut === 'ouvert' ? 'Actif' : 'Terminé'}
+                        </Badge>
+                        <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1.5 uppercase">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(r.dateHeure).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <CardTitle className="text-lg font-black tracking-tight">
+                        {r.pointDepart} → {r.destination}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="py-2">
+                      <div className="text-sm font-semibold flex items-center gap-2 text-muted-foreground">
+                        <CheckCircle2 className="w-4 h-4 text-green-500" />
+                        <span>{r.placesDisponibles} places restantes</span>
+                      </div>
+                    </CardContent>
+                    <CardFooter className="py-4 flex gap-2 border-t mt-4">
+                      <Button variant="ghost" size="sm" className="flex-1 h-9 rounded-lg font-bold text-xs uppercase">Gérer</Button>
+                      <Button variant="ghost" size="sm" className="h-9 w-9 rounded-lg text-destructive hover:bg-destructive/10"><Trash2 className="w-4 h-4" /></Button>
+                    </CardFooter>
+                  </Card>
+                ))
+              )}
+            </div>
+
+            <div className="pt-10">
+              <h2 className="text-xl font-black tracking-tight flex items-center gap-3 mb-6 uppercase">
+                <Bike className="w-5 h-5 text-primary" />
+                Mon Garage
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {motos.map(m => (
+                  <Card key={m.id} className="border shadow-sm bg-card/50 rounded-2xl group hover:border-primary/50 transition-all">
+                    <CardContent className="p-6 flex items-center gap-4">
+                      <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+                        <Bike className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-sm">{m.marque} {m.modele}</div>
+                        <div className="text-[10px] font-black text-muted-foreground uppercase">{m.immatriculation}</div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                <Card className="border-2 border-dashed border-border/50 bg-primary/5 hover:bg-primary/10 hover:border-primary transition-all cursor-pointer flex items-center justify-center p-6 rounded-2xl group" onClick={() => router.push('/garage')}>
+                  <div className="flex flex-col items-center gap-2">
+                    <Plus className="w-5 h-5 text-primary" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-primary">Ajouter</span>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          </>
+        ) : user.role === 'passager' ? (
+          <div className="space-y-6">
+            <h2 className="text-xl font-black tracking-tight flex items-center gap-3 uppercase">
+              <HistoryIcon className="w-5 h-5 text-primary" />
+              Mes Réservations
+            </h2>
+            <div className="bg-card/30 backdrop-blur-xl rounded-2xl border shadow-sm p-4">
+              <HistoriquePassager />
+            </div>
+          </div>
+        ) : (
+          <div className="bg-card/20 backdrop-blur-xl rounded-3xl p-16 text-center border shadow-sm">
+            <div className="w-20 h-20 bg-primary/5 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <AlertCircle className="w-10 h-10 text-primary/40" />
+            </div>
+            <h2 className="text-2xl font-black mb-2 tracking-tight">Compte en attente</h2>
+            <p className="text-muted-foreground max-w-md mx-auto text-sm font-medium">
+              L'audit de votre profil <span className="text-primary font-bold">{(user.role)}</span> est en cours.
+            </p>
+            <Button variant="outline" className="mt-8 rounded-xl px-10 h-11 font-bold" onClick={logout}>
+              Déconnexion
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
