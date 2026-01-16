@@ -11,6 +11,7 @@ import { eq } from 'drizzle-orm';
  *     tags:
  *       - Zones
  *     summary: Liste toutes les zones
+ *     responses:
  *       200:
  *         description: Liste des zones
  *         content:
@@ -18,7 +19,15 @@ import { eq } from 'drizzle-orm';
  *             schema:
  *               type: array
  *               items:
- *                 $ref: '#/components/schemas/Zone'
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     format: uuid
+ *                   nom:
+ *                     type: string
+ *                   description:
+ *                     type: string
  *     security:
  *       - bearerAuth: []
  *   post:
@@ -30,14 +39,17 @@ import { eq } from 'drizzle-orm';
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Zone'
+ *             type: object
+ *             required:
+ *               - nom
+ *             properties:
+ *               nom:
+ *                 type: string
+ *               description:
+ *                 type: string
  *     responses:
  *       201:
  *         description: Zone créée
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Zone'
  *       400:
  *         description: Données invalides
  *     security:

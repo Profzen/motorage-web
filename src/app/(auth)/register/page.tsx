@@ -9,53 +9,49 @@ import { User, Mail, Lock, AlertCircle, CheckCircle } from "lucide-react";
 import { useState } from "react";
 import { useAuthStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { registerFormSchema } from "@/lib/validation";
+import { z } from "zod";
+
+type RegisterFormValues = z.infer<typeof registerFormSchema>;
 
 export default function RegisterPage() {
-    const [nom, setNom] = useState("");
-    const [prenom, setPrenom] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
-    const [termsAccepted, setTermsAccepted] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const router = useRouter();
-    const register = useAuthStore((state) => state.register);
+    const registerUser = useAuthStore((state) => state.register);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<RegisterFormValues>({
+        resolver: zodResolver(registerFormSchema),
+        mode: "onBlur",
+        defaultValues: {
+            nom: "",
+            prenom: "",
+            email: "",
+            password: "",
+            confirmPassword: "",
+        } as RegisterFormValues,
+    });
+
+    const onSubmit = async (data: RegisterFormValues) => {
         setError("");
         setLoading(true);
 
         try {
-            if (!nom || !prenom || !email || !password || !confirmPassword) {
-                setError("Veuillez remplir tous les champs");
-                return;
-            }
-
-            if (password !== confirmPassword) {
-                setError("Les mots de passe ne correspondent pas");
-                return;
-            }
-
-            if (password.length < 8) {
-                setError("Le mot de passe doit contenir au moins 8 caractères");
-                return;
-            }
-
-            if (!termsAccepted) {
-                setError("Vous devez accepter les conditions d'utilisation");
-                return;
-            }
-
-            await register(nom, prenom, email, password);
+            await registerUser(data.nom, data.prenom, data.email, data.password);
             router.push("/dashboard");
-        } catch (err: any) {
-            setError(err.message || "Erreur lors de l'inscription");
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : "Erreur lors de l'inscription");
         } finally {
             setLoading(false);
         }
     };
+
     return (
         <div className="w-full max-w-sm">
             <div className="space-y-6">
@@ -74,8 +70,8 @@ export default function RegisterPage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <form className="space-y-4" onSubmit={handleSubmit}>
-                            {/* Error Message */}
+                        <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+                            {/* Global Error Message */}
                             {error && (
                                 <div className="flex gap-3 p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-900 animate-in fade-in slide-in-from-top-1">
                                     <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
@@ -94,12 +90,11 @@ export default function RegisterPage() {
                                         <Input
                                             id="nom"
                                             placeholder="Dupont"
-                                            className="pl-10 h-10 bg-background/50 focus:bg-background transition-all"
-                                            value={nom}
-                                            onChange={(e) => setNom(e.target.value)}
-                                            required
+                                            className={`pl-10 h-10 bg-background/50 focus:bg-background transition-all ${errors.nom ? 'border-red-500' : ''}`}
+                                            {...register("nom")}
                                         />
                                     </div>
+                                    {errors.nom && <p className="text-[10px] text-red-500">{errors.nom.message}</p>}
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="prenom" className="text-sm font-medium">
@@ -110,12 +105,11 @@ export default function RegisterPage() {
                                         <Input
                                             id="prenom"
                                             placeholder="Jean"
-                                            className="pl-10 h-10 bg-background/50 focus:bg-background transition-all"
-                                            value={prenom}
-                                            onChange={(e) => setPrenom(e.target.value)}
-                                            required
+                                            className={`pl-10 h-10 bg-background/50 focus:bg-background transition-all ${errors.prenom ? 'border-red-500' : ''}`}
+                                            {...register("prenom")}
                                         />
                                     </div>
+                                    {errors.prenom && <p className="text-[10px] text-red-500">{errors.prenom.message}</p>}
                                 </div>
                             </div>
 
@@ -130,12 +124,11 @@ export default function RegisterPage() {
                                         id="email"
                                         type="email"
                                         placeholder="etudiant@univ-lome.tg"
-                                        className="pl-10 h-11 bg-background/50 focus:bg-background transition-all"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        required
+                                        className={`pl-10 h-11 bg-background/50 focus:bg-background transition-all ${errors.email ? 'border-red-500' : ''}`}
+                                        {...register("email")}
                                     />
                                 </div>
+                                {errors.email && <p className="text-[10px] text-red-500">{errors.email.message}</p>}
                             </div>
 
                             {/* Password Field */}
@@ -149,12 +142,11 @@ export default function RegisterPage() {
                                         id="password"
                                         type="password"
                                         placeholder="Minimum 8 caractères"
-                                        className="pl-10 h-11 bg-background/50 focus:bg-background transition-all"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        required
+                                        className={`pl-10 h-11 bg-background/50 focus:bg-background transition-all ${errors.password ? 'border-red-500' : ''}`}
+                                        {...register("password")}
                                     />
                                 </div>
+                                {errors.password && <p className="text-[10px] text-red-500">{errors.password.message}</p>}
                             </div>
 
                             {/* Confirm Password Field */}
@@ -168,16 +160,15 @@ export default function RegisterPage() {
                                         id="confirmPassword"
                                         type="password"
                                         placeholder="Confirmez votre mot de passe"
-                                        className="pl-10 h-11 bg-background/50 focus:bg-background transition-all"
-                                        value={confirmPassword}
-                                        onChange={(e) => setConfirmPassword(e.target.value)}
-                                        required
+                                        className={`pl-10 h-11 bg-background/50 focus:bg-background transition-all ${errors.confirmPassword ? 'border-red-500' : ''}`}
+                                        {...register("confirmPassword")}
                                     />
                                 </div>
+                                {errors.confirmPassword && <p className="text-[10px] text-red-500">{errors.confirmPassword.message}</p>}
                             </div>
 
                             {/* Info Box */}
-                            <div className="flex gap-3 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-900 border-dashed">
+                            <div className="flex gap-3 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-red-900 border-dashed">
                                 <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
                                 <p className="text-xs text-green-700 dark:text-green-300">
                                     Utilisez votre email étudiant officiel pour une vérification rapide
@@ -190,8 +181,6 @@ export default function RegisterPage() {
                                     id="terms"
                                     type="checkbox"
                                     className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary/20 cursor-pointer"
-                                    checked={termsAccepted}
-                                    onChange={(e) => setTermsAccepted(e.target.checked)}
                                     required
                                 />
                                 <label htmlFor="terms" className="text-xs text-muted-foreground leading-tight cursor-pointer hover:text-foreground transition-colors">

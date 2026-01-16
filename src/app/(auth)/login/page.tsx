@@ -9,34 +9,45 @@ import { Mail, Lock, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { useAuthStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { loginSchema } from "@/lib/validation";
+import { z } from "zod";
+
+type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const router = useRouter();
     const login = useAuthStore((state) => state.login);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<LoginFormValues>({
+        resolver: zodResolver(loginSchema),
+        defaultValues: {
+            email: "",
+            password: "",
+        }
+    });
+
+    const onSubmit = async (data: LoginFormValues) => {
         setError("");
         setLoading(true);
 
         try {
-            if (!email || !password) {
-                setError("Veuillez remplir tous les champs");
-                return;
-            }
-
-            await login(email, password);
+            await login(data.email, data.password);
             router.push("/dashboard");
-        } catch (err: any) {
-            setError(err.message || "Erreur lors de la connexion");
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : "Erreur lors de la connexion");
         } finally {
             setLoading(false);
         }
     };
+
     return (
         <div className="w-full max-w-sm">
             <div className="space-y-6">
@@ -55,8 +66,8 @@ export default function LoginPage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <form className="space-y-4" onSubmit={handleSubmit}>
-                            {/* Error Message */}
+                        <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+                            {/* Global Error Message */}
                             {error && (
                                 <div className="flex gap-3 p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-900 animate-in fade-in slide-in-from-top-1">
                                     <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
@@ -75,12 +86,13 @@ export default function LoginPage() {
                                         id="email"
                                         type="email"
                                         placeholder="etudiant@univ-lome.tg"
-                                        className="pl-10 h-11 bg-background/50 focus:bg-background transition-all"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        required
+                                        className={`pl-10 h-11 bg-background/50 focus:bg-background transition-all ${errors.email ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                                        {...register("email")}
                                     />
                                 </div>
+                                {errors.email && (
+                                    <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>
+                                )}
                             </div>
 
                             {/* Password Field */}
@@ -99,12 +111,13 @@ export default function LoginPage() {
                                         id="password"
                                         type="password"
                                         placeholder="••••••••"
-                                        className="pl-10 h-11 bg-background/50 focus:bg-background transition-all"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        required
+                                        className={`pl-10 h-11 bg-background/50 focus:bg-background transition-all ${errors.password ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                                        {...register("password")}
                                     />
                                 </div>
+                                {errors.password && (
+                                    <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>
+                                )}
                             </div>
 
                             {/* Info Box */}
@@ -156,7 +169,7 @@ export default function LoginPage() {
                 {/* Footer Links */}
                 <div className="text-center p-4 bg-background/30 backdrop-blur-sm rounded-xl border border-border/50">
                     <p className="text-sm text-muted-foreground">
-                        Vous n'avez pas de compte ?
+                        Vous n&apos;avez pas de compte ?
                         <Link href="/register" className="ml-1 text-primary font-bold hover:underline">
                             Créer un compte
                         </Link>

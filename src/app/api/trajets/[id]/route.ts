@@ -43,7 +43,20 @@ import { eq } from 'drizzle-orm';
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Trajet'
+ *             type: object
+ *             properties:
+ *               pointDepart:
+ *                 type: string
+ *               destination:
+ *                 type: string
+ *               dateHeure:
+ *                 type: string
+ *                 format: date-time
+ *               placesDisponibles:
+ *                 type: integer
+ *               statut:
+ *                 type: string
+ *                 enum: [ouvert, plein, terminé, annulé]
  *     responses:
  *       200:
  *         description: Trajet mis à jour

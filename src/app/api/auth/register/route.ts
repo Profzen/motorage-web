@@ -51,17 +51,18 @@ export async function POST(request: Request) {
       prenom: validatedData.prenom,
       email: validatedData.email,
       password: hashedPassword,
-      role: validatedData.role || 'passager',
-      statut: 'actif',
+      role: (validatedData as { role?: string }).role || 'passager',
+      statut: (validatedData as { statut?: string }).statut || 'actif',
+      phone: (validatedData as { phone?: string }).phone || null,
     }).returning();
 
     const user = newUser[0];
-    const { password: _, ...userWithoutPassword } = user;
+    const { password: _, refreshToken: __, ...userWithoutPassword } = user;
 
     // Generate Tokens
     const payload = { userId: user.id, email: user.email, role: user.role };
-    const accessToken = await signJWT(payload);
-    const refreshToken = await signRefreshToken(payload);
+    const accessToken = (await signJWT(payload)) as string;
+    const refreshToken = (await signRefreshToken(payload)) as string;
 
     // Save refresh token to DB
     await db.update(users)
@@ -92,11 +93,12 @@ export async function POST(request: Request) {
       token: accessToken,
       refreshToken
     }, { status: 201 });
-  } catch (error: any) {
-    if (error.name === 'ZodError') {
-      return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 });
+  } catch (error: unknown) {
+    const errorMsg = error instanceof Error ? error.message : '';
+    if (error instanceof Error && error.name === 'ZodError') {
+      return NextResponse.json({ error: 'Validation failed', details: (error as any).errors }, { status: 400 });
     }
-    if (error.message?.includes('UNIQUE constraint failed')) {
+    if (errorMsg.includes('UNIQUE constraint failed')) {
       return NextResponse.json({ error: 'Cet email est déjà utilisé' }, { status: 400 });
     }
     console.error('Registration error:', error);

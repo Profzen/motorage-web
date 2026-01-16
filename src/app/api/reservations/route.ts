@@ -17,7 +17,21 @@ import { eq, sql } from 'drizzle-orm';
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Reservation'
+ *             type: object
+ *             required:
+ *               - trajetId
+ *               - etudiantId
+ *             properties:
+ *               trajetId:
+ *                 type: string
+ *                 format: uuid
+ *               etudiantId:
+ *                 type: string
+ *                 format: uuid
+ *               statut:
+ *                 type: string
+ *                 enum: [en_attente, confirmé, refusé, terminé, annulé]
+ *                 default: en_attente
  *     responses:
  *       201:
  *         description: Réservation créée avec succès

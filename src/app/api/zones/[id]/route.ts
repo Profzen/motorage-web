@@ -1,16 +1,16 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { motos } from '@/lib/db/schema';
-import { motoSchema } from '@/lib/validation';
+import { zones } from '@/lib/db/schema';
+import { zoneSchema } from '@/lib/validation';
 import { eq } from 'drizzle-orm';
 
 /**
  * @openapi
- * /motos/{id}:
+ * /zones/{id}:
  *   get:
  *     tags:
- *       - Motos
- *     summary: Détails d'une moto
+ *       - Zones
+ *     summary: Détails d'une zone
  *     parameters:
  *       - in: path
  *         name: id
@@ -19,13 +19,13 @@ import { eq } from 'drizzle-orm';
  *           type: string
  *     responses:
  *       200:
- *         description: Détails de la moto
+ *         description: Détails de la zone
  *       404:
- *         description: Moto non trouvée
- *   put:
+ *         description: Zone non trouvée
+ *   patch:
  *     tags:
- *       - Motos
- *     summary: Modifier une moto
+ *       - Zones
+ *     summary: Modifier une zone (Admin)
  *     parameters:
  *       - in: path
  *         name: id
@@ -39,23 +39,21 @@ import { eq } from 'drizzle-orm';
  *           schema:
  *             type: object
  *             properties:
- *               marque:
+ *               nom:
  *                 type: string
- *               modele:
+ *               description:
  *                 type: string
- *               immatriculation:
- *                 type: string
- *               disponibilite:
- *                 type: boolean
  *     responses:
  *       200:
- *         description: Moto mise à jour
+ *         description: Zone mise à jour
  *       400:
  *         description: Données invalides
+ *     security:
+ *       - bearerAuth: []
  *   delete:
  *     tags:
- *       - Motos
- *     summary: Supprimer une moto
+ *       - Zones
+ *     summary: Supprimer une zone (Admin)
  *     parameters:
  *       - in: path
  *         name: id
@@ -64,7 +62,9 @@ import { eq } from 'drizzle-orm';
  *           type: string
  *     responses:
  *       200:
- *         description: Moto supprimée
+ *         description: Zone supprimée
+ *     security:
+ *       - bearerAuth: []
  */
 
 export async function GET(
@@ -72,38 +72,38 @@ export async function GET(
     { params }: { params: { id: string } }
 ) {
     try {
-        const moto = await db.query.motos.findFirst({
-            where: eq(motos.id, params.id),
+        const zone = await db.query.zones.findFirst({
+            where: eq(zones.id, params.id),
         });
 
-        if (!moto) {
-            return NextResponse.json({ error: 'Moto not found' }, { status: 404 });
+        if (!zone) {
+            return NextResponse.json({ error: 'Zone not found' }, { status: 404 });
         }
 
-        return NextResponse.json(moto);
+        return NextResponse.json(zone);
     } catch (error) {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
 
-export async function PUT(
+export async function PATCH(
     request: Request,
     { params }: { params: { id: string } }
 ) {
     try {
         const body = await request.json();
-        const validatedData = motoSchema.partial().parse(body);
+        const validatedData = zoneSchema.partial().parse(body);
 
-        const updatedMoto = await db.update(motos)
+        const updated = await db.update(zones)
             .set(validatedData)
-            .where(eq(motos.id, params.id))
+            .where(eq(zones.id, params.id))
             .returning();
 
-        if (updatedMoto.length === 0) {
-            return NextResponse.json({ error: 'Moto not found' }, { status: 404 });
+        if (updated.length === 0) {
+            return NextResponse.json({ error: 'Zone not found' }, { status: 404 });
         }
 
-        return NextResponse.json(updatedMoto[0]);
+        return NextResponse.json(updated[0]);
     } catch (error: any) {
         if (error.name === 'ZodError') {
             return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 });
@@ -117,15 +117,15 @@ export async function DELETE(
     { params }: { params: { id: string } }
 ) {
     try {
-        const deletedMoto = await db.delete(motos)
-            .where(eq(motos.id, params.id))
+        const deleted = await db.delete(zones)
+            .where(eq(zones.id, params.id))
             .returning();
 
-        if (deletedMoto.length === 0) {
-            return NextResponse.json({ error: 'Moto not found' }, { status: 404 });
+        if (deleted.length === 0) {
+            return NextResponse.json({ error: 'Zone not found' }, { status: 404 });
         }
 
-        return NextResponse.json({ message: 'Moto deleted successfully' });
+        return NextResponse.json({ message: 'Zone supprimée avec succès' });
     } catch (error) {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }

@@ -61,12 +61,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Identifiants invalides' }, { status: 401 });
     }
 
-    const { password: _, ...userWithoutPassword } = user;
+    const { password: _, refreshToken: __, ...userWithoutPassword } = user;
 
     // Generate Tokens
     const payload = { userId: user.id, email: user.email, role: user.role };
-    const accessToken = await signJWT(payload);
-    const refreshToken = await signRefreshToken(payload);
+    const accessToken = (await signJWT(payload)) as string;
+    const refreshToken = (await signRefreshToken(payload)) as string;
 
     // Save refresh token to DB
     await db.update(users)
@@ -97,9 +97,9 @@ export async function POST(request: Request) {
       token: accessToken,
       refreshToken
     });
-  } catch (error: any) {
-    if (error.name === 'ZodError') {
-      return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 });
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === 'ZodError') {
+      return NextResponse.json({ error: 'Validation failed', details: (error as any).errors }, { status: 400 });
     }
     console.error('Login error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

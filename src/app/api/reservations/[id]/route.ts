@@ -57,12 +57,20 @@ import { eq, sql } from 'drizzle-orm';
  *       - bearerAuth: []
  */
 
+
+import { reservationSchema } from '@/lib/validation';
+
 export async function PATCH(
     request: Request,
     { params }: { params: { id: string } }
 ) {
     try {
-        const { statut } = await request.json();
+        const body = await request.json();
+        const { statut } = reservationSchema.partial().parse(body);
+
+        if (!statut) {
+            return NextResponse.json({ error: 'Statut is required' }, { status: 400 });
+        }
 
         const result = await db.transaction(async (tx) => {
             const reservation = await tx.query.reservations.findFirst({
@@ -108,7 +116,10 @@ export async function PATCH(
         }
 
         return NextResponse.json(result.data);
-    } catch (error) {
+    } catch (error: any) {
+        if (error.name === 'ZodError') {
+            return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 });
+        }
         console.error('Error updating reservation:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }

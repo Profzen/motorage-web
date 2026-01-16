@@ -41,7 +41,25 @@ import { eq } from 'drizzle-orm';
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Moto'
+ *             type: object
+ *             required:
+ *               - marque
+ *               - modele
+ *               - immatriculation
+ *               - proprietaireId
+ *             properties:
+ *               marque:
+ *                 type: string
+ *               modele:
+ *                 type: string
+ *               immatriculation:
+ *                 type: string
+ *               proprietaireId:
+ *                 type: string
+ *                 format: uuid
+ *               disponibilite:
+ *                 type: boolean
+ *                 default: true
  *     responses:
  *       201:
  *         description: Moto créée

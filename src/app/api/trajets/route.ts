@@ -106,7 +106,51 @@ export async function GET(request: Request) {
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Trajet'
+ *             type: object
+ *             required:
+ *               - pointDepart
+ *               - destination
+ *               - dateHeure
+ *               - placesDisponibles
+ *               - conducteurId
+ *             properties:
+ *               pointDepart:
+ *                 type: string
+ *               destination:
+ *                 type: string
+ *               departZoneId:
+ *                 type: string
+ *                 format: uuid
+ *                 nullable: true
+ *               arriveeZoneId:
+ *                 type: string
+ *                 format: uuid
+ *                 nullable: true
+ *               dateHeure:
+ *                 type: string
+ *                 format: date-time
+ *               placesDisponibles:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 4
+ *               conducteurId:
+ *                 type: string
+ *                 format: uuid
+ *               departureLat:
+ *                 type: number
+ *                 nullable: true
+ *               departureLng:
+ *                 type: number
+ *                 nullable: true
+ *               arrivalLat:
+ *                 type: number
+ *                 nullable: true
+ *               arrivalLng:
+ *                 type: number
+ *                 nullable: true
+ *               statut:
+ *                 type: string
+ *                 enum: [ouvert, plein, terminé, annulé]
  *     responses:
  *       201:
  *         description: Trajet publié avec succès

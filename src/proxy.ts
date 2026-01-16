@@ -8,10 +8,10 @@ const publicPaths = [
     '/api/auth/register',
     '/api/auth/refresh',
     '/api-docs',
-    '/api/swagger.json', // If you have a separate JSON route
+    '/api/swagger', // The JSON definition route
 ];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // Check if the path is an API route and not public

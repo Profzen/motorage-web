@@ -21,29 +21,37 @@ export async function comparePassword(password: string, hash: string): Promise<b
     return bcrypt.compare(password, hash);
 }
 
-export async function signJWT(payload: any) {
-    return new SignJWT(payload)
-        .setProtectedHeader({ alg: 'HS256' })
-        .setIssuedAt()
-        .setExpirationTime(JWT_EXPIRES_IN)
-        .sign(JWT_SECRET);
+export async function signJWT(payload: Record<string, unknown>) {
+    try {
+        return await new SignJWT(payload)
+            .setProtectedHeader({ alg: 'HS256' })
+            .setIssuedAt()
+            .setExpirationTime(JWT_EXPIRES_IN)
+            .sign(JWT_SECRET);
+    } catch {
+        return null;
+    }
 }
 
 export async function verifyJWT(token: string) {
     try {
         const { payload } = await jwtVerify(token, JWT_SECRET);
         return payload;
-    } catch (error) {
+    } catch {
         return null;
     }
 }
 
-export async function signRefreshToken(payload: any) {
-    return new SignJWT(payload)
-        .setProtectedHeader({ alg: 'HS256' })
-        .setIssuedAt()
-        .setExpirationTime(JWT_REFRESH_EXPIRES_IN)
-        .sign(JWT_REFRESH_SECRET);
+export async function signRefreshToken(payload: Record<string, unknown>) {
+    try {
+        return await new SignJWT(payload)
+            .setProtectedHeader({ alg: 'HS256' })
+            .setIssuedAt()
+            .setExpirationTime(JWT_REFRESH_EXPIRES_IN)
+            .sign(JWT_REFRESH_SECRET);
+    } catch {
+        return null;
+    }
 }
 
 export async function verifyRefreshToken(token: string) {

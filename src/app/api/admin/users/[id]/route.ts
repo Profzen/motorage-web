@@ -40,15 +40,22 @@ import { eq } from 'drizzle-orm';
  *       - bearerAuth: []
  */
 
+import { userSchema } from '@/lib/validation';
+
 export async function PATCH(
     request: Request,
     { params }: { params: { id: string } }
 ) {
     try {
         const body = await request.json();
+        const validatedData = userSchema.partial().parse(body);
+
+        // Security: Don't allow password updates through this admin endpoint
+        // or handle it with appropriate hashing if needed. For now, omit it.
+        const { password: __, ...updateFields } = validatedData;
 
         const updated = await db.update(users)
-            .set(body)
+            .set(updateFields)
             .where(eq(users.id, params.id))
             .returning();
 
@@ -56,9 +63,12 @@ export async function PATCH(
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        const { password: _, ...userWithoutPassword } = updated[0];
+        const { password: _, refreshToken: ___, ...userWithoutPassword } = updated[0];
         return NextResponse.json(userWithoutPassword);
-    } catch (error) {
+    } catch (error: any) {
+        if (error.name === 'ZodError') {
+            return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 });
+        }
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
