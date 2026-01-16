@@ -2,19 +2,20 @@
 
 MOTORAGE est une plateforme web moderne et performante conçue pour faciliter l''entraide et le partage de trajets à moto entre les membres de la communauté de l''Université de Lomé (UL).
 
-![MOTORAGE Banner](/public/screenshots/screenshot-landing.png)
+![MOTORAGE Banner](https://motorage.com/og-image.png)
 
 ## 🌟 Fonctionnalités Clés
 
-- **Tableau de Bord Moderne** : Une interface utilisateur sophistiquée, réactive et optimisée pour la gestion quotidienne.
+- **Tableau de Bord SaaS Moderne** : Une interface utilisateur sophistiquée, réactive et optimisée pour la gestion quotidienne.
   - Sidebar rétractable avec mode icônes et tooltips.
   - Navigation dynamique filtrée par rôle (Passager vs Conducteur).
-  - Thème clair, sombre et système.
+  - Thème clair, sombre et système (Glassmorphism & Radix UI).
 - **Gestion de Profil Complète** : Mise à jour des informations personnelles et suppression sécurisée du compte.
 - **Système de Notifications en Temps Réel** : Alertes centralisées pour les réservations, confirmations et mises à jour système.
 - **Historique de Réservations** : Suivi détaillé de l''état des trajets pour les passagers (en attente, confirmé, terminé, annulé).
 - **Gestion de Garage (Conducteurs)** : Ajout et gestion du parc moto personnel.
 - **Géolocalisation intelligente** : Suggestion automatique des points de départ et d''arrivée basés sur les zones clés de l''université.
+- **Documentation API Interactive** : Swagger/OpenAPI intégré pour faciliter le développement et l''intégration.
 
 ## 🛠 Stack Technique
 
@@ -25,6 +26,7 @@ MOTORAGE est une plateforme web moderne et performante conçue pour faciliter l'
 - **Animations** : [Framer Motion](https://www.framer.com/motion/)
 - **Gestion d''état** : [Zustand](https://github.com/pmndrs/zustand)
 - **Base de données** : [Turso (SQLite)](https://turso.tech/) avec [Drizzle ORM](https://orm.drizzle.team/)
+- **Documentation API** : [Swagger UI](https://swagger.io/) & [OpenAPI 3.0](https://www.openapis.org/)
 - **Tests** : [Vitest](https://vitest.dev/) & [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/)
 
 ## 🚀 Installation et Configuration
@@ -65,12 +67,18 @@ MOTORAGE est une plateforme web moderne et performante conçue pour faciliter l'
    ```
    Accédez à [http://localhost:3000](http://localhost:3000).
 
+## 📖 Documentation API
+
+L''application expose une documentation interactive Swagger pour explorer et tester les endpoints API :
+- **URL** : `http://localhost:3000/api-docs`
+
 ## 📁 Structure du Projet
 
 ```text
 src/
 ├── app/                  # Routes Next.js (Pages & API)
 │   ├── api/              # Endpoints API (Auth, Trajets, etc.)
+│   ├── api-docs/         # Documentation Swagger UI
 │   ├── dashboard/        # Layout et Pages du Tableau de bord
 │   └── page.tsx          # Page d''accueil (Landing Page)
 ├── components/           # Composants UI, Layout et Sections
@@ -79,7 +87,7 @@ src/
 │   └── dashboard/        # Composants spécifiques au dashboard
 ├── lib/                  # Utilitaires et Logique
 │   ├── db/               # Schéma Drizzle et DB config
->>   └── store.ts          # Orchestration d''état Zustand
+│   └── store.ts          # Orchestration d''état Zustand
 └── app/globals.css       # Tailwind CSS 4 & Thèmes
 ```
 
