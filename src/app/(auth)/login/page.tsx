@@ -34,15 +34,27 @@ export default function LoginPage() {
         }
     });
 
+    const [fieldError, setFieldError] = useState<{ field?: string; message: string } | null>(null);
+
     const onSubmit = async (data: LoginFormValues) => {
         setError("");
+        setFieldError(null);
         setLoading(true);
 
         try {
             await login(data.email, data.password);
             router.push("/dashboard");
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : "Erreur lors de la connexion");
+            const message = err instanceof Error ? err.message : "Erreur lors de la connexion";
+
+            // Déterminer le champ concerné par l'erreur
+            if (message.includes('email') || message.includes('compte')) {
+                setFieldError({ field: 'email', message });
+            } else if (message.includes('passe') || message.includes('password')) {
+                setFieldError({ field: 'password', message });
+            } else {
+                setError(message);
+            }
         } finally {
             setLoading(false);
         }
@@ -86,12 +98,12 @@ export default function LoginPage() {
                                         id="email"
                                         type="email"
                                         placeholder="etudiant@univ-lome.tg"
-                                        className={`pl-10 h-11 bg-background/50 focus:bg-background transition-all ${errors.email ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                                        className={`pl-10 h-11 bg-background/50 focus:bg-background transition-all ${errors.email || fieldError?.field === 'email' ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                                         {...register("email")}
                                     />
                                 </div>
-                                {errors.email && (
-                                    <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>
+                                {(errors.email || fieldError?.field === 'email') && (
+                                    <p className="text-xs text-red-500 mt-1">{errors.email?.message || fieldError?.message}</p>
                                 )}
                             </div>
 
@@ -111,12 +123,12 @@ export default function LoginPage() {
                                         id="password"
                                         type="password"
                                         placeholder="••••••••"
-                                        className={`pl-10 h-11 bg-background/50 focus:bg-background transition-all ${errors.password ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                                        className={`pl-10 h-11 bg-background/50 focus:bg-background transition-all ${errors.password || fieldError?.field === 'password' ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                                         {...register("password")}
                                     />
                                 </div>
-                                {errors.password && (
-                                    <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>
+                                {(errors.password || fieldError?.field === 'password') && (
+                                    <p className="text-xs text-red-500 mt-1">{errors.password?.message || fieldError?.message}</p>
                                 )}
                             </div>
 

@@ -77,8 +77,8 @@ export function HistoriquePassager() {
                         <Calendar className="h-3.5 w-3.5" />
                         {res.trajet ? new Date(res.trajet.dateHeure).toLocaleDateString() : 'Date inconnue'}
                       </div>
-                      <Badge className={getStatusColor(res.status)}>
-                        {res.status.replace('_', ' ')}
+                      <Badge className={getStatusColor(res.statut)}>
+                        {res.statut.replace('_', ' ')}
                       </Badge>
                     </div>
                     <div className="text-right flex flex-col items-end gap-2">
@@ -86,7 +86,7 @@ export function HistoriquePassager() {
                         <span className="text-[10px] text-muted-foreground block">RÉSERVÉ LE</span>
                         <span className="text-xs font-semibold">{new Date(res.createdAt).toLocaleDateString()}</span>
                       </div>
-                      {res.status === 'en_attente' && (
+                      {res.statut === 'en_attente' && (
                         <Button
                           variant="ghost"
                           size="sm"

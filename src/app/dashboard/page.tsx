@@ -52,6 +52,26 @@ export default function DashboardPage() {
   const rides = mounted && user?.id ? getTrajetsByDriver(user.id) : [];
   const motos = mounted && user?.id ? getMotosByDriver(user.id) : [];
 
+  // Pour le passager
+  const { reservations } = useReservationsStore();
+  const { trajets } = useTrajetsStore();
+  const userReservations = mounted && user?.id ? reservations.filter(r => r.etudiantId === user.id) : [];
+
+  // Activité combinée pour la liste
+  const activities = user?.role === 'conducteur'
+    ? rides.map(r => ({ ...r, activityType: 'conducteur' }))
+    : userReservations.map(res => {
+      const trajet = trajets.find(t => t.id === res.trajetId);
+      return {
+        ...trajet,
+        id: res.id,
+        dateHeure: res.createdAt,
+        activityType: 'passager',
+        pointDepart: trajet?.pointDepart || 'N/A',
+        destination: trajet?.destination || 'N/A'
+      };
+    });
+
   useEffect(() => {
     if (!user) {
       router.push('/login');
@@ -85,15 +105,27 @@ export default function DashboardPage() {
 
   return (
     <div className="container mx-auto py-8 px-4 space-y-10 max-w-6xl">
-      {/* Header Minimaliste */}
+      {/* Header avec action rapide selon le rôle */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b pb-8">
         <div className="space-y-1">
-          <h1 className="text-3xl font-black tracking-tight">Tableau de bord</h1>
+          <h1 className="text-3xl font-black tracking-tight">
+            {user.role === 'conducteur' ? 'Espace Conducteur' : user.role === 'administrateur' ? 'Administration' : 'Espace Passager'}
+          </h1>
           <p className="text-muted-foreground font-medium">
             Bonjour <span className="text-foreground font-bold">{user.prenom}</span>, ravi de vous revoir sur Miyi Ðekae.
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {/* Action rapide selon le rôle */}
+          {user.role === 'conducteur' ? (
+            <Button onClick={() => router.push('/trajets/nouveau')} className="rounded-xl font-bold shadow-lg shadow-primary/20">
+              <Plus className="w-4 h-4 mr-2" /> Publier un trajet
+            </Button>
+          ) : user.role === 'passager' ? (
+            <Button onClick={() => router.push('/trajets')} className="rounded-xl font-bold shadow-lg shadow-primary/20">
+              <MapPin className="w-4 h-4 mr-2" /> Trouver un trajet
+            </Button>
+          ) : null}
           <Button variant="outline" onClick={() => setIsEditingProfile(!isEditingProfile)} className="rounded-xl font-bold">
             <Settings className="w-4 h-4 mr-2" /> Profil
           </Button>
@@ -106,19 +138,36 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         {/* Colonne de Gauche : Résumé & Activité */}
         <div className="lg:col-span-2 space-y-10">
-          {/* Quick Stats Minimalistes */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {/* Quick Stats selon le rôle */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <Card className="border shadow-sm rounded-2xl bg-card/30 backdrop-blur-sm">
               <CardContent className="p-6 flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                   <MapPin className="w-6 h-6" />
                 </div>
                 <div>
-                  <div className="text-2xl font-black">{rides.length}</div>
-                  <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Trajets publiés</div>
+                  <div className="text-2xl font-black">
+                    {user.role === 'conducteur' ? rides.length : userReservations.length}
+                  </div>
+                  <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                    {user.role === 'conducteur' ? 'Trajets publiés' : 'Réservations'}
+                  </div>
                 </div>
               </CardContent>
             </Card>
+            {user.role === 'conducteur' && (
+              <Card className="border shadow-sm rounded-2xl bg-card/30 backdrop-blur-sm">
+                <CardContent className="p-6 flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600">
+                    <Bell className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-black">3</div>
+                    <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Demandes en attente</div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             <Card className="border shadow-sm rounded-2xl bg-card/30 backdrop-blur-sm">
               <CardContent className="p-6 flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center text-green-600">
@@ -200,21 +249,26 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent className="p-0">
                 <div className="divide-y divide-border/30">
-                  {rides.slice(0, 3).map((r, i) => (
+                  {activities.slice(0, 3).map((act: any, i) => (
                     <div key={i} className="p-4 flex items-center justify-between hover:bg-primary/5 transition-colors">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-full bg-muted/40 flex items-center justify-center">
                           <MapPin className="w-5 h-5 text-muted-foreground" />
                         </div>
                         <div>
-                          <p className="text-sm font-bold tracking-tight">{r.pointDepart} → {r.destination}</p>
-                          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest">{new Date(r.dateHeure).toLocaleDateString()}</p>
+                          <p className="text-sm font-bold tracking-tight">{act.pointDepart} → {act.destination}</p>
+                          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest">{new Date(act.dateHeure).toLocaleDateString()}</p>
                         </div>
                       </div>
-                      <Badge variant="outline" className="text-[10px] font-bold border-primary/20 text-primary">CONDUCTEUR</Badge>
+                      <Badge variant="outline" className={cn(
+                        "text-[10px] font-bold border-primary/20",
+                        act.activityType === 'conducteur' ? "text-primary border-primary/20" : "text-blue-500 border-blue-500/20"
+                      )}>
+                        {act.activityType === 'conducteur' ? 'CONDUCTEUR' : 'PASSAGER'}
+                      </Badge>
                     </div>
                   ))}
-                  {rides.length === 0 && (
+                  {activities.length === 0 && (
                     <div className="p-10 text-center">
                       <p className="text-sm text-muted-foreground italic">Aucun trajet récent à afficher.</p>
                     </div>

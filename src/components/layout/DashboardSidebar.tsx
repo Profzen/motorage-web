@@ -48,7 +48,8 @@ import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
-const NAV_ITEMS = [
+// Navigation pour les PASSAGERS
+const PASSAGER_NAV_ITEMS = [
   {
     title: "Tableau de Bord",
     icon: LayoutDashboard,
@@ -56,19 +57,57 @@ const NAV_ITEMS = [
     badge: null,
   },
   {
-    title: "Trajets",
+    title: "Explorer",
+    icon: Search,
+    href: "/trajets",
+    badge: null,
+  },
+  {
+    title: "Mes Réservations",
+    icon: Package,
+    href: "/dashboard/reservations",
+    badge: null,
+  },
+  {
+    title: "Historique",
+    icon: History,
+    href: "/historique",
+    badge: null,
+  },
+  {
+    title: "Paramètres",
+    icon: Settings,
+    href: "/settings",
+    badge: null,
+  },
+]
+
+// Navigation pour les CONDUCTEURS
+const CONDUCTEUR_NAV_ITEMS = [
+  {
+    title: "Tableau de Bord",
+    icon: LayoutDashboard,
+    href: "/dashboard",
+    badge: null,
+  },
+  {
+    title: "Mes Trajets",
     icon: MapPin,
     href: "#",
-    badge: "12",
+    badge: null,
     children: [
-      { title: "Explorer les trajets", href: "/trajets" },
-      { title: "Mes réservations", href: "/dashboard/reservations" },
       { title: "Publier un trajet", href: "/trajets/nouveau" },
-      { title: "Historique complet", href: "/historique" },
+      { title: "Gérer mes trajets", href: "/dashboard/trajets" },
     ]
   },
   {
-    title: "Garage",
+    title: "Demandes",
+    icon: Bell,
+    href: "/dashboard/demandes",
+    badge: "3",
+  },
+  {
+    title: "Mon Garage",
     icon: Bike,
     href: "/garage",
     badge: null,
@@ -80,11 +119,32 @@ const NAV_ITEMS = [
     badge: null,
   },
   {
+    title: "Paramètres",
+    icon: Settings,
+    href: "/settings",
+    badge: null,
+  },
+]
+
+// Navigation pour les ADMINISTRATEURS
+const ADMIN_NAV_ITEMS = [
+  {
+    title: "Tableau de Bord",
+    icon: LayoutDashboard,
+    href: "/dashboard",
+    badge: null,
+  },
+  {
     title: "Utilisateurs",
     icon: Users,
     href: "/admin/users",
-    role: "administrateur",
     badge: "Nouveau",
+  },
+  {
+    title: "Zones",
+    icon: MapPin,
+    href: "/admin/zones",
+    badge: null,
   },
   {
     title: "Paramètres",
@@ -93,6 +153,19 @@ const NAV_ITEMS = [
     badge: null,
   },
 ]
+
+// Fonction pour récupérer les items de navigation selon le rôle
+const getNavItems = (role: string | undefined) => {
+  switch (role) {
+    case 'conducteur':
+      return CONDUCTEUR_NAV_ITEMS;
+    case 'administrateur':
+      return ADMIN_NAV_ITEMS;
+    case 'passager':
+    default:
+      return PASSAGER_NAV_ITEMS;
+  }
+}
 
 export function DashboardSidebar() {
   const { user, logout } = useAuthStore()
@@ -192,7 +265,7 @@ export function DashboardSidebar() {
 
         <ScrollArea className="flex-1 px-3">
           <div className="space-y-1.5 py-2">
-            {NAV_ITEMS.filter(item => !item.role || (mounted && item.role === user?.role)).map((item) => (
+            {getNavItems(user?.role).map((item) => (
               <SidebarItem
                 key={item.title}
                 item={item}

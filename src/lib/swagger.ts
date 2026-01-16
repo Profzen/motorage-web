@@ -26,7 +26,6 @@ const options = {
                 User: {
                     type: 'object',
                     properties: {
-                        id: { type: 'string', format: 'uuid' },
                         nom: { type: 'string' },
                         prenom: { type: 'string' },
                         email: { type: 'string', format: 'email' },
@@ -34,10 +33,8 @@ const options = {
                         statut: { type: 'string' },
                         avatar: { type: 'string', nullable: true },
                         phone: { type: 'string', nullable: true },
-                        createdAt: { type: 'string', format: 'date-time' },
                     },
                     example: {
-                        id: '550e8400-e29b-41d4-a716-446655440000',
                         nom: 'Doe',
                         prenom: 'John',
                         email: 'john.doe@univ-lome.tg',
@@ -50,7 +47,6 @@ const options = {
                     type: 'object',
                     required: ['conducteurId', 'pointDepart', 'destination', 'dateHeure', 'placesDisponibles'],
                     properties: {
-                        id: { type: 'string', format: 'uuid' },
                         conducteurId: { type: 'string', format: 'uuid' },
                         pointDepart: { type: 'string' },
                         destination: { type: 'string' },
@@ -63,7 +59,6 @@ const options = {
                         arrivalLat: { type: 'number', nullable: true },
                         arrivalLng: { type: 'number', nullable: true },
                         statut: { type: 'string', enum: ['ouvert', 'plein', 'terminé', 'annulé'] },
-                        createdAt: { type: 'string', format: 'date-time' },
                     },
                     example: {
                         conducteurId: 'a1b2c3d4-e5f6-4g7h-8i9j-k1l2m3n4o5p6',
@@ -83,11 +78,9 @@ const options = {
                 Reservation: {
                     type: 'object',
                     properties: {
-                        id: { type: 'string', format: 'uuid' },
                         trajetId: { type: 'string', format: 'uuid' },
                         etudiantId: { type: 'string', format: 'uuid' },
                         statut: { type: 'string', enum: ['en_attente', 'confirmé', 'refusé', 'terminé', 'annulé'] },
-                        createdAt: { type: 'string', format: 'date-time' },
                     },
                     example: {
                         trajetId: 't1-trajet-id',
@@ -98,7 +91,6 @@ const options = {
                 Zone: {
                     type: 'object',
                     properties: {
-                        id: { type: 'string', format: 'uuid' },
                         nom: { type: 'string' },
                         description: { type: 'string', nullable: true },
                     },
@@ -110,7 +102,6 @@ const options = {
                 Moto: {
                     type: 'object',
                     properties: {
-                        id: { type: 'string', format: 'uuid' },
                         marque: { type: 'string' },
                         modele: { type: 'string' },
                         immatriculation: { type: 'string' },

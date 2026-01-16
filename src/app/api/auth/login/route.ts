@@ -57,8 +57,21 @@ export async function POST(request: Request) {
       where: eq(users.email, validatedData.email),
     });
 
-    if (!user || !(await comparePassword(validatedData.password, user.password))) {
-      return NextResponse.json({ error: 'Identifiants invalides' }, { status: 401 });
+    // Vérifier si l'utilisateur existe
+    if (!user) {
+      return NextResponse.json({
+        error: 'Aucun compte trouvé avec cet email',
+        field: 'email'
+      }, { status: 401 });
+    }
+
+    // Vérifier le mot de passe
+    const isPasswordValid = await comparePassword(validatedData.password, user.password);
+    if (!isPasswordValid) {
+      return NextResponse.json({
+        error: 'Mot de passe incorrect',
+        field: 'password'
+      }, { status: 401 });
     }
 
     const { password: _, refreshToken: __, ...userWithoutPassword } = user;

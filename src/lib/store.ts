@@ -51,7 +51,7 @@ export interface Reservation {
   id: string;
   trajetId: string;
   etudiantId: string;
-  status: 'en_attente' | 'confirmé' | 'refusé' | 'terminé' | 'annulé';
+  statut: 'en_attente' | 'confirmé' | 'refusé' | 'terminé' | 'annulé';
   createdAt: string;
 }
 
@@ -92,7 +92,7 @@ interface TrajetsStore {
 interface ReservationsStore {
   reservations: Reservation[];
   addReservation: (reservation: Reservation) => void;
-  updateReservationStatus: (id: string, status: Reservation['status']) => void;
+  updateReservationStatus: (id: string, statut: Reservation['statut']) => void;
   getReservationsByPassenger: (passengerId: string) => Reservation[];
   getReservationsByDriver: (driverId: string) => Reservation[];
 }
@@ -125,29 +125,49 @@ export const useAuthStore = create<AuthStore>()(
     (set) => ({
       user: null,
       isLoggedIn: false,
-      login: async (email: string, password: string) => {
-        const mockUser: User = {
-          id: 'driver1',
-          nom: email.split('@')[0],
-          prenom: 'Conducteur',
-          email,
-          role: 'conducteur',
-          statut: 'actif',
-        };
-        set({ user: mockUser, isLoggedIn: true });
+      login: async (email, password) => {
+        try {
+          const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || 'Erreur lors de la connexion');
+          }
+
+          set({ user: data.user, isLoggedIn: true });
+        } catch (error) {
+          console.error('Login error:', error);
+          throw error;
+        }
       },
-      register: async (nom: string, prenom: string, email: string, password: string) => {
-        const mockUser: User = {
-          id: 'driver1',
-          nom,
-          prenom,
-          email,
-          role: 'passager',
-          statut: 'actif',
-        };
-        set({ user: mockUser, isLoggedIn: true });
+      register: async (nom, prenom, email, password) => {
+        try {
+          const response = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nom, prenom, email, password }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || 'Erreur lors de l\'inscription');
+          }
+
+          set({ user: data.user, isLoggedIn: true });
+        } catch (error) {
+          console.error('Registration error:', error);
+          throw error;
+        }
       },
       logout: () => {
+        // En plus de vider le store, on devrait idéalement appeler une route de logout pour invalider les cookies
+        fetch('/api/auth/logout', { method: 'POST' }).catch(console.error);
         set({ user: null, isLoggedIn: false });
       },
       updateUser: (userData) => {
@@ -177,14 +197,6 @@ export const useMotosStore = create<MotosStore>()((set, get) => ({
       marque: 'Honda',
       modele: 'CB150',
       immatriculation: 'TG-2022-001',
-      disponibilite: true,
-    },
-    {
-      id: '2',
-      proprietaireId: 'driver2',
-      marque: 'Yamaha',
-      modele: 'YZF-R3',
-      immatriculation: 'TG-2023-045',
       disponibilite: true,
     },
   ],
@@ -219,7 +231,7 @@ export const useTrajetsStore = create<TrajetsStore>()((set, get) => ({
         nom: 'Dupont',
         prenom: 'Jean',
         email: 'jean@univ-lome.tg',
-        role: 'passager',
+        role: 'conducteur', // Fixed inconsistent role in mock data
         statut: 'actif',
       },
       pointDepart: 'Campus Principal',
@@ -311,10 +323,10 @@ export const useReservationsStore = create<ReservationsStore>()((set, get) => ({
       reservations: [...state.reservations, reservation],
     }));
   },
-  updateReservationStatus: (id, status) => {
+  updateReservationStatus: (id, statut) => {
     set((state) => ({
       reservations: state.reservations.map((r) =>
-        r.id === id ? { ...r, status } : r
+        r.id === id ? { ...r, statut } : r
       ),
     }));
   },

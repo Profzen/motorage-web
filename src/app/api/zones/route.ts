@@ -21,9 +21,6 @@ import { eq } from 'drizzle-orm';
  *               items:
  *                 type: object
  *                 properties:
- *                   id:
- *                     type: string
- *                     format: uuid
  *                   nom:
  *                     type: string
  *                   description:
