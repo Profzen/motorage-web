@@ -1,53 +1,35 @@
-# Miyi Ðekae - Plateforme d'Entraide Moto
+# MOTORAGE - Plateforme d''Entraide Moto
 
-Miyi Ðekae est une plateforme web moderne conçue pour faciliter l'entraide entre les étudiants motocyclistes de l'Université de Lomé (UL).
+MOTORAGE est une plateforme web moderne et performante conçue pour faciliter l''entraide et le partage de trajets à moto entre les membres de la communauté de l''Université de Lomé (UL).
 
-![Landing Page Screenshot](public/screenshots/screenshot-landing.png)
+![MOTORAGE Banner](https://motorage.com/og-image.png)
 
-## Stack Technique
+## 🌟 Fonctionnalités Clés
 
-- **Framework** : Next.js 16 (App Router)
-- **Base de données** : Turso (SQLite) avec Drizzle ORM
-- **Styling** : Tailwind CSS 4
-- **Gestion d'état** : Zustand
-- **Icônes** : Lucide React
-- **Tests** : Vitest & React Testing Library
+- **Tableau de Bord Moderne** : Une interface utilisateur sophistiquée, réactive et optimisée pour la gestion quotidienne.
+  - Sidebar rétractable avec mode icônes et tooltips.
+  - Navigation dynamique filtrée par rôle (Passager vs Conducteur).
+  - Thème clair, sombre et système.
+- **Gestion de Profil Complète** : Mise à jour des informations personnelles et suppression sécurisée du compte.
+- **Système de Notifications en Temps Réel** : Alertes centralisées pour les réservations, confirmations et mises à jour système.
+- **Historique de Réservations** : Suivi détaillé de l''état des trajets pour les passagers (en attente, confirmé, terminé, annulé).
+- **Gestion de Garage (Conducteurs)** : Ajout et gestion du parc moto personnel.
+- **Géolocalisation intelligente** : Suggestion automatique des points de départ et d''arrivée basés sur les zones clés de l''université.
 
-## Configuration de la base de données (Turso)
+## 🛠 Stack Technique
 
-1. Installez la CLI Turso et créez une base de données.
-2. Copiez les informations dans un fichier `.env` :
-   ```env
-   TURSO_DATABASE_URL=libsql://your-db-name.turso.io
-   TURSO_AUTH_TOKEN=your-auth-token
-   ```
-3. Poussez le schéma vers la base de données :
-   ```bash
-   pnpm db:push
-   ```
-4. Visualisez vos données :
-   ```bash
-   pnpm db:studio
-   ```
+- **Framework** : [Next.js 16 (App Router)](https://nextjs.org/)
+- **Bibliothèque UI** : [React 19](https://react.dev/)
+- **Styling** : [Tailwind CSS 4](https://tailwindcss.com/)
+- **Composants** : [Radix UI](https://www.radix-ui.com/) & [Lucide Icons](https://lucide.dev/)
+- **Animations** : [Framer Motion](https://www.framer.com/motion/)
+- **Gestion d''état** : [Zustand](https://github.com/pmndrs/zustand)
+- **Base de données** : [Turso (SQLite)](https://turso.tech/) avec [Drizzle ORM](https://orm.drizzle.team/)
+- **Tests** : [Vitest](https://vitest.dev/) & [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/)
 
-## Structure du Projet
+## 🚀 Installation et Configuration
 
-```text
-src/
-├── app/                  # Routes (Pages & API)
-│   ├── api/              # API Routes (Auth, Routes, etc.)
-│   ├── dashboard/        # Dashboard
-│   └── page.tsx          # Landing Page
-├── components/           # Composants réutilisables
-├── lib/
-│   ├── db/               # Configuration Drizzle & Schéma
-│   └── store.ts          # Gestion d'état Zustand
-└── app/globals.css       # Configuration Tailwind 4
-```
-
-## Installation et Démarrage
-
-1. **Cloner le projet**
+1. **Cloner le dépôt**
    ```bash
    git clone <repository-url>
    cd projet-motorage-web
@@ -55,30 +37,63 @@ src/
 
 2. **Installer les dépendances**
    ```bash
-   npm install
+   pnpm install
    ```
 
-3. **Configurer les variables d'environnement**
+3. **Configurer les variables d''environnement**
+   Créez un fichier `.env` à la racine :
+   ```env
+   # Database (Turso)
+   TURSO_DATABASE_URL=libsql://your-db-name.turso.io
+   TURSO_AUTH_TOKEN=your-auth-token
+
+   # Authentication (JWT)
+   JWT_SECRET=your-secure-secret-key
+   JWT_REFRESH_SECRET=your-secure-refresh-key
+   JWT_EXPIRES_IN=15m
+   JWT_REFRESH_EXPIRES_IN=7d
+   ```
+
+4. **Synchroniser la base de données**
    ```bash
-   cp .env.local.example .env.local
+   pnpm db:push
    ```
 
-4. **Lancer le serveur de développement**
+5. **Lancer le serveur de développement**
    ```bash
-   npm dev
+   pnpm dev
    ```
-   L'application sera accessible sur [http://localhost:3000](http://localhost:3000).
+   Accédez à [http://localhost:3000](http://localhost:3000).
 
-## Scripts Disponibles
+## 📁 Structure du Projet
 
-- `npm run dev` : Lance le serveur en mode développement.
-- `npm run build` : Prépare l'application pour la production.
-- `npm run start` : Lance l'application construite.
-- `npm run lint` : Vérifie la qualité du code avec ESLint.
+```text
+src/
+├── app/                  # Routes Next.js (Pages & API)
+│   ├── api/              # Endpoints API (Auth, Trajets, etc.)
+│   ├── dashboard/        # Layout et Pages du Tableau de bord
+│   └── page.tsx          # Page d''accueil (Landing Page)
+├── components/           # Composants UI, Layout et Sections
+│   ├── ui/               # Composants atomiques (Radix/Shadcn)
+│   ├── layout/           # Sidebar, Header, Footer
+│   └── dashboard/        # Composants spécifiques au dashboard
+├── lib/                  # Utilitaires et Logique
+│   ├── db/               # Schéma Drizzle et DB config
+>>   └── store.ts          # Orchestration d''état Zustand
+└── app/globals.css       # Tailwind CSS 4 & Thèmes
+```
 
-## Prochaines Étapes (Sprint 2)
+## 🧪 Tests et Qualité
 
-- Finalisation de la logique SQL (Relations, Contraintes)
-- Logique d'authentification complète de bout en bout
-- Création du système d'annonces dynamique
-- Espace utilisateur fonctionnel avec données réelles
+- Lancer les tests unitaires : `pnpm test`
+- Vérifier le linting : `pnpm lint`
+- Ouvrir Drizzle Studio : `pnpm db:studio`
+
+## 📈 État d''avancement
+
+- [x] Sprint 1 : Cadrage, Maquettage et Base technique.
+- [x] Sprint 2 : Authentification, Dashboard SaaS, Notifications et Profil.
+- [ ] Sprint 3 (En cours) : Logique de Matching avancée, Messagerie et Évaluations.
+
+---
+Conçu avec ❤️ pour les étudiants de l''Université de Lomé.

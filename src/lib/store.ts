@@ -166,7 +166,6 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
       logout: () => {
-        // En plus de vider le store, on devrait idéalement appeler une route de logout pour invalider les cookies
         fetch('/api/auth/logout', { method: 'POST' }).catch(console.error);
         set({ user: null, isLoggedIn: false });
       },
