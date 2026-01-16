@@ -5,7 +5,7 @@ import { Users, Target, Heart, Zap } from "lucide-react";
 
 export const metadata = {
   title: "À propos | MOTORAGE",
-  description: "En savoir plus sur MOTORAGE, la plateforme d'entraide moto pour les étudiants",
+  description: "En savoir pluss sur MOTORAGE, la plateforme d'entraide moto pour les étudiants",
 };
 
 export default function AboutPage() {
