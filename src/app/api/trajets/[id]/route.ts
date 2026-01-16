@@ -20,8 +20,14 @@ import { eq } from 'drizzle-orm';
  *     responses:
  *       200:
  *         description: Détails du trajet
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Trajet'
  *       404:
  *         description: Trajet non trouvé
+ *     security:
+ *       - bearerAuth: []
  *   put:
  *     tags:
  *       - Trajets
@@ -41,6 +47,12 @@ import { eq } from 'drizzle-orm';
  *     responses:
  *       200:
  *         description: Trajet mis à jour
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Trajet'
+ *     security:
+ *       - bearerAuth: []
  *   delete:
  *     tags:
  *       - Trajets
@@ -54,6 +66,8 @@ import { eq } from 'drizzle-orm';
  *     responses:
  *       200:
  *         description: Trajet supprimé
+ *     security:
+ *       - bearerAuth: []
  */
 
 export async function GET(

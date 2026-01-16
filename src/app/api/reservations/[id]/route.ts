@@ -28,12 +28,18 @@ import { eq, sql } from 'drizzle-orm';
  *             properties:
  *               statut:
  *                 type: string
- *                 enum: [en_attente, confirmé, refusé, terminé]
+ *                 enum: [en_attente, confirmé, refusé, terminé, annulé]
  *     responses:
  *       200:
  *         description: Statut mis à jour
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Reservation'
  *       400:
  *         description: Impossible de confirmer (plus de places)
+ *     security:
+ *       - bearerAuth: []
  *   delete:
  *     tags:
  *       - Réservations
@@ -47,6 +53,8 @@ import { eq, sql } from 'drizzle-orm';
  *     responses:
  *       200:
  *         description: Réservation annulée
+ *     security:
+ *       - bearerAuth: []
  */
 
 export async function PATCH(

@@ -32,6 +32,12 @@ import { eq } from 'drizzle-orm';
  *     responses:
  *       200:
  *         description: Utilisateur mis à jour
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *     security:
+ *       - bearerAuth: []
  */
 
 export async function PATCH(

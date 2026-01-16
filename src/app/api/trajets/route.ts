@@ -51,6 +51,8 @@ import { trajetSchema } from '@/lib/validation';
  *                 $ref: '#/components/schemas/Trajet'
  *       500:
  *         description: Erreur serveur
+ *     security:
+ *       - bearerAuth: []
  */
 export async function GET(request: Request) {
   try {
@@ -116,6 +118,8 @@ export async function GET(request: Request) {
  *         description: Données invalides
  *       500:
  *         description: Erreur serveur
+ *     security:
+ *       - bearerAuth: []
  */
 export async function POST(request: Request) {
   try {

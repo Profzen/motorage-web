@@ -11,9 +11,16 @@ import { eq } from 'drizzle-orm';
  *     tags:
  *       - Zones
  *     summary: Liste toutes les zones
- *     responses:
  *       200:
  *         description: Liste des zones
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Zone'
+ *     security:
+ *       - bearerAuth: []
  *   post:
  *     tags:
  *       - Zones
@@ -23,19 +30,18 @@ import { eq } from 'drizzle-orm';
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - nom
- *             properties:
- *               nom:
- *                 type: string
- *               description:
- *                 type: string
+ *             $ref: '#/components/schemas/Zone'
  *     responses:
  *       201:
  *         description: Zone créée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Zone'
  *       400:
  *         description: Données invalides
+ *     security:
+ *       - bearerAuth: []
  */
 
 export async function GET() {

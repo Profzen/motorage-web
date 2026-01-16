@@ -20,9 +20,17 @@ import { eq } from 'drizzle-orm';
  *         description: ID du propriétaire pour filtrer les motos
  *     responses:
  *       200:
- *         description: Succès
+ *         description: Liste des motos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Moto'
  *       500:
  *         description: Erreur serveur
+ *     security:
+ *       - bearerAuth: []
  *   post:
  *     tags:
  *       - Motos
@@ -33,30 +41,20 @@ import { eq } from 'drizzle-orm';
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - marque
- *               - modele
- *               - immatriculation
- *               - proprietaireId
- *             properties:
- *               marque:
- *                 type: string
- *               modele:
- *                 type: string
- *               immatriculation:
- *                 type: string
- *               proprietaireId:
- *                 type: string
- *               disponibilite:
- *                 type: boolean
+ *             $ref: '#/components/schemas/Moto'
  *     responses:
  *       201:
  *         description: Moto créée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Moto'
  *       400:
  *         description: Données invalides
  *       500:
  *         description: Erreur serveur
+ *     security:
+ *       - bearerAuth: []
  */
 
 export async function GET(request: Request) {

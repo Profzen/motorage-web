@@ -13,6 +13,14 @@ import { eq, not } from 'drizzle-orm';
  *     responses:
  *       200:
  *         description: Liste des utilisateurs
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/User'
+ *     security:
+ *       - bearerAuth: []
  */
 
 export async function GET() {

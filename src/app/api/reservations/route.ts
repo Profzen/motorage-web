@@ -29,6 +29,8 @@ import { eq, sql } from 'drizzle-orm';
  *         description: Pas de places disponibles ou données invalides
  *       500:
  *         description: Erreur serveur
+ *     security:
+ *       - bearerAuth: []
  */
 
 export async function POST(request: Request) {

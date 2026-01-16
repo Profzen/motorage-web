@@ -12,6 +12,7 @@ export const users = sqliteTable('users', {
   statut: text('statut').notNull().default('actif'), // actif, suspendu, etc.
   avatar: text('avatar'),
   phone: text('phone'),
+  refreshToken: text('refresh_token'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
@@ -19,7 +20,6 @@ export const usersRelations = relations(users, ({ many }) => ({
   motos: many(motos),
   trajets: many(trajets),
   reservations: many(reservations),
-  zones: many(zones), // Admin who created the zone if needed, but zones are global here
 }));
 
 // Table ZONES
