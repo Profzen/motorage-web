@@ -3,14 +3,14 @@ import Link from "next/link";
 
 export function Footer() {
   return (
-    <footer className="border-t bg-surface">
-      <div className="container mx-auto px-4 py-16 md:py-20">
+    <footer className="border-t bg-surface/50">
+      <div className="container mx-auto px-4 py-20 md:py-28">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-10">
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
             <Link href="/" className="flex items-center gap-2 mb-4">
               <Bike className="h-6 w-6 text-primary" />
-              <span className="text-xl font-bold tracking-tight">MOTORAGE</span>
+              <span className="text-xl font-bold tracking-tight">Miyi Ðekae</span>
             </Link>
             <p className="text-muted-foreground text-sm max-w-sm mb-6 leading-relaxed">
               La première plateforme d&apos;entraide moto entre étudiants. Connectez-vous, partagez et roulez en confiance.
@@ -22,8 +22,8 @@ export function Footer() {
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="h-4 w-4 flex-shrink-0" />
-                <a href="mailto:contact@motorage.com" className="hover:text-primary transition-colors">
-                  contact@motorage.com
+                <a href="mailto:contact@miyi-dekae.tg" className="hover:text-primary transition-colors">
+                  contact@miyi-dekae.tg
                 </a>
               </div>
             </div>
@@ -115,7 +115,7 @@ export function Footer() {
         <div className="mt-12 pt-8 border-t border-border/50">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} MOTORAGE. Tous droits réservés.
+              © {new Date().getFullYear()} Miyi Ðekae. Tous droits réservés.
             </p>
             <div className="flex items-center gap-6">
               <a href="#" className="text-muted-foreground hover:text-primary transition-colors" aria-label="GitHub">
