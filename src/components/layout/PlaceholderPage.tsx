@@ -11,13 +11,14 @@ export function PlaceholderPage({ title, children }: PlaceholderPageProps) {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main className="grow flex items-center justify-center py-20">
+      <main className="flex grow items-center justify-center py-20">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl font-bold mb-6">{title}</h1>
-          <div className="mx-auto max-w-md p-8 border rounded-2xl bg-surface shadow-sm">
+          <h1 className="mb-6 text-4xl font-bold">{title}</h1>
+          <div className="bg-surface mx-auto max-w-md rounded-2xl border p-8 shadow-sm">
             {children || (
               <p className="text-muted-foreground">
-                Cette page est actuellement un placeholder. Le contenu sera ajouté au Sprint 2.
+                Cette page est actuellement un placeholder. Le contenu sera
+                ajouté au Sprint 2.
               </p>
             )}
           </div>
@@ -27,4 +28,3 @@ export function PlaceholderPage({ title, children }: PlaceholderPageProps) {
     </div>
   );
 }
-

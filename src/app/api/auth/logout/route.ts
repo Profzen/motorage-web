@@ -1,5 +1,5 @@
-import { cookies } from 'next/headers';
-import { successResponse } from '@/lib/api-response';
+import { cookies } from "next/headers";
+import { successResponse } from "@/lib/api-response";
 
 /**
  * @openapi
@@ -18,10 +18,10 @@ import { successResponse } from '@/lib/api-response';
  *               $ref: '#/components/schemas/ApiResponse'
  */
 export async function POST() {
-    const cookieStore = await cookies();
+  const cookieStore = await cookies();
 
-    cookieStore.delete('token');
-    cookieStore.delete('refreshToken');
+  cookieStore.delete("token");
+  cookieStore.delete("refreshToken");
 
-    return successResponse({ message: 'Déconnecté avec succès' });
+  return successResponse({ message: "Déconnecté avec succès" });
 }

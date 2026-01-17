@@ -1,8 +1,8 @@
-import { db } from '@/lib/db';
-import { zones } from '@/lib/db/schema';
-import { zoneSchema } from '@/lib/validation';
-import { successResponse, ApiErrors } from '@/lib/api-response';
-import { z } from 'zod';
+import { db } from "@/lib/db";
+import { zones } from "@/lib/db/schema";
+import { zoneSchema } from "@/lib/validation";
+import { successResponse, ApiErrors } from "@/lib/api-response";
+import { z } from "zod";
 
 /**
  * @openapi
@@ -67,33 +67,43 @@ import { z } from 'zod';
  */
 
 export async function GET() {
-    try {
-        const allZones = await db.select().from(zones).orderBy(zones.nom);
-        return successResponse(allZones);
-    } catch (error) {
-        console.error('Error fetching zones:', error);
-        return ApiErrors.serverError();
-    }
+  try {
+    const allZones = await db.select().from(zones).orderBy(zones.nom);
+    return successResponse(allZones);
+  } catch (error) {
+    console.error("Error fetching zones:", error);
+    return ApiErrors.serverError();
+  }
 }
 
 export async function POST(request: Request) {
-    try {
-        const body = await request.json();
-        const validatedData = zoneSchema.parse(body);
+  try {
+    const body = await request.json();
+    const validatedData = zoneSchema.parse(body);
 
-        const newZone = await db.insert(zones).values({
-            nom: validatedData.nom,
-            description: validatedData.description,
-        }).returning();
+    const newZone = await db
+      .insert(zones)
+      .values({
+        nom: validatedData.nom,
+        description: validatedData.description,
+      })
+      .returning();
 
-        return successResponse(newZone[0], undefined, 201);
-    } catch (error: unknown) {
-        if (error instanceof z.ZodError) {
-            return ApiErrors.validationError('Validation failed', undefined, error.issues);
-        }
-        if (error instanceof Error && error.message?.includes('UNIQUE constraint failed')) {
-            return ApiErrors.validationError('Cette zone existe déjà', 'nom');
-        }
-        return ApiErrors.serverError();
+    return successResponse(newZone[0], undefined, 201);
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      return ApiErrors.validationError(
+        "Validation failed",
+        undefined,
+        error.issues
+      );
     }
+    if (
+      error instanceof Error &&
+      error.message?.includes("UNIQUE constraint failed")
+    ) {
+      return ApiErrors.validationError("Cette zone existe déjà", "nom");
+    }
+    return ApiErrors.serverError();
+  }
 }

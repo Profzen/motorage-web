@@ -1,7 +1,11 @@
-import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema';
-import { sql } from 'drizzle-orm';
-import { paginatedResponse, ApiErrors, parsePaginationParams } from '@/lib/api-response';
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema";
+import { sql } from "drizzle-orm";
+import {
+  paginatedResponse,
+  ApiErrors,
+  parsePaginationParams,
+} from "@/lib/api-response";
 
 /**
  * @openapi
@@ -54,30 +58,31 @@ import { paginatedResponse, ApiErrors, parsePaginationParams } from '@/lib/api-r
  *       - BearerAuth: []
  */
 export async function GET(request: Request) {
-    try {
-        const { searchParams } = new URL(request.url);
-        const { page, limit } = parsePaginationParams(searchParams);
-        const offset = (page - 1) * limit;
+  try {
+    const { searchParams } = new URL(request.url);
+    const { page, limit } = parsePaginationParams(searchParams);
+    const offset = (page - 1) * limit;
 
-        // Get total count
-        const countResult = await db.select({ count: sql<number>`count(*)` })
-            .from(users);
-        const total = Number(countResult[0]?.count || 0);
+    // Get total count
+    const countResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(users);
+    const total = Number(countResult[0]?.count || 0);
 
-        // Get paginated data
-        const allUsers = await db.query.users.findMany({
-            columns: {
-                password: false,
-                refreshToken: false,
-            },
-            orderBy: (users, { desc }) => [desc(users.createdAt)],
-            limit,
-            offset,
-        });
+    // Get paginated data
+    const allUsers = await db.query.users.findMany({
+      columns: {
+        password: false,
+        refreshToken: false,
+      },
+      orderBy: (users, { desc }) => [desc(users.createdAt)],
+      limit,
+      offset,
+    });
 
-        return paginatedResponse(allUsers, page, limit, total);
-    } catch (error) {
-        console.error('Error fetching users:', error);
-        return ApiErrors.serverError();
-    }
+    return paginatedResponse(allUsers, page, limit, total);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    return ApiErrors.serverError();
+  }
 }

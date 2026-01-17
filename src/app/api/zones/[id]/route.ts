@@ -1,9 +1,9 @@
-import { db } from '@/lib/db';
-import { zones } from '@/lib/db/schema';
-import { zoneSchema } from '@/lib/validation';
-import { eq } from 'drizzle-orm';
-import { successResponse, ApiErrors } from '@/lib/api-response';
-import { z } from 'zod';
+import { db } from "@/lib/db";
+import { zones } from "@/lib/db/schema";
+import { zoneSchema } from "@/lib/validation";
+import { eq } from "drizzle-orm";
+import { successResponse, ApiErrors } from "@/lib/api-response";
+import { z } from "zod";
 
 /**
  * @openapi
@@ -119,65 +119,71 @@ import { z } from 'zod';
  */
 
 export async function GET(
-    request: Request,
-    { params }: { params: { id: string } }
+  request: Request,
+  { params }: { params: { id: string } }
 ) {
-    try {
-        const zone = await db.query.zones.findFirst({
-            where: eq(zones.id, params.id),
-        });
+  try {
+    const zone = await db.query.zones.findFirst({
+      where: eq(zones.id, params.id),
+    });
 
-        if (!zone) {
-            return ApiErrors.notFound('Zone');
-        }
-
-        return successResponse(zone);
-    } catch {
-        return ApiErrors.serverError();
+    if (!zone) {
+      return ApiErrors.notFound("Zone");
     }
+
+    return successResponse(zone);
+  } catch {
+    return ApiErrors.serverError();
+  }
 }
 
 export async function PATCH(
-    request: Request,
-    { params }: { params: { id: string } }
+  request: Request,
+  { params }: { params: { id: string } }
 ) {
-    try {
-        const body = await request.json();
-        const validatedData = zoneSchema.partial().parse(body);
+  try {
+    const body = await request.json();
+    const validatedData = zoneSchema.partial().parse(body);
 
-        const updated = await db.update(zones)
-            .set(validatedData)
-            .where(eq(zones.id, params.id))
-            .returning();
+    const updated = await db
+      .update(zones)
+      .set(validatedData)
+      .where(eq(zones.id, params.id))
+      .returning();
 
-        if (updated.length === 0) {
-            return ApiErrors.notFound('Zone');
-        }
-
-        return successResponse(updated[0]);
-    } catch (error: unknown) {
-        if (error instanceof z.ZodError) {
-            return ApiErrors.validationError('Validation failed', undefined, error.issues);
-        }
-        return ApiErrors.serverError();
+    if (updated.length === 0) {
+      return ApiErrors.notFound("Zone");
     }
+
+    return successResponse(updated[0]);
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      return ApiErrors.validationError(
+        "Validation failed",
+        undefined,
+        error.issues
+      );
+    }
+    return ApiErrors.serverError();
+  }
 }
 
 export async function DELETE(
-    request: Request,
-    { params }: { params: { id: string } }
+  request: Request,
+  { params }: { params: { id: string } }
 ) {
-    try {
-        const deleted = await db.delete(zones)
-            .where(eq(zones.id, params.id))
-            .returning();
+  try {
+    const deleted = await db
+      .delete(zones)
+      .where(eq(zones.id, params.id))
+      .returning();
 
-        if (deleted.length === 0) {
-            return ApiErrors.notFound('Zone');
-        }
-
-        return successResponse({ message: 'Zone supprimée avec succès' });
-    } catch {
-        return ApiErrors.serverError();
+    if (deleted.length === 0) {
+      return ApiErrors.notFound("Zone");
     }
+
+    return successResponse({ message: "Zone supprimée avec succès" });
+  } catch {
+    return ApiErrors.serverError();
+  }
 }

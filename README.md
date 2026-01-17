@@ -7,6 +7,7 @@ MIYI ÐEKAE (anciennement MOTORAGE) est une plateforme de gestion centralisée p
 ## 📌 Vision du Projet
 
 Le projet Miyi Ðekae est scindé en deux écosystèmes :
+
 1.  **Mobile (User-Facing)** : Réservé aux Étudiants (Passagers) et Conducteurs pour la réservation et le suivi temps réel.
 2.  **Web (Admin Console)** : Réservé à l''équipe administrative pour la gestion des dossiers, la sécurité et l''analyse des flux.
 
@@ -37,17 +38,20 @@ Le projet Miyi Ðekae est scindé en deux écosystèmes :
 ## 🚀 Installation & Administration
 
 1. **Installation**
+
    ```bash
    pnpm install
    ```
 
 2. **Synchroniser la base de données**
+
    ```bash
    pnpm db:push
    ```
 
 3. **Créer le premier administrateur**
    Puisque l''inscription publique est désactivée, utilisez le script de création :
+
    ```bash
    pnpm admin:create "votre-email@univ-lome.tg" "votreMotDePasse"
    ```
@@ -60,22 +64,23 @@ Le projet Miyi Ðekae est scindé en deux écosystèmes :
 ## 📖 Documentation API
 
 L''application expose une documentation interactive :
+
 - **Swagger UI** : `http://localhost:3000/api-docs`
 
 ## 📁 Structure du Portail
 
 ```text
 src/
-├── app/                  
+├── app/
 │   ├── (auth)/           # Portail de connexion sécurisé
 │   ├── (site)/           # Landing page institutionnelle
 │   ├── dashboard/        # Console d''administration Web
 │   └── api/              # Endpoints (Validations, Utilisateurs, Flux)
-├── components/           
+├── components/
 │   ├── dashboard/        # Widgets KPI et Monitoring
 │   └── layout/           # Sidebar administrative dynamique
 ├── scripts/              # Outils de maintenance (Create Admin)
-└── lib/                  
+└── lib/
     ├── db/               # Schéma relationnel Drizzle
     └── store.ts          # État global (Auth & Sidebar)
 ```
@@ -87,6 +92,7 @@ src/
 - **Data Browser** : `pnpm db:studio`
 
 ## 📊 État du Jalon 3
+
 - [x] Pivot vers Interface 100% Administrative.
 - [x] Suppression des fonctions User (Mobile Only).
 - [x] Création du Tableau de bord SaaS moderne.

@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { motion, AnimatePresence } from "framer-motion"
+import * as React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
   MapPin,
@@ -24,15 +24,20 @@ import {
   FileWarning,
   ShieldAlert,
   ClipboardCheck,
-  ArrowRightLeft
-} from "lucide-react"
+  ArrowRightLeft,
+} from "lucide-react";
 
-import { cn } from "@/lib/utils"
-import { useAuthStore, useSidebarStore } from "@/lib/store"
-import { useTheme } from "next-themes"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
+import { cn } from "@/lib/utils";
+import { useAuthStore, useSidebarStore } from "@/lib/store";
+import { useTheme } from "next-themes";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,11 +45,11 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuGroup
-} from "@/components/ui/dropdown-menu"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
+  DropdownMenuGroup,
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Navigation pour les ADMINISTRATEURS
 const ADMIN_NAV_ITEMS = [
@@ -89,8 +94,8 @@ const ADMIN_NAV_ITEMS = [
     icon: MapPin,
     href: "/admin/config",
     badge: null,
-  }
-]
+  },
+];
 
 // Navigation pour les UTILISATEURS LAMBDA (Passagers / Conducteurs)
 const USER_NAV_ITEMS = [
@@ -117,48 +122,48 @@ const USER_NAV_ITEMS = [
     icon: Settings,
     href: "/dashboard/settings",
     badge: null,
-  }
-]
+  },
+];
 
 // Fonction pour récupérer les items de navigation selon le rôle
 const getNavItems = (role: string | undefined) => {
-  if (role === 'administrateur') {
-    return ADMIN_NAV_ITEMS
+  if (role === "administrateur") {
+    return ADMIN_NAV_ITEMS;
   }
-  return USER_NAV_ITEMS
-}
+  return USER_NAV_ITEMS;
+};
 
 export function DashboardSidebar() {
-  const { user, logout } = useAuthStore()
-  const { isCollapsed, isOpen, setCollapsed, setOpen } = useSidebarStore()
-  const { setTheme } = useTheme()
-  const pathname = usePathname()
-  const [searchFocused, setSearchFocused] = React.useState(false)
-  const [mounted, setMounted] = React.useState(false)
+  const { user, logout } = useAuthStore();
+  const { isCollapsed, isOpen, setCollapsed, setOpen } = useSidebarStore();
+  const { setTheme } = useTheme();
+  const pathname = usePathname();
+  const [searchFocused, setSearchFocused] = React.useState(false);
+  const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
 
   // Handle mobile resize
   React.useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 768) {
-        setCollapsed(false)
+        setCollapsed(false);
       } else {
-        setOpen(false)
+        setOpen(false);
       }
-    }
-    window.addEventListener("resize", handleResize)
-    return () => window.removeEventListener("resize", handleResize)
-  }, [setCollapsed, setOpen])
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [setCollapsed, setOpen]);
 
   return (
     <>
       {/* Mobile Overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 md:hidden"
+          className="bg-background/80 fixed inset-0 z-40 backdrop-blur-sm md:hidden"
           onClick={() => setOpen(false)}
         />
       )}
@@ -168,27 +173,34 @@ export function DashboardSidebar() {
         initial={false}
         animate={{
           width: mounted && isCollapsed ? 80 : 280,
-          x: mounted && (isOpen || (typeof window !== 'undefined' && window.innerWidth >= 768)) ? 0 : (mounted ? -280 : 0)
+          x:
+            mounted &&
+            (isOpen ||
+              (typeof window !== "undefined" && window.innerWidth >= 768))
+              ? 0
+              : mounted
+                ? -280
+                : 0,
         }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className={cn(
-          "fixed top-0 left-0 h-screen z-50 bg-card/70 border-r flex flex-col transition-all duration-500 ease-in-out",
-          "backdrop-blur-xl shadow-2xl shadow-primary/5",
-          "before:absolute before:inset-0 before:bg-linear-to-b before:from-primary/5 before:to-transparent before:pointer-events-none",
+          "bg-card/70 fixed top-0 left-0 z-50 flex h-screen flex-col border-r transition-all duration-500 ease-in-out",
+          "shadow-primary/5 shadow-2xl backdrop-blur-xl",
+          "before:from-primary/5 before:pointer-events-none before:absolute before:inset-0 before:bg-linear-to-b before:to-transparent",
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}
       >
         {/* Header */}
-        <div className="h-16 flex items-center px-4 justify-between shrink-0">
+        <div className="flex h-16 shrink-0 items-center justify-between px-4">
           <Link href="/" className="flex items-center gap-3 overflow-hidden">
-            <div className="bg-primary h-10 w-10 rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-primary/20">
+            <div className="bg-primary shadow-primary/20 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-lg">
               <Bike className="text-primary-foreground h-6 w-6" />
             </div>
             {!isCollapsed && (
               <motion.span
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="font-bold text-xl tracking-tight whitespace-nowrap"
+                className="text-xl font-bold tracking-tight whitespace-nowrap"
               >
                 Miyi Ðekae
               </motion.span>
@@ -198,24 +210,30 @@ export function DashboardSidebar() {
             variant="ghost"
             size="icon"
             onClick={() => setCollapsed(!isCollapsed)}
-            className="hidden md:flex h-8 w-8 hover:bg-primary/10 hover:text-primary transition-all rounded-lg"
+            className="hover:bg-primary/10 hover:text-primary hidden h-8 w-8 rounded-lg transition-all md:flex"
           >
-            {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            {isCollapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
           </Button>
         </div>
 
         {/* Search */}
         <div className="px-3 py-4">
-          <div className={cn(
-            "relative transition-all duration-300",
-            isCollapsed ? "w-10 overflow-hidden" : "w-full"
-          )}>
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div
+            className={cn(
+              "relative transition-all duration-300",
+              isCollapsed ? "w-10 overflow-hidden" : "w-full"
+            )}
+          >
+            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
             <Input
               placeholder={isCollapsed ? "" : "Rechercher..."}
               className={cn(
-                "pl-10 bg-muted/40 border-transparent transition-all duration-300",
-                "hover:bg-muted/60 focus:bg-background focus:border-primary/50 focus:ring-4 focus:ring-primary/10 shadow-none",
+                "bg-muted/40 border-transparent pl-10 transition-all duration-300",
+                "hover:bg-muted/60 focus:bg-background focus:border-primary/50 focus:ring-primary/10 shadow-none focus:ring-4",
                 searchFocused && "bg-background border-primary/50 shadow-sm"
               )}
               onFocus={() => setSearchFocused(true)}
@@ -235,26 +253,33 @@ export function DashboardSidebar() {
               />
             ))}
           </div>
-
         </ScrollArea>
 
         {/* User Section */}
-        <div className="p-3 mt-auto border-t bg-muted/10">
+        <div className="bg-muted/10 mt-auto border-t p-3">
           {mounted && !isCollapsed ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="w-full justify-start p-2 h-auto gap-3 hover:bg-muted/50 rounded-xl">
-                  <Avatar className="h-10 w-10 border-2 border-background shadow-sm">
+                <Button
+                  variant="ghost"
+                  className="hover:bg-muted/50 h-auto w-full justify-start gap-3 rounded-xl p-2"
+                >
+                  <Avatar className="border-background h-10 w-10 border-2 shadow-sm">
                     <AvatarImage src={user?.avatar} />
                     <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                      {user?.prenom?.[0]}{user?.nom?.[0]}
+                      {user?.prenom?.[0]}
+                      {user?.nom?.[0]}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex flex-col items-start text-left flex-1 min-w-0">
-                    <span className="text-sm font-semibold truncate w-full">{user?.prenom} {user?.nom}</span>
-                    <span className="text-[10px] text-muted-foreground truncate w-full">{user?.email}</span>
+                  <div className="flex min-w-0 flex-1 flex-col items-start text-left">
+                    <span className="w-full truncate text-sm font-semibold">
+                      {user?.prenom} {user?.nom}
+                    </span>
+                    <span className="text-muted-foreground w-full truncate text-[10px]">
+                      {user?.email}
+                    </span>
                   </div>
-                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  <ChevronDown className="text-muted-foreground h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-64" side="top" align="start">
@@ -284,7 +309,10 @@ export function DashboardSidebar() {
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive font-medium focus:text-destructive" onClick={logout}>
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive font-medium"
+                  onClick={logout}
+                >
                   <LogOut className="mr-2 h-4 w-4" /> Déconnexion
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -295,16 +323,27 @@ export function DashboardSidebar() {
                 <TooltipTrigger asChild>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-12 w-12 rounded-xl mx-auto block p-0 overflow-hidden">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="mx-auto block h-12 w-12 overflow-hidden rounded-xl p-0"
+                      >
                         <Avatar className="h-12 w-12 rounded-xl">
                           <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                            {user?.prenom?.[0]}{user?.nom?.[0]}
+                            {user?.prenom?.[0]}
+                            {user?.nom?.[0]}
                           </AvatarFallback>
                         </Avatar>
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent side="right" align="end" className="w-56">
-                      <DropdownMenuItem onClick={logout}>Déconnexion</DropdownMenuItem>
+                    <DropdownMenuContent
+                      side="right"
+                      align="end"
+                      className="w-56"
+                    >
+                      <DropdownMenuItem onClick={logout}>
+                        Déconnexion
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TooltipTrigger>
@@ -315,23 +354,31 @@ export function DashboardSidebar() {
         </div>
       </motion.aside>
     </>
-  )
+  );
 }
 
 interface NavItem {
-  title: string
-  icon: React.ElementType
-  href: string
-  badge: string | null
+  title: string;
+  icon: React.ElementType;
+  href: string;
+  badge: string | null;
   children?: {
-    title: string
-    href: string
-  }[]
+    title: string;
+    href: string;
+  }[];
 }
 
-function SidebarItem({ item, isCollapsed, isActive }: { item: NavItem; isCollapsed: boolean; isActive: boolean }) {
-  const [isOpen, setIsOpen] = React.useState(false)
-  const hasChildren = item.children && item.children.length > 0
+function SidebarItem({
+  item,
+  isCollapsed,
+  isActive,
+}: {
+  item: NavItem;
+  isCollapsed: boolean;
+  isActive: boolean;
+}) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const hasChildren = item.children && item.children.length > 0;
 
   if (hasChildren && !isCollapsed) {
     return (
@@ -340,14 +387,26 @@ function SidebarItem({ item, isCollapsed, isActive }: { item: NavItem; isCollaps
           variant="ghost"
           onClick={() => setIsOpen(!isOpen)}
           className={cn(
-            "w-full justify-start h-10 gap-3 px-3 transition-all rounded-xl",
+            "h-10 w-full justify-start gap-3 rounded-xl px-3 transition-all",
             "hover:bg-primary/5 hover:text-primary",
             isActive && "bg-primary/10 text-primary"
           )}
         >
-          <item.icon className={cn("h-5 w-5 shrink-0 transition-all duration-300", isActive ? "text-primary scale-110" : "text-muted-foreground group-hover:text-primary")} />
+          <item.icon
+            className={cn(
+              "h-5 w-5 shrink-0 transition-all duration-300",
+              isActive
+                ? "text-primary scale-110"
+                : "text-muted-foreground group-hover:text-primary"
+            )}
+          />
           <span className="flex-1 text-sm font-semibold">{item.title}</span>
-          <ChevronDown className={cn("h-4 w-4 transition-transform duration-300 text-muted-foreground", isOpen && "rotate-180 text-primary")} />
+          <ChevronDown
+            className={cn(
+              "text-muted-foreground h-4 w-4 transition-transform duration-300",
+              isOpen && "text-primary rotate-180"
+            )}
+          />
         </Button>
         <AnimatePresence>
           {isOpen && (
@@ -355,13 +414,13 @@ function SidebarItem({ item, isCollapsed, isActive }: { item: NavItem; isCollaps
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="pl-11 space-y-1 overflow-hidden"
+              className="space-y-1 overflow-hidden pl-11"
             >
               {item.children?.map((child) => (
                 <Link
                   key={child.title}
                   href={child.href}
-                  className="block py-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                  className="text-muted-foreground hover:text-primary block py-2 text-sm transition-colors"
                 >
                   {child.title}
                 </Link>
@@ -370,7 +429,7 @@ function SidebarItem({ item, isCollapsed, isActive }: { item: NavItem; isCollaps
           )}
         </AnimatePresence>
       </div>
-    )
+    );
   }
 
   return (
@@ -380,7 +439,7 @@ function SidebarItem({ item, isCollapsed, isActive }: { item: NavItem; isCollaps
           <Link
             href={item.href}
             className={cn(
-              "flex items-center h-10 gap-3 px-3 rounded-xl transition-all relative group",
+              "group relative flex h-10 items-center gap-3 rounded-xl px-3 transition-all",
               isActive
                 ? "bg-primary/10 text-primary shadow-sm"
                 : "text-muted-foreground hover:bg-muted/80 hover:text-foreground hover:translate-x-1"
@@ -389,18 +448,25 @@ function SidebarItem({ item, isCollapsed, isActive }: { item: NavItem; isCollaps
             {isActive && (
               <motion.div
                 layoutId="active-indicator"
-                className="absolute left-0 w-1 h-6 bg-primary rounded-r-full"
+                className="bg-primary absolute left-0 h-6 w-1 rounded-r-full"
               />
             )}
-            <item.icon className={cn(
-              "h-5 w-5 shrink-0 transition-transform duration-300",
-              isActive ? "scale-110" : "group-hover:scale-110"
-            )} />
+            <item.icon
+              className={cn(
+                "h-5 w-5 shrink-0 transition-transform duration-300",
+                isActive ? "scale-110" : "group-hover:scale-110"
+              )}
+            />
             {!isCollapsed && (
-              <span className="flex-1 text-sm font-medium truncate">{item.title}</span>
+              <span className="flex-1 truncate text-sm font-medium">
+                {item.title}
+              </span>
             )}
             {!isCollapsed && item.badge && (
-              <Badge variant={item.badge === "Nouveau" ? "default" : "secondary"} className="h-5 px-1.5 text-[10px] font-bold">
+              <Badge
+                variant={item.badge === "Nouveau" ? "default" : "secondary"}
+                className="h-5 px-1.5 text-[10px] font-bold"
+              >
                 {item.badge}
               </Badge>
             )}
@@ -409,10 +475,12 @@ function SidebarItem({ item, isCollapsed, isActive }: { item: NavItem; isCollaps
         {isCollapsed && (
           <TooltipContent side="right" className="flex items-center gap-3">
             {item.title}
-            {item.badge && <Badge className="h-4 px-1 text-[8px]">{item.badge}</Badge>}
+            {item.badge && (
+              <Badge className="h-4 px-1 text-[8px]">{item.badge}</Badge>
+            )}
           </TooltipContent>
         )}
       </Tooltip>
     </TooltipProvider>
-  )
+  );
 }

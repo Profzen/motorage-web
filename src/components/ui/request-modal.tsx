@@ -13,7 +13,12 @@ type RequestModalProps = {
   trajetTitle?: string;
 };
 
-export function RequestModal({ open, onClose, onConfirm, trajetTitle }: RequestModalProps) {
+export function RequestModal({
+  open,
+  onClose,
+  onConfirm,
+  trajetTitle,
+}: RequestModalProps) {
   const [seats, setSeats] = React.useState("1");
 
   if (!open) return null;
@@ -27,7 +32,7 @@ export function RequestModal({ open, onClose, onConfirm, trajetTitle }: RequestM
         </CardHeader>
         <CardContent className="space-y-4">
           {trajetTitle && (
-            <p className="text-sm text-muted-foreground">{trajetTitle}</p>
+            <p className="text-muted-foreground text-sm">{trajetTitle}</p>
           )}
           <div className="space-y-2">
             <Label htmlFor="seats">Nombre de places</Label>
@@ -41,7 +46,10 @@ export function RequestModal({ open, onClose, onConfirm, trajetTitle }: RequestM
             />
           </div>
           <div className="flex gap-2 pt-2">
-            <Button className="flex-1" onClick={() => onConfirm(parseInt(seats || "1", 10))}>
+            <Button
+              className="flex-1"
+              onClick={() => onConfirm(parseInt(seats || "1", 10))}
+            >
               Envoyer la demande
             </Button>
             <Button variant="outline" className="flex-1" onClick={onClose}>

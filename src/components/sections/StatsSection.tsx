@@ -20,17 +20,20 @@ const stats = [
 
 export function StatsSection() {
   return (
-    <section className="py-16 bg-linear-to-r from-primary/5 to-secondary/5 border-y">
+    <section className="from-primary/5 to-secondary/5 border-y bg-linear-to-r py-16">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           {stats.map((stat, index) => {
             const Icon = stat.icon;
             return (
-              <div key={index} className="flex flex-col items-center justify-center text-center">
-                <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                  <Icon className="h-7 w-7 text-primary" />
+              <div
+                key={index}
+                className="flex flex-col items-center justify-center text-center"
+              >
+                <div className="bg-primary/10 mb-4 flex h-14 w-14 items-center justify-center rounded-full">
+                  <Icon className="text-primary h-7 w-7" />
                 </div>
-                <div className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+                <div className="text-foreground mb-2 text-3xl font-bold md:text-4xl">
                   {stat.value}
                 </div>
                 <div className="text-muted-foreground text-sm font-medium">
@@ -44,4 +47,3 @@ export function StatsSection() {
     </section>
   );
 }
-

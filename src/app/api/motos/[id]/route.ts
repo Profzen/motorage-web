@@ -1,8 +1,8 @@
-import { db } from '@/lib/db';
-import { motos } from '@/lib/db/schema';
-import { motoSchema } from '@/lib/validation';
-import { eq } from 'drizzle-orm';
-import { successResponse, ApiErrors } from '@/lib/api-response';
+import { db } from "@/lib/db";
+import { motos } from "@/lib/db/schema";
+import { motoSchema } from "@/lib/validation";
+import { eq } from "drizzle-orm";
+import { successResponse, ApiErrors } from "@/lib/api-response";
 
 /**
  * @openapi
@@ -118,65 +118,71 @@ import { successResponse, ApiErrors } from '@/lib/api-response';
  */
 
 export async function GET(
-    _request: Request,
-    { params }: { params: { id: string } }
+  _request: Request,
+  { params }: { params: { id: string } }
 ) {
-    try {
-        const moto = await db.query.motos.findFirst({
-            where: eq(motos.id, params.id),
-        });
+  try {
+    const moto = await db.query.motos.findFirst({
+      where: eq(motos.id, params.id),
+    });
 
-        if (!moto) {
-            return ApiErrors.notFound('Moto');
-        }
-
-        return successResponse(moto);
-    } catch {
-        return ApiErrors.serverError();
+    if (!moto) {
+      return ApiErrors.notFound("Moto");
     }
+
+    return successResponse(moto);
+  } catch {
+    return ApiErrors.serverError();
+  }
 }
 
 export async function PUT(
-    request: Request,
-    { params }: { params: { id: string } }
+  request: Request,
+  { params }: { params: { id: string } }
 ) {
-    try {
-        const body = await request.json();
-        const validatedData = motoSchema.partial().parse(body);
+  try {
+    const body = await request.json();
+    const validatedData = motoSchema.partial().parse(body);
 
-        const updatedMoto = await db.update(motos)
-            .set(validatedData)
-            .where(eq(motos.id, params.id))
-            .returning();
+    const updatedMoto = await db
+      .update(motos)
+      .set(validatedData)
+      .where(eq(motos.id, params.id))
+      .returning();
 
-        if (updatedMoto.length === 0) {
-            return ApiErrors.notFound('Moto');
-        }
-
-        return successResponse(updatedMoto[0]);
-    } catch (error: unknown) {
-        if (error instanceof Error && error.name === 'ZodError') {
-            return ApiErrors.validationError('Validation failed', undefined, (error as { errors: unknown[] }).errors);
-        }
-        return ApiErrors.serverError();
+    if (updatedMoto.length === 0) {
+      return ApiErrors.notFound("Moto");
     }
+
+    return successResponse(updatedMoto[0]);
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === "ZodError") {
+      return ApiErrors.validationError(
+        "Validation failed",
+        undefined,
+        (error as { errors: unknown[] }).errors
+      );
+    }
+    return ApiErrors.serverError();
+  }
 }
 
 export async function DELETE(
-    request: Request,
-    { params }: { params: { id: string } }
+  request: Request,
+  { params }: { params: { id: string } }
 ) {
-    try {
-        const deletedMoto = await db.delete(motos)
-            .where(eq(motos.id, params.id))
-            .returning();
+  try {
+    const deletedMoto = await db
+      .delete(motos)
+      .where(eq(motos.id, params.id))
+      .returning();
 
-        if (deletedMoto.length === 0) {
-            return ApiErrors.notFound('Moto');
-        }
-
-        return successResponse({ message: 'Moto deleted successfully' });
-    } catch {
-        return ApiErrors.serverError();
+    if (deletedMoto.length === 0) {
+      return ApiErrors.notFound("Moto");
     }
+
+    return successResponse({ message: "Moto deleted successfully" });
+  } catch {
+    return ApiErrors.serverError();
+  }
 }

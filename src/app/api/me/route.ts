@@ -1,11 +1,11 @@
-import { cookies } from 'next/headers';
-import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import { authenticateRequest } from '@/lib/auth';
-import { successResponse, ApiErrors } from '@/lib/api-response';
-import { updateProfileSchema } from '@/lib/validation';
-import { z } from 'zod';
+import { cookies } from "next/headers";
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import { authenticateRequest } from "@/lib/auth";
+import { successResponse, ApiErrors } from "@/lib/api-response";
+import { updateProfileSchema } from "@/lib/validation";
+import { z } from "zod";
 
 /**
  * @openapi
@@ -94,93 +94,111 @@ import { z } from 'zod';
  *               $ref: '#/components/schemas/ErrorResponse500'
  */
 export async function GET(request: Request) {
-    try {
-        const cookieStore = await cookies();
-        const cookieToken = cookieStore.get('token')?.value;
+  try {
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get("token")?.value;
 
-        const authPayload = await authenticateRequest(request, cookieToken);
+    const authPayload = await authenticateRequest(request, cookieToken);
 
-        if (!authPayload) {
-            return ApiErrors.unauthorized();
-        }
-
-        // Fetch full user data from database
-        const user = await db.query.users.findFirst({
-            where: eq(users.id, authPayload.userId),
-        });
-
-        if (!user) {
-            return ApiErrors.notFound('Utilisateur');
-        }
-
-        // Remove sensitive data
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { password: _password, refreshToken: _refreshTokenInDb, ...userWithoutSensitiveData } = user;
-
-        // Get user stats (could be expanded later)
-        // For now, return basic stats based on role
-        const stats = {
-            role: user.role,
-            statut: user.statut,
-            // Additional stats can be added here by querying related tables
-        };
-
-        return successResponse({
-            user: userWithoutSensitiveData,
-            stats,
-        });
-    } catch (error) {
-        console.error('Get profile error:', error);
-        return ApiErrors.serverError();
+    if (!authPayload) {
+      return ApiErrors.unauthorized();
     }
+
+    // Fetch full user data from database
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, authPayload.userId),
+    });
+
+    if (!user) {
+      return ApiErrors.notFound("Utilisateur");
+    }
+
+    // Remove sensitive data
+    /* eslint-disable @typescript-eslint/no-unused-vars */
+    const {
+      password: _password,
+      refreshToken: _refreshTokenInDb,
+      ...userWithoutSensitiveData
+    } = user;
+    /* eslint-enable @typescript-eslint/no-unused-vars */
+
+    // Get user stats (could be expanded later)
+    // For now, return basic stats based on role
+    const stats = {
+      role: user.role,
+      statut: user.statut,
+      // Additional stats can be added here by querying related tables
+    };
+
+    return successResponse({
+      user: userWithoutSensitiveData,
+      stats,
+    });
+  } catch (error) {
+    console.error("Get profile error:", error);
+    return ApiErrors.serverError();
+  }
 }
 
 export async function PATCH(request: Request) {
-    try {
-        const cookieStore = await cookies();
-        const cookieToken = cookieStore.get('token')?.value;
+  try {
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get("token")?.value;
 
-        const authPayload = await authenticateRequest(request, cookieToken);
+    const authPayload = await authenticateRequest(request, cookieToken);
 
-        if (!authPayload) {
-            return ApiErrors.unauthorized();
-        }
-
-        const body = await request.json();
-        const validatedData = updateProfileSchema.parse(body);
-
-        // Check if email is being updated and if it's already taken
-        if (validatedData.email) {
-            const existingUser = await db.query.users.findFirst({
-                where: eq(users.email, validatedData.email),
-            });
-
-            if (existingUser && existingUser.id !== authPayload.userId) {
-                return ApiErrors.conflict('email', 'Cet email est déjà utilisé par un autre compte');
-            }
-        }
-
-        const updated = await db.update(users)
-            .set(validatedData)
-            .where(eq(users.id, authPayload.userId))
-            .returning();
-
-        if (updated.length === 0) {
-            return ApiErrors.notFound('Utilisateur');
-        }
-
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { password: _p, refreshToken: _rt, ...userWithoutSensitiveData } = updated[0];
-
-        return successResponse({
-            message: "Profil mis à jour avec succès",
-            user: userWithoutSensitiveData
-        });
-    } catch (error: unknown) {
-        console.error('Update profile error:', error);
-        if (error instanceof z.ZodError) {
-            return ApiErrors.validationError('Validation failed', undefined, error.issues);
-        }
-        return ApiErrors.serverError();
+    if (!authPayload) {
+      return ApiErrors.unauthorized();
     }
+
+    const body = await request.json();
+    const validatedData = updateProfileSchema.parse(body);
+
+    // Check if email is being updated and if it's already taken
+    if (validatedData.email) {
+      const existingUser = await db.query.users.findFirst({
+        where: eq(users.email, validatedData.email),
+      });
+
+      if (existingUser && existingUser.id !== authPayload.userId) {
+        return ApiErrors.conflict(
+          "email",
+          "Cet email est déjà utilisé par un autre compte"
+        );
+      }
+    }
+
+    const updated = await db
+      .update(users)
+      .set(validatedData)
+      .where(eq(users.id, authPayload.userId))
+      .returning();
+
+    if (updated.length === 0) {
+      return ApiErrors.notFound("Utilisateur");
+    }
+
+    /* eslint-disable @typescript-eslint/no-unused-vars */
+    const {
+      password: _p,
+      refreshToken: _rt,
+      ...userWithoutSensitiveData
+    } = updated[0];
+    /* eslint-enable @typescript-eslint/no-unused-vars */
+
+    return successResponse({
+      message: "Profil mis à jour avec succès",
+      user: userWithoutSensitiveData,
+    });
+  } catch (error: unknown) {
+    console.error("Update profile error:", error);
+    if (error instanceof z.ZodError) {
+      return ApiErrors.validationError(
+        "Validation failed",
+        undefined,
+        error.issues
+      );
+    }
+    return ApiErrors.serverError();
+  }
 }

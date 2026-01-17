@@ -1,7 +1,7 @@
-import { db } from '@/lib/db';
-import { reservations } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import { successResponse, ApiErrors } from '@/lib/api-response';
+import { db } from "@/lib/db";
+import { reservations } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import { successResponse, ApiErrors } from "@/lib/api-response";
 
 /**
  * @openapi
@@ -34,30 +34,30 @@ import { successResponse, ApiErrors } from '@/lib/api-response';
  */
 
 export async function GET(
-    request: Request,
-    { params }: { params: { id: string } }
+  request: Request,
+  { params }: { params: { id: string } }
 ) {
-    try {
-        const history = await db.query.reservations.findMany({
-            where: eq(reservations.etudiantId, params.id),
-            with: {
-                trajet: {
-                    with: {
-                        conducteur: {
-                            columns: {
-                                password: false,
-                                refreshToken: false,
-                            }
-                        }
-                    }
-                },
+  try {
+    const history = await db.query.reservations.findMany({
+      where: eq(reservations.etudiantId, params.id),
+      with: {
+        trajet: {
+          with: {
+            conducteur: {
+              columns: {
+                password: false,
+                refreshToken: false,
+              },
             },
-            orderBy: (reservations, { desc }) => [desc(reservations.createdAt)],
-        });
+          },
+        },
+      },
+      orderBy: (reservations, { desc }) => [desc(reservations.createdAt)],
+    });
 
-        return successResponse(history);
-    } catch (error) {
-        console.error('Error fetching passenger history:', error);
-        return ApiErrors.serverError();
-    }
+    return successResponse(history);
+  } catch (error) {
+    console.error("Error fetching passenger history:", error);
+    return ApiErrors.serverError();
+  }
 }

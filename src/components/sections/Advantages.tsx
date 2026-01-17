@@ -7,53 +7,64 @@ import { motion } from "framer-motion";
 const advantages = [
   {
     title: "Rapidité",
-    description: "Trouvez un dépanneur étudiant directement sur le campus en moins de 10 minutes.",
+    description:
+      "Trouvez un dépanneur étudiant directement sur le campus en moins de 10 minutes.",
     icon: Clock,
   },
   {
     title: "Confiance",
-    description: "Tous les membres sont des étudiants vérifiés de l&apos;Université de Lomé.",
+    description:
+      "Tous les membres sont des étudiants vérifiés de l&apos;Université de Lomé.",
     icon: Shield,
   },
   {
     title: "Économie",
-    description: "Évitez les frais de remorquage et de mécanique coûteux grâce à l&apos;entraide.",
+    description:
+      "Évitez les frais de remorquage et de mécanique coûteux grâce à l&apos;entraide.",
     icon: Wallet,
   },
   {
     title: "Communauté",
-    description: "Rejoignez un réseau de passionnés de moto et partagez vos expériences.",
+    description:
+      "Rejoignez un réseau de passionnés de moto et partagez vos expériences.",
     icon: Users,
   },
 ];
 
 export function Advantages() {
   return (
-    <section className="py-24 bg-surface/50">
+    <section className="bg-surface/50 py-24">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">Pourquoi Miyi Ðekae ?</h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
-            Une solution pensée par des étudiants, pour les étudiants de l&apos;UL.
+        <div className="mb-16 text-center">
+          <h2 className="mb-4 text-3xl font-bold tracking-tight sm:text-4xl">
+            Pourquoi Miyi Ðekae ?
+          </h2>
+          <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
+            Une solution pensée par des étudiants, pour les étudiants de
+            l&apos;UL.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {advantages.map((adv, index) => (
             <motion.div
               key={index}
               whileHover={{ y: -5 }}
               transition={{ duration: 0.2 }}
             >
-              <Card className="border-none shadow-lg bg-card hover:bg-accent/5 transition-colors h-full">
+              <Card className="bg-card hover:bg-accent/5 h-full border-none shadow-lg transition-colors">
                 <CardHeader>
-                  <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 transition-transform group-hover:scale-110">
-                    <adv.icon className="h-6 w-6 text-primary" />
+                  <div className="bg-primary/10 mb-4 flex h-12 w-12 items-center justify-center rounded-xl transition-transform group-hover:scale-110">
+                    <adv.icon className="text-primary h-6 w-6" />
                   </div>
-                  <CardTitle className="text-xl font-bold">{adv.title}</CardTitle>
+                  <CardTitle className="text-xl font-bold">
+                    {adv.title}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground leading-relaxed">{adv.description}</p>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {adv.description}
+                  </p>
                 </CardContent>
               </Card>
             </motion.div>

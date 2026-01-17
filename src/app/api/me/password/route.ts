@@ -1,11 +1,11 @@
-import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import { authenticateRequest, comparePassword, hashPassword } from '@/lib/auth';
-import { successResponse, ApiErrors } from '@/lib/api-response';
-import { updatePasswordSchema } from '@/lib/validation';
+import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import { authenticateRequest, comparePassword, hashPassword } from "@/lib/auth";
+import { successResponse, ApiErrors } from "@/lib/api-response";
+import { updatePasswordSchema } from "@/lib/validation";
 
 /**
  * @openapi
@@ -61,50 +61,57 @@ import { updatePasswordSchema } from '@/lib/validation';
  *               $ref: '#/components/schemas/ErrorResponse500'
  */
 export async function POST(request: Request) {
-    try {
-        const cookieStore = await cookies();
-        const cookieToken = cookieStore.get('token')?.value;
+  try {
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get("token")?.value;
 
-        const authPayload = await authenticateRequest(request, cookieToken);
+    const authPayload = await authenticateRequest(request, cookieToken);
 
-        if (!authPayload) {
-            return ApiErrors.unauthorized();
-        }
-
-        const body = await request.json();
-        const validatedData = updatePasswordSchema.parse(body);
-
-        // Fetch user from database to check current password
-        const user = await db.query.users.findFirst({
-            where: eq(users.id, authPayload.userId),
-        });
-
-        if (!user) {
-            return ApiErrors.notFound('Utilisateur');
-        }
-
-        // Verify current password
-        const isPasswordValid = await comparePassword(validatedData.currentPassword, user.password);
-        if (!isPasswordValid) {
-            return ApiErrors.invalidCredentials('currentPassword', 'L\'ancien mot de passe est incorrect');
-        }
-
-        // Hash new password
-        const hashedPassword = await hashPassword(validatedData.newPassword);
-
-        // Update password in database
-        await db.update(users)
-            .set({ password: hashedPassword })
-            .where(eq(users.id, authPayload.userId));
-
-        return successResponse({
-            message: "Mot de passe mis à jour avec succès"
-        });
-    } catch (error) {
-        console.error('Update password error:', error);
-        if (error instanceof Error && error.name === 'ZodError') {
-            return NextResponse.json({ error: error }, { status: 400 });
-        }
-        return ApiErrors.serverError();
+    if (!authPayload) {
+      return ApiErrors.unauthorized();
     }
+
+    const body = await request.json();
+    const validatedData = updatePasswordSchema.parse(body);
+
+    // Fetch user from database to check current password
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, authPayload.userId),
+    });
+
+    if (!user) {
+      return ApiErrors.notFound("Utilisateur");
+    }
+
+    // Verify current password
+    const isPasswordValid = await comparePassword(
+      validatedData.currentPassword,
+      user.password
+    );
+    if (!isPasswordValid) {
+      return ApiErrors.invalidCredentials(
+        "currentPassword",
+        "L'ancien mot de passe est incorrect"
+      );
+    }
+
+    // Hash new password
+    const hashedPassword = await hashPassword(validatedData.newPassword);
+
+    // Update password in database
+    await db
+      .update(users)
+      .set({ password: hashedPassword })
+      .where(eq(users.id, authPayload.userId));
+
+    return successResponse({
+      message: "Mot de passe mis à jour avec succès",
+    });
+  } catch (error) {
+    console.error("Update password error:", error);
+    if (error instanceof Error && error.name === "ZodError") {
+      return NextResponse.json({ error: error }, { status: 400 });
+    }
+    return ApiErrors.serverError();
+  }
 }

@@ -1,9 +1,9 @@
-import { db } from '@/lib/db';
-import { trajets } from '@/lib/db/schema';
-import { trajetSchema } from '@/lib/validation';
-import { eq } from 'drizzle-orm';
-import { successResponse, ApiErrors } from '@/lib/api-response';
-import { z } from 'zod';
+import { db } from "@/lib/db";
+import { trajets } from "@/lib/db/schema";
+import { trajetSchema } from "@/lib/validation";
+import { eq } from "drizzle-orm";
+import { successResponse, ApiErrors } from "@/lib/api-response";
+import { z } from "zod";
 
 /**
  * @openapi
@@ -129,83 +129,89 @@ import { z } from 'zod';
  */
 
 export async function GET(
-    _request: Request,
-    { params }: { params: { id: string } }
+  _request: Request,
+  { params }: { params: { id: string } }
 ) {
-    try {
-        const trajet = await db.query.trajets.findFirst({
-            where: eq(trajets.id, params.id),
-            with: {
-                conducteur: {
-                    columns: {
-                        password: false,
-                    },
-                },
-                departZone: true,
-                arriveeZone: true,
-                reservations: {
-                    with: {
-                        etudiant: {
-                            columns: {
-                                password: false,
-                            },
-                        },
-                    },
-                },
+  try {
+    const trajet = await db.query.trajets.findFirst({
+      where: eq(trajets.id, params.id),
+      with: {
+        conducteur: {
+          columns: {
+            password: false,
+          },
+        },
+        departZone: true,
+        arriveeZone: true,
+        reservations: {
+          with: {
+            etudiant: {
+              columns: {
+                password: false,
+              },
             },
-        });
+          },
+        },
+      },
+    });
 
-        if (!trajet) {
-            return ApiErrors.notFound('Trajet');
-        }
-
-        return successResponse(trajet);
-    } catch {
-        return ApiErrors.serverError();
+    if (!trajet) {
+      return ApiErrors.notFound("Trajet");
     }
+
+    return successResponse(trajet);
+  } catch {
+    return ApiErrors.serverError();
+  }
 }
 
 export async function PUT(
-    request: Request,
-    { params }: { params: { id: string } }
+  request: Request,
+  { params }: { params: { id: string } }
 ) {
-    try {
-        const body = await request.json();
-        const validatedData = trajetSchema.partial().parse(body);
+  try {
+    const body = await request.json();
+    const validatedData = trajetSchema.partial().parse(body);
 
-        const updated = await db.update(trajets)
-            .set(validatedData)
-            .where(eq(trajets.id, params.id))
-            .returning();
+    const updated = await db
+      .update(trajets)
+      .set(validatedData)
+      .where(eq(trajets.id, params.id))
+      .returning();
 
-        if (updated.length === 0) {
-            return ApiErrors.notFound('Trajet');
-        }
-
-        return successResponse(updated[0]);
-    } catch (error: unknown) {
-        if (error instanceof z.ZodError) {
-            return ApiErrors.validationError('Validation failed', undefined, error.issues);
-        }
-        return ApiErrors.serverError();
+    if (updated.length === 0) {
+      return ApiErrors.notFound("Trajet");
     }
+
+    return successResponse(updated[0]);
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      return ApiErrors.validationError(
+        "Validation failed",
+        undefined,
+        error.issues
+      );
+    }
+    return ApiErrors.serverError();
+  }
 }
 
 export async function DELETE(
-    _request: Request,
-    { params }: { params: { id: string } }
+  _request: Request,
+  { params }: { params: { id: string } }
 ) {
-    try {
-        const deleted = await db.delete(trajets)
-            .where(eq(trajets.id, params.id))
-            .returning();
+  try {
+    const deleted = await db
+      .delete(trajets)
+      .where(eq(trajets.id, params.id))
+      .returning();
 
-        if (deleted.length === 0) {
-            return ApiErrors.notFound('Trajet');
-        }
-
-        return successResponse({ message: 'Trajet supprimé avec succès' });
-    } catch {
-        return ApiErrors.serverError();
+    if (deleted.length === 0) {
+      return ApiErrors.notFound("Trajet");
     }
+
+    return successResponse({ message: "Trajet supprimé avec succès" });
+  } catch {
+    return ApiErrors.serverError();
+  }
 }

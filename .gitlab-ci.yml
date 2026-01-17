@@ -45,7 +45,6 @@ lint:
   dependencies:
     - install
 
-
 # Étape 2.5 : Tests unitaires
 test:
   stage: test

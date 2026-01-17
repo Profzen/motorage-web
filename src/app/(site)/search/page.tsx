@@ -1,7 +1,13 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -16,20 +22,34 @@ import {
   MessageCircle,
   MapIcon,
 } from "lucide-react";
-import { useTrajetsStore, useReservationsStore, useAuthStore, useLocationStore, useNotificationsStore } from "@/lib/store";
+import {
+  useTrajetsStore,
+  useReservationsStore,
+  useAuthStore,
+  useLocationStore,
+  useNotificationsStore,
+} from "@/lib/store";
 import { useState, useMemo } from "react";
 import dynamic from "next/dynamic";
-const MapView = dynamic(() => import("@/components/sections/MapView").then(m => m.MapView), { ssr: false });
+const MapView = dynamic(
+  () => import("@/components/sections/MapView").then((m) => m.MapView),
+  { ssr: false }
+);
 import { RequestModal } from "@/components/ui/request-modal";
 
 const toRad = (deg: number) => (deg * Math.PI) / 180;
-const distanceKm = (a: { lat: number; lng: number }, b: { lat: number; lng: number }) => {
+const distanceKm = (
+  a: { lat: number; lng: number },
+  b: { lat: number; lng: number }
+) => {
   const R = 6371;
   const dLat = toRad(b.lat - a.lat);
   const dLon = toRad(b.lng - a.lng);
   const la1 = toRad(a.lat);
   const la2 = toRad(b.lat);
-  const aHarv = Math.sin(dLat / 2) ** 2 + Math.sin(dLon / 2) ** 2 * Math.cos(la1) * Math.cos(la2);
+  const aHarv =
+    Math.sin(dLat / 2) ** 2 +
+    Math.sin(dLon / 2) ** 2 * Math.cos(la1) * Math.cos(la2);
   return 2 * R * Math.atan2(Math.sqrt(aHarv), Math.sqrt(1 - aHarv));
 };
 
@@ -44,12 +64,19 @@ export default function SearchPage() {
   const [arrival, setArrival] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [radiusKm, setRadiusKm] = useState("10");
-  const [selectedTrajet, setSelectedTrajet] = useState<(typeof trajets)[0] | null>(null);
+  const [selectedTrajet, setSelectedTrajet] = useState<
+    (typeof trajets)[0] | null
+  >(null);
   const [showDetails, setShowDetails] = useState(false);
-  const [flash, setFlash] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [flash, setFlash] = useState<{
+    text: string;
+    type: "success" | "error";
+  } | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const addReservation = useReservationsStore((state) => state.addReservation);
-  const addNotification = useNotificationsStore((state) => state.addNotification);
+  const addNotification = useNotificationsStore(
+    (state) => state.addNotification
+  );
 
   const filteredTrajets = useMemo(() => {
     let filtered = trajets;
@@ -67,14 +94,21 @@ export default function SearchPage() {
     }
 
     if (selectedDate) {
-      filtered = filtered.filter((t) => t.dateHeure.split('T')[0] === selectedDate);
+      filtered = filtered.filter(
+        (t) => t.dateHeure.split("T")[0] === selectedDate
+      );
     }
 
     const radiusValue = parseInt(radiusKm || "0", 10);
     if (userLocation && radiusValue > 0) {
       filtered = filtered.filter((t) => {
         if (!t.departureLat || !t.departureLng) return true;
-        return distanceKm({ lat: t.departureLat, lng: t.departureLng }, userLocation) <= radiusValue;
+        return (
+          distanceKm(
+            { lat: t.departureLat, lng: t.departureLng },
+            userLocation
+          ) <= radiusValue
+        );
       });
     }
 
@@ -106,8 +140,8 @@ export default function SearchPage() {
     addNotification({
       userId: selectedTrajet.conducteurId,
       titre: "Nouvelle réservation",
-      message: `${user?.prenom || 'Un étudiant'} souhaite rejoindre votre trajet ${selectedTrajet.pointDepart} → ${selectedTrajet.destination}`,
-      type: "info"
+      message: `${user?.prenom || "Un étudiant"} souhaite rejoindre votre trajet ${selectedTrajet.pointDepart} → ${selectedTrajet.destination}`,
+      type: "info",
     });
 
     setModalOpen(false);
@@ -118,26 +152,36 @@ export default function SearchPage() {
 
   const nearestTrajetsWithDistance = userLocation
     ? trajets
-      .map((t) => ({
-        trajet: t,
-        distance: t.departureLat ? distanceKm({ lat: t.departureLat, lng: t.departureLng! }, userLocation) : 9999,
-      }))
-      .sort((a, b) => a.distance - b.distance)
+        .map((t) => ({
+          trajet: t,
+          distance: t.departureLat
+            ? distanceKm(
+                { lat: t.departureLat, lng: t.departureLng! },
+                userLocation
+              )
+            : 9999,
+        }))
+        .sort((a, b) => a.distance - b.distance)
     : [];
 
-  const closestTrajets = nearestTrajetsWithDistance.slice(0, 3).map((item) => item.trajet);
+  const closestTrajets = nearestTrajetsWithDistance
+    .slice(0, 3)
+    .map((item) => item.trajet);
   const displayTrajetsMap = userLocation
-    ? Array.from(new Map([...filteredTrajets, ...closestTrajets].map((t) => [t.id, t]))).map(([, t]) => t)
+    ? Array.from(
+        new Map([...filteredTrajets, ...closestTrajets].map((t) => [t.id, t]))
+      ).map(([, t]) => t)
     : filteredTrajets;
 
   return (
     <div className="container mx-auto px-4 py-20 md:py-32">
       {flash && (
         <div
-          className={`mb-4 p-3 rounded-lg border text-sm ${flash.type === "success"
-              ? "bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-100"
-              : "bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-100"
-            }`}
+          className={`mb-4 rounded-lg border p-3 text-sm ${
+            flash.type === "success"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-100"
+              : "border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-900/20 dark:text-red-100"
+          }`}
         >
           {flash.text}
         </div>
@@ -145,7 +189,7 @@ export default function SearchPage() {
       <div className="space-y-8">
         {/* Search Section */}
         <div>
-          <h1 className="text-4xl font-bold mb-2">Chercher un trajet</h1>
+          <h1 className="mb-2 text-4xl font-bold">Chercher un trajet</h1>
           <p className="text-muted-foreground">
             Trouvez un motocycliste pour vous accompagner
           </p>
@@ -157,12 +201,12 @@ export default function SearchPage() {
             <CardTitle className="text-lg">Filtres de recherche</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
               {/* Departure */}
               <div className="space-y-2">
                 <Label htmlFor="departure">Départ</Label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <MapPin className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                   <Input
                     id="departure"
                     placeholder="Ex: Campus"
@@ -177,7 +221,7 @@ export default function SearchPage() {
               <div className="space-y-2">
                 <Label htmlFor="arrival">Destination</Label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <MapPin className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                   <Input
                     id="arrival"
                     placeholder="Ex: Centre-ville"
@@ -192,7 +236,7 @@ export default function SearchPage() {
               <div className="space-y-2">
                 <Label htmlFor="date">Date</Label>
                 <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Calendar className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                   <Input
                     id="date"
                     type="date"
@@ -240,11 +284,11 @@ export default function SearchPage() {
                 </Button>
               </div>
             </div>
-            <div className="flex flex-col gap-2 mt-3 text-xs">
+            <div className="mt-3 flex flex-col gap-2 text-xs">
               {locationStatus === "denied" && (
                 <div className="text-red-600">
-                  Accès à la localisation refusé : certains trajets peuvent ne pas
-                  apparaître.
+                  Accès à la localisation refusé : certains trajets peuvent ne
+                  pas apparaître.
                 </div>
               )}
               {locationStatus === "error" && (
@@ -257,13 +301,15 @@ export default function SearchPage() {
                   Filtré autour de votre position (~{radiusKm} km).
                 </div>
               )}
-              <div className="flex gap-2 items-center">
+              <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" onClick={requestLocation}>
                   {locationStatus === "prompting"
                     ? "Localisation en cours..."
                     : "Mettre à jour ma position"}
                 </Button>
-                <span className="text-muted-foreground">Statut : {locationStatus}</span>
+                <span className="text-muted-foreground">
+                  Statut : {locationStatus}
+                </span>
               </div>
             </div>
           </CardContent>
@@ -273,7 +319,9 @@ export default function SearchPage() {
         <Card className="border-0 shadow-lg">
           <CardHeader>
             <CardTitle className="text-lg">Carte des trajets</CardTitle>
-            <CardDescription>Visualisez les départs des trajets filtrés</CardDescription>
+            <CardDescription>
+              Visualisez les départs des trajets filtrés
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <MapView
@@ -299,9 +347,9 @@ export default function SearchPage() {
         </Card>
 
         {/* Results */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {/* Results List */}
-          <div className="md:col-span-2 space-y-4">
+          <div className="space-y-4 md:col-span-2">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold">
                 Trajets disponibles ({filteredTrajets.length})
@@ -311,7 +359,7 @@ export default function SearchPage() {
             {filteredTrajets.length === 0 ? (
               <Card className="border-0 shadow-sm">
                 <CardContent className="pt-8 pb-8 text-center">
-                  <MapIcon className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
+                  <MapIcon className="text-muted-foreground mx-auto mb-3 h-12 w-12 opacity-50" />
                   <p className="text-muted-foreground mb-4">
                     Aucun trajet ne correspond à votre recherche
                   </p>
@@ -331,7 +379,7 @@ export default function SearchPage() {
               filteredTrajets.map((trajet) => (
                 <Card
                   key={trajet.id}
-                  className="border-0 shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
+                  className="cursor-pointer border-0 shadow-lg transition-shadow hover:shadow-xl"
                   onClick={() => handleViewDetails(trajet)}
                 >
                   <CardContent className="pt-6">
@@ -339,16 +387,26 @@ export default function SearchPage() {
                       {/* Trajet Info */}
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <p className="text-xl font-bold">{trajet.pointDepart}</p>
+                          <div className="mb-2 flex items-center gap-2">
+                            <p className="text-xl font-bold">
+                              {trajet.pointDepart}
+                            </p>
                             <span className="text-muted-foreground">→</span>
-                            <p className="text-xl font-bold">{trajet.destination}</p>
+                            <p className="text-xl font-bold">
+                              {trajet.destination}
+                            </p>
                           </div>
-                          <p className="text-sm text-muted-foreground">Trajet régulier</p>
+                          <p className="text-muted-foreground text-sm">
+                            Trajet régulier
+                          </p>
                         </div>
                         <div className="text-right">
-                          <p className="text-2xl font-bold text-primary">500 XOF</p>
-                          <p className="text-xs text-muted-foreground">par passager</p>
+                          <p className="text-primary text-2xl font-bold">
+                            500 XOF
+                          </p>
+                          <p className="text-muted-foreground text-xs">
+                            par passager
+                          </p>
                         </div>
                       </div>
 
@@ -356,33 +414,38 @@ export default function SearchPage() {
                       <div className="border-t pt-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                              <Users className="h-5 w-5 text-primary" />
+                            <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
+                              <Users className="text-primary h-5 w-5" />
                             </div>
                             <div>
                               <p className="font-medium">
-                                {trajet.conducteur.prenom} {trajet.conducteur.nom}
+                                {trajet.conducteur.prenom}{" "}
+                                {trajet.conducteur.nom}
                               </p>
                               <div className="flex items-center gap-1">
                                 <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                                 <span className="text-xs font-medium">5.0</span>
-                                <span className="text-xs text-muted-foreground">
+                                <span className="text-muted-foreground text-xs">
                                   (12 avis)
                                 </span>
                               </div>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">{trajet.dateHeure}</span>
+                            <Clock className="text-muted-foreground h-4 w-4" />
+                            <span className="text-sm font-medium">
+                              {trajet.dateHeure}
+                            </span>
                           </div>
                         </div>
                       </div>
 
                       {/* Seats Info */}
                       <div className="flex items-center gap-2 text-sm">
-                        <Bike className="h-4 w-4 text-muted-foreground" />
-                        <span>{trajet.placesDisponibles} places disponible(s)</span>
+                        <Bike className="text-muted-foreground h-4 w-4" />
+                        <span>
+                          {trajet.placesDisponibles} places disponible(s)
+                        </span>
                       </div>
 
                       {/* Action Button */}
@@ -409,7 +472,9 @@ export default function SearchPage() {
             {userLocation && nearestTrajetsWithDistance.length > 0 && (
               <Card className="border-0 shadow-sm">
                 <CardHeader>
-                  <CardTitle className="text-base">Les plus proches de vous</CardTitle>
+                  <CardTitle className="text-base">
+                    Les plus proches de vous
+                  </CardTitle>
                   <CardDescription>
                     Top 3 des départs autour de votre position
                   </CardDescription>
@@ -430,7 +495,10 @@ export default function SearchPage() {
                             {distance.toFixed(1)} km
                           </p>
                         </div>
-                        <Button size="sm" onClick={() => handleRequestRide(trajet)}>
+                        <Button
+                          size="sm"
+                          onClick={() => handleRequestRide(trajet)}
+                        >
                           Choisir
                         </Button>
                       </div>
@@ -451,28 +519,42 @@ export default function SearchPage() {
                   <CardContent className="space-y-4">
                     <div className="space-y-3">
                       <div>
-                        <p className="text-xs text-muted-foreground">DÉPART</p>
-                        <p className="font-medium">{selectedTrajet.pointDepart}</p>
+                        <p className="text-muted-foreground text-xs">DÉPART</p>
+                        <p className="font-medium">
+                          {selectedTrajet.pointDepart}
+                        </p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">DESTINATION</p>
-                        <p className="font-medium">{selectedTrajet.destination}</p>
+                        <p className="text-muted-foreground text-xs">
+                          DESTINATION
+                        </p>
+                        <p className="font-medium">
+                          {selectedTrajet.destination}
+                        </p>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <p className="text-xs text-muted-foreground">HEURE</p>
-                          <p className="font-medium">{selectedTrajet.dateHeure}</p>
+                          <p className="text-muted-foreground text-xs">HEURE</p>
+                          <p className="font-medium">
+                            {selectedTrajet.dateHeure}
+                          </p>
                         </div>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">FRÉQUENCE</p>
+                        <p className="text-muted-foreground text-xs">
+                          FRÉQUENCE
+                        </p>
                         <p className="text-sm">Du lundi au vendredi</p>
                       </div>
                     </div>
 
                     <div className="border-t pt-4">
-                      <p className="text-2xl font-bold text-primary mb-2">500 XOF</p>
-                      <p className="text-xs text-muted-foreground">par passager</p>
+                      <p className="text-primary mb-2 text-2xl font-bold">
+                        500 XOF
+                      </p>
+                      <p className="text-muted-foreground text-xs">
+                        par passager
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
@@ -483,8 +565,8 @@ export default function SearchPage() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center gap-3">
-                      <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Users className="h-6 w-6 text-primary" />
+                      <div className="bg-primary/10 flex h-12 w-12 items-center justify-center rounded-full">
+                        <Users className="text-primary h-6 w-6" />
                       </div>
                       <div>
                         <p className="font-medium">
@@ -494,17 +576,27 @@ export default function SearchPage() {
                         <div className="flex items-center gap-1">
                           <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                           <span className="text-sm font-medium">5.0</span>
-                          <span className="text-sm text-muted-foreground">(12 avis)</span>
+                          <span className="text-muted-foreground text-sm">
+                            (12 avis)
+                          </span>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex gap-2">
-                      <Button variant="outline" className="flex-1 gap-2" size="sm">
+                      <Button
+                        variant="outline"
+                        className="flex-1 gap-2"
+                        size="sm"
+                      >
                         <MessageCircle className="h-4 w-4" />
                         Message
                       </Button>
-                      <Button variant="outline" className="flex-1 gap-2" size="sm">
+                      <Button
+                        variant="outline"
+                        className="flex-1 gap-2"
+                        size="sm"
+                      >
                         <Phone className="h-4 w-4" />
                         Appeler
                       </Button>
@@ -522,8 +614,8 @@ export default function SearchPage() {
             ) : (
               <Card className="border-0 shadow-sm">
                 <CardContent className="pt-8 pb-8 text-center">
-                  <MapIcon className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
-                  <p className="text-sm text-muted-foreground">
+                  <MapIcon className="text-muted-foreground mx-auto mb-3 h-12 w-12 opacity-50" />
+                  <p className="text-muted-foreground text-sm">
                     Sélectionnez un trajet pour voir les détails
                   </p>
                 </CardContent>

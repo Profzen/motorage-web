@@ -1,15 +1,15 @@
-import { db } from '@/lib/db';
-import { reports } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import { successResponse, ApiErrors } from '@/lib/api-response';
-import { authenticateRequest } from '@/lib/auth';
-import { createNotification } from '@/lib/notifications';
-import { cookies } from 'next/headers';
-import { z } from 'zod';
+import { db } from "@/lib/db";
+import { reports } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import { successResponse, ApiErrors } from "@/lib/api-response";
+import { authenticateRequest } from "@/lib/auth";
+import { createNotification } from "@/lib/notifications";
+import { cookies } from "next/headers";
+import { z } from "zod";
 
 const updateReportSchema = z.object({
-    statut: z.enum(['en_cours', 'resolu', 'rejete']),
-    commentaireAdmin: z.string().optional(),
+  statut: z.enum(["en_cours", "resolu", "rejete"]),
+  commentaireAdmin: z.string().optional(),
 });
 
 /**
@@ -41,49 +41,51 @@ const updateReportSchema = z.object({
  *         description: Signalement mis à jour
  */
 export async function PATCH(
-    request: Request,
-    { params }: { params: { id: string } }
+  request: Request,
+  { params }: { params: { id: string } }
 ) {
-    try {
-        const cookieStore = await cookies();
-        const cookieToken = cookieStore.get('token')?.value;
-        const authPayload = await authenticateRequest(request, cookieToken);
+  try {
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get("token")?.value;
+    const authPayload = await authenticateRequest(request, cookieToken);
 
-        if (!authPayload || authPayload.role !== 'administrateur') {
-            return ApiErrors.unauthorized('Accès réservé aux administrateurs');
-        }
-
-        const body = await request.json();
-        const { statut, commentaireAdmin } = updateReportSchema.parse(body);
-        const { id } = await params;
-
-        const report = await db.query.reports.findFirst({
-            where: eq(reports.id, id),
-        });
-
-        if (!report) return ApiErrors.notFound('Signalement');
-
-        await db.update(reports)
-            .set({ 
-                statut, 
-                commentaireAdmin, 
-                updatedAt: new Date().toISOString() 
-            })
-            .where(eq(reports.id, id));
-
-        // Notify the reporter
-        await createNotification({
-            userId: report.reporterId,
-            type: 'system',
-            title: 'Signalement mis à jour',
-            message: `Votre signalement "${report.titre}" est désormais : ${statut}.`,
-            data: { reportId: id }
-        });
-
-        return successResponse({ message: 'Signalement traité avec succès' });
-    } catch (error) {
-        if (error instanceof z.ZodError) return ApiErrors.badRequest(error.issues[0].message);
-        console.error('Update report error:', error);
-        return ApiErrors.serverError();
+    if (!authPayload || authPayload.role !== "administrateur") {
+      return ApiErrors.unauthorized("Accès réservé aux administrateurs");
     }
+
+    const body = await request.json();
+    const { statut, commentaireAdmin } = updateReportSchema.parse(body);
+    const { id } = await params;
+
+    const report = await db.query.reports.findFirst({
+      where: eq(reports.id, id),
+    });
+
+    if (!report) return ApiErrors.notFound("Signalement");
+
+    await db
+      .update(reports)
+      .set({
+        statut,
+        commentaireAdmin,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(reports.id, id));
+
+    // Notify the reporter
+    await createNotification({
+      userId: report.reporterId,
+      type: "system",
+      title: "Signalement mis à jour",
+      message: `Votre signalement "${report.titre}" est désormais : ${statut}.`,
+      data: { reportId: id },
+    });
+
+    return successResponse({ message: "Signalement traité avec succès" });
+  } catch (error) {
+    if (error instanceof z.ZodError)
+      return ApiErrors.badRequest(error.issues[0].message);
+    console.error("Update report error:", error);
+    return ApiErrors.serverError();
+  }
 }

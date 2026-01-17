@@ -1,9 +1,14 @@
-import { db } from '@/lib/db';
-import { trajets } from '@/lib/db/schema';
-import { sql } from 'drizzle-orm';
-import { trajetSchema } from '@/lib/validation';
-import { successResponse, paginatedResponse, ApiErrors, parsePaginationParams } from '@/lib/api-response';
-import { z } from 'zod';
+import { db } from "@/lib/db";
+import { trajets } from "@/lib/db/schema";
+import { sql } from "drizzle-orm";
+import { trajetSchema } from "@/lib/validation";
+import {
+  successResponse,
+  paginatedResponse,
+  ApiErrors,
+  parsePaginationParams,
+} from "@/lib/api-response";
+import { z } from "zod";
 
 /**
  * @openapi
@@ -80,15 +85,16 @@ export async function GET(request: Request) {
     const { page, limit } = parsePaginationParams(searchParams);
     const offset = (page - 1) * limit;
 
-    const from = searchParams.get('from');
-    const to = searchParams.get('to');
-    const departZoneId = searchParams.get('departZoneId');
-    const arriveeZoneId = searchParams.get('arriveeZoneId');
-    const conducteurId = searchParams.get('conducteurId');
-    const statut = searchParams.get('statut');
+    const from = searchParams.get("from");
+    const to = searchParams.get("to");
+    const departZoneId = searchParams.get("departZoneId");
+    const arriveeZoneId = searchParams.get("arriveeZoneId");
+    const conducteurId = searchParams.get("conducteurId");
+    const statut = searchParams.get("statut");
 
     // Get total count
-    const countResult = await db.select({ count: sql<number>`count(*)` })
+    const countResult = await db
+      .select({ count: sql<number>`count(*)` })
       .from(trajets)
       .where((t, { and, eq, like }) => {
         const conditions = [];
@@ -131,7 +137,7 @@ export async function GET(request: Request) {
 
     return paginatedResponse(data, page, limit, total);
   } catch (error) {
-    console.error('Error fetching trajets:', error);
+    console.error("Error fetching trajets:", error);
     return ApiErrors.serverError();
   }
 }
@@ -218,27 +224,34 @@ export async function POST(request: Request) {
     const body = await request.json();
     const validatedData = trajetSchema.parse(body);
 
-    const newTrajet = await db.insert(trajets).values({
-      conducteurId: validatedData.conducteurId,
-      pointDepart: validatedData.pointDepart,
-      destination: validatedData.destination,
-      departZoneId: validatedData.departZoneId,
-      arriveeZoneId: validatedData.arriveeZoneId,
-      dateHeure: validatedData.dateHeure,
-      placesDisponibles: validatedData.placesDisponibles,
-      departureLat: validatedData.departureLat,
-      departureLng: validatedData.departureLng,
-      arrivalLat: validatedData.arrivalLat,
-      arrivalLng: validatedData.arrivalLng,
-      statut: validatedData.statut || 'ouvert',
-    }).returning();
+    const newTrajet = await db
+      .insert(trajets)
+      .values({
+        conducteurId: validatedData.conducteurId,
+        pointDepart: validatedData.pointDepart,
+        destination: validatedData.destination,
+        departZoneId: validatedData.departZoneId,
+        arriveeZoneId: validatedData.arriveeZoneId,
+        dateHeure: validatedData.dateHeure,
+        placesDisponibles: validatedData.placesDisponibles,
+        departureLat: validatedData.departureLat,
+        departureLng: validatedData.departureLng,
+        arrivalLat: validatedData.arrivalLat,
+        arrivalLng: validatedData.arrivalLng,
+        statut: validatedData.statut || "ouvert",
+      })
+      .returning();
 
     return successResponse(newTrajet[0], undefined, 201);
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
-      return ApiErrors.validationError('Validation failed', undefined, error.issues);
+      return ApiErrors.validationError(
+        "Validation failed",
+        undefined,
+        error.issues
+      );
     }
-    console.error('Error creating trajet:', error);
+    console.error("Error creating trajet:", error);
     return ApiErrors.serverError();
   }
 }

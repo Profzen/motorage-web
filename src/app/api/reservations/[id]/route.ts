@@ -1,9 +1,9 @@
-import { db } from '@/lib/db';
-import { reservations, trajets } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import { reservationSchema } from '@/lib/validation';
-import { successResponse, ApiErrors } from '@/lib/api-response';
-import { z } from 'zod';
+import { db } from "@/lib/db";
+import { reservations, trajets } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import { reservationSchema } from "@/lib/validation";
+import { successResponse, ApiErrors } from "@/lib/api-response";
+import { z } from "zod";
 
 /**
  * @openapi
@@ -86,96 +86,114 @@ import { z } from 'zod';
  */
 
 export async function PATCH(
-    request: Request,
-    { params }: { params: { id: string } }
+  request: Request,
+  { params }: { params: { id: string } }
 ) {
-    try {
-        const body = await request.json();
-        const { statut } = reservationSchema.partial().parse(body);
+  try {
+    const body = await request.json();
+    const { statut } = reservationSchema.partial().parse(body);
 
-        if (!statut) {
-            return ApiErrors.validationError('Statut is required', 'statut');
-        }
-
-        const result = await db.transaction(async (tx) => {
-            const reservation = await tx.query.reservations.findFirst({
-                where: eq(reservations.id, params.id),
-                with: {
-                    trajet: true,
-                }
-            });
-
-            if (!reservation) {
-                return { error: ApiErrors.notFound('Réservation') };
-            }
-
-            // Logic for confirming: decrement placesDisponibles
-            if (statut === 'confirmé' && reservation.statut !== 'confirmé') {
-                if (reservation.trajet.placesDisponibles <= 0) {
-                    return { error: ApiErrors.validationError('Plus de places disponibles', undefined) };
-                }
-
-                // Update trajet places
-                await tx.update(trajets)
-                    .set({ placesDisponibles: reservation.trajet.placesDisponibles - 1 })
-                    .where(eq(trajets.id, reservation.trajetId));
-            }
-
-            // Logic for cancelling/refusing after confirmation: increment placesDisponibles
-            if ((statut === 'refusé' || statut === 'annulé') && reservation.statut === 'confirmé') {
-                await tx.update(trajets)
-                    .set({ placesDisponibles: reservation.trajet.placesDisponibles + 1 })
-                    .where(eq(trajets.id, reservation.trajetId));
-            }
-
-            const updated = await tx.update(reservations)
-                .set({ statut })
-                .where(eq(reservations.id, params.id))
-                .returning();
-
-            return { data: updated[0] };
-        });
-
-        if (result.error) {
-            return result.error;
-        }
-
-        return successResponse(result.data);
-    } catch (error: unknown) {
-        if (error instanceof z.ZodError) {
-            return ApiErrors.validationError('Validation failed', undefined, error.issues);
-        }
-        console.error('Error updating reservation:', error);
-        return ApiErrors.serverError();
+    if (!statut) {
+      return ApiErrors.validationError("Statut is required", "statut");
     }
+
+    const result = await db.transaction(async (tx) => {
+      const reservation = await tx.query.reservations.findFirst({
+        where: eq(reservations.id, params.id),
+        with: {
+          trajet: true,
+        },
+      });
+
+      if (!reservation) {
+        return { error: ApiErrors.notFound("Réservation") };
+      }
+
+      // Logic for confirming: decrement placesDisponibles
+      if (statut === "confirmé" && reservation.statut !== "confirmé") {
+        if (reservation.trajet.placesDisponibles <= 0) {
+          return {
+            error: ApiErrors.validationError(
+              "Plus de places disponibles",
+              undefined
+            ),
+          };
+        }
+
+        // Update trajet places
+        await tx
+          .update(trajets)
+          .set({ placesDisponibles: reservation.trajet.placesDisponibles - 1 })
+          .where(eq(trajets.id, reservation.trajetId));
+      }
+
+      // Logic for cancelling/refusing after confirmation: increment placesDisponibles
+      if (
+        (statut === "refusé" || statut === "annulé") &&
+        reservation.statut === "confirmé"
+      ) {
+        await tx
+          .update(trajets)
+          .set({ placesDisponibles: reservation.trajet.placesDisponibles + 1 })
+          .where(eq(trajets.id, reservation.trajetId));
+      }
+
+      const updated = await tx
+        .update(reservations)
+        .set({ statut })
+        .where(eq(reservations.id, params.id))
+        .returning();
+
+      return { data: updated[0] };
+    });
+
+    if (result.error) {
+      return result.error;
+    }
+
+    return successResponse(result.data);
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      return ApiErrors.validationError(
+        "Validation failed",
+        undefined,
+        error.issues
+      );
+    }
+    console.error("Error updating reservation:", error);
+    return ApiErrors.serverError();
+  }
 }
 
 export async function DELETE(
-    request: Request,
-    { params }: { params: { id: string } }
+  request: Request,
+  { params }: { params: { id: string } }
 ) {
-    try {
-        await db.transaction(async (tx) => {
-            const reservation = await tx.query.reservations.findFirst({
-                where: eq(reservations.id, params.id),
-            });
+  try {
+    await db.transaction(async (tx) => {
+      const reservation = await tx.query.reservations.findFirst({
+        where: eq(reservations.id, params.id),
+      });
 
-            if (reservation?.statut === 'confirmé') {
-                // Re-increment places if it was confirmed
-                const trajet = await tx.query.trajets.findFirst({ where: eq(trajets.id, reservation.trajetId) });
-                if (trajet) {
-                    await tx.update(trajets)
-                        .set({ placesDisponibles: trajet.placesDisponibles + 1 })
-                        .where(eq(trajets.id, trajet.id));
-                }
-            }
-
-            await tx.delete(reservations).where(eq(reservations.id, params.id));
+      if (reservation?.statut === "confirmé") {
+        // Re-increment places if it was confirmed
+        const trajet = await tx.query.trajets.findFirst({
+          where: eq(trajets.id, reservation.trajetId),
         });
+        if (trajet) {
+          await tx
+            .update(trajets)
+            .set({ placesDisponibles: trajet.placesDisponibles + 1 })
+            .where(eq(trajets.id, trajet.id));
+        }
+      }
 
-        return successResponse({ message: 'Réservation annulée' });
-    } catch (error) {
-        console.error('Error deleting reservation:', error);
-        return ApiErrors.serverError();
-    }
+      await tx.delete(reservations).where(eq(reservations.id, params.id));
+    });
+
+    return successResponse({ message: "Réservation annulée" });
+  } catch (error) {
+    console.error("Error deleting reservation:", error);
+    return ApiErrors.serverError();
+  }
 }
