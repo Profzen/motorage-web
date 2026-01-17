@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { zones } from '@/lib/db/schema';
-import { zoneSchema } from '@/lib/validation';
-import { eq } from 'drizzle-orm';
+import { db } from "@/lib/db";
+import { zones } from "@/lib/db/schema";
+import { zoneSchema } from "@/lib/validation";
+import { eq } from "drizzle-orm";
+import { successResponse, ApiErrors } from "@/lib/api-response";
+import { z } from "zod";
 
 /**
  * @openapi
@@ -20,8 +21,22 @@ import { eq } from 'drizzle-orm';
  *     responses:
  *       200:
  *         description: Détails de la zone
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ZoneResponse'
  *       404:
  *         description: Zone non trouvée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse404'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
  *   patch:
  *     tags:
  *       - Zones
@@ -46,10 +61,30 @@ import { eq } from 'drizzle-orm';
  *     responses:
  *       200:
  *         description: Zone mise à jour
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ZoneResponse'
  *       400:
  *         description: Données invalides
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse400'
+ *       404:
+ *         description: Zone non trouvée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse404'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
  *   delete:
  *     tags:
  *       - Zones
@@ -63,70 +98,92 @@ import { eq } from 'drizzle-orm';
  *     responses:
  *       200:
  *         description: Zone supprimée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       404:
+ *         description: Zone non trouvée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse404'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
  */
 
 export async function GET(
-    request: Request,
-    { params }: { params: { id: string } }
+  request: Request,
+  { params }: { params: { id: string } }
 ) {
-    try {
-        const zone = await db.query.zones.findFirst({
-            where: eq(zones.id, params.id),
-        });
+  try {
+    const zone = await db.query.zones.findFirst({
+      where: eq(zones.id, params.id),
+    });
 
-        if (!zone) {
-            return NextResponse.json({ error: 'Zone not found' }, { status: 404 });
-        }
-
-        return NextResponse.json(zone);
-    } catch (error) {
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    if (!zone) {
+      return ApiErrors.notFound("Zone");
     }
+
+    return successResponse(zone);
+  } catch {
+    return ApiErrors.serverError();
+  }
 }
 
 export async function PATCH(
-    request: Request,
-    { params }: { params: { id: string } }
+  request: Request,
+  { params }: { params: { id: string } }
 ) {
-    try {
-        const body = await request.json();
-        const validatedData = zoneSchema.partial().parse(body);
+  try {
+    const body = await request.json();
+    const validatedData = zoneSchema.partial().parse(body);
 
-        const updated = await db.update(zones)
-            .set(validatedData)
-            .where(eq(zones.id, params.id))
-            .returning();
+    const updated = await db
+      .update(zones)
+      .set(validatedData)
+      .where(eq(zones.id, params.id))
+      .returning();
 
-        if (updated.length === 0) {
-            return NextResponse.json({ error: 'Zone not found' }, { status: 404 });
-        }
-
-        return NextResponse.json(updated[0]);
-    } catch (error: any) {
-        if (error.name === 'ZodError') {
-            return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 });
-        }
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    if (updated.length === 0) {
+      return ApiErrors.notFound("Zone");
     }
+
+    return successResponse(updated[0]);
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      return ApiErrors.validationError(
+        "Validation failed",
+        undefined,
+        error.issues
+      );
+    }
+    return ApiErrors.serverError();
+  }
 }
 
 export async function DELETE(
-    request: Request,
-    { params }: { params: { id: string } }
+  request: Request,
+  { params }: { params: { id: string } }
 ) {
-    try {
-        const deleted = await db.delete(zones)
-            .where(eq(zones.id, params.id))
-            .returning();
+  try {
+    const deleted = await db
+      .delete(zones)
+      .where(eq(zones.id, params.id))
+      .returning();
 
-        if (deleted.length === 0) {
-            return NextResponse.json({ error: 'Zone not found' }, { status: 404 });
-        }
-
-        return NextResponse.json({ message: 'Zone supprimée avec succès' });
-    } catch (error) {
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    if (deleted.length === 0) {
+      return ApiErrors.notFound("Zone");
     }
+
+    return successResponse({ message: "Zone supprimée avec succès" });
+  } catch {
+    return ApiErrors.serverError();
+  }
 }

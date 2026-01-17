@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { zones } from '@/lib/db/schema';
-import { zoneSchema } from '@/lib/validation';
-import { eq } from 'drizzle-orm';
+import { db } from "@/lib/db";
+import { zones } from "@/lib/db/schema";
+import { zoneSchema } from "@/lib/validation";
+import { successResponse, ApiErrors } from "@/lib/api-response";
+import { z } from "zod";
 
 /**
  * @openapi
@@ -17,16 +17,15 @@ import { eq } from 'drizzle-orm';
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   nom:
- *                     type: string
- *                   description:
- *                     type: string
+ *               $ref: '#/components/schemas/ZoneListResponse'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
  *   post:
  *     tags:
  *       - Zones
@@ -47,39 +46,64 @@ import { eq } from 'drizzle-orm';
  *     responses:
  *       201:
  *         description: Zone créée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ZoneResponse'
  *       400:
  *         description: Données invalides
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse400'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
  */
 
 export async function GET() {
-    try {
-        const allZones = await db.select().from(zones).orderBy(zones.nom);
-        return NextResponse.json(allZones);
-    } catch (error) {
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-    }
+  try {
+    const allZones = await db.select().from(zones).orderBy(zones.nom);
+    return successResponse(allZones);
+  } catch (error) {
+    console.error("Error fetching zones:", error);
+    return ApiErrors.serverError();
+  }
 }
 
 export async function POST(request: Request) {
-    try {
-        const body = await request.json();
-        const validatedData = zoneSchema.parse(body);
+  try {
+    const body = await request.json();
+    const validatedData = zoneSchema.parse(body);
 
-        const newZone = await db.insert(zones).values({
-            nom: validatedData.nom,
-            description: validatedData.description,
-        }).returning();
+    const newZone = await db
+      .insert(zones)
+      .values({
+        nom: validatedData.nom,
+        description: validatedData.description,
+      })
+      .returning();
 
-        return NextResponse.json(newZone[0], { status: 201 });
-    } catch (error: any) {
-        if (error.name === 'ZodError') {
-            return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 });
-        }
-        if (error.message?.includes('UNIQUE constraint failed')) {
-            return NextResponse.json({ error: 'Cette zone existe déjà' }, { status: 400 });
-        }
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return successResponse(newZone[0], undefined, 201);
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      return ApiErrors.validationError(
+        "Validation failed",
+        undefined,
+        error.issues
+      );
     }
+    if (
+      error instanceof Error &&
+      error.message?.includes("UNIQUE constraint failed")
+    ) {
+      return ApiErrors.validationError("Cette zone existe déjà", "nom");
+    }
+    return ApiErrors.serverError();
+  }
 }

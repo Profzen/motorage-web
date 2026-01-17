@@ -3,7 +3,7 @@
 
 @layer utilities {
   .glassmorphism {
-    @apply bg-background/60 backdrop-blur-xl border border-white/10 shadow-xl;
+    @apply bg-background/60 border border-white/10 shadow-xl backdrop-blur-xl;
   }
 }
 
@@ -120,7 +120,6 @@
   --sidebar-border: #334155;
   --sidebar-ring: #3b82f6;
 }
-
 
 @layer base {
   * {

@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { reservations, trajets } from '@/lib/db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { db } from "@/lib/db";
+import { trajets } from "@/lib/db/schema";
+import { sql } from "drizzle-orm";
+import { successResponse, ApiErrors } from "@/lib/api-response";
 
 /**
  * @openapi
@@ -19,31 +19,49 @@ import { eq, sql } from 'drizzle-orm';
  *     responses:
  *       200:
  *         description: Liste des demandes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ReservationListResponse'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
+ *     security:
+ *       - BearerAuth: []
  */
 
 export async function GET(
-    request: Request,
-    { params }: { params: { id: string } }
+  request: Request,
+  { params }: { params: { id: string } }
 ) {
-    try {
-        const receivedRequests = await db.query.reservations.findMany({
-            where: (reservations, { exists }) =>
-                exists(
-                    db.select().from(trajets).where(sql`${trajets.id} = ${reservations.trajetId} AND ${trajets.conducteurId} = ${params.id}`)
-                ),
-            with: {
-                trajet: true,
-                etudiant: {
-                    columns: {
-                        password: false,
-                    }
-                },
-            }
-        });
+  try {
+    const receivedRequests = await db.query.reservations.findMany({
+      where: (reservations, { exists }) =>
+        exists(
+          db
+            .select()
+            .from(trajets)
+            .where(
+              sql`${trajets.id} = ${reservations.trajetId} AND ${trajets.conducteurId} = ${params.id}`
+            )
+        ),
+      with: {
+        trajet: true,
+        etudiant: {
+          columns: {
+            password: false,
+            refreshToken: false,
+          },
+        },
+      },
+    });
 
-        return NextResponse.json(receivedRequests);
-    } catch (error) {
-        console.error('Error fetching driver requests:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-    }
+    return successResponse(receivedRequests);
+  } catch (error) {
+    console.error("Error fetching driver requests:", error);
+    return ApiErrors.serverError();
+  }
 }

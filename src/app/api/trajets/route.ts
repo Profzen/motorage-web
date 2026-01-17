@@ -1,10 +1,14 @@
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { trajets, users } from '@/lib/db/schema';
-import { eq, and, like } from 'drizzle-orm'; // Added 'and', 'like'
-import { z } from 'zod'; // Added Zod import
-
-import { trajetSchema } from '@/lib/validation';
+import { db } from "@/lib/db";
+import { trajets } from "@/lib/db/schema";
+import { sql } from "drizzle-orm";
+import { trajetSchema } from "@/lib/validation";
+import {
+  successResponse,
+  paginatedResponse,
+  ApiErrors,
+  parsePaginationParams,
+} from "@/lib/api-response";
+import { z } from "zod";
 
 /**
  * @openapi
@@ -12,9 +16,22 @@ import { trajetSchema } from '@/lib/validation';
  *   get:
  *     tags:
  *       - Trajets
- *     summary: Récupérer tous les trajets avec filtres
- *     description: Retourne la liste des trajets. Supporte le filtrage par départ, destination, zones et conducteur.
+ *     summary: Récupérer tous les trajets avec filtres et pagination
+ *     description: Retourne la liste des trajets paginée. Supporte le filtrage par départ, destination, zones et conducteur.
  *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Numéro de page
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *           maximum: 100
+ *         description: Nombre d'éléments par page
  *       - in: query
  *         name: from
  *         schema:
@@ -40,56 +57,88 @@ import { trajetSchema } from '@/lib/validation';
  *         schema:
  *           type: string
  *         description: Filtrer par conducteur
+ *       - in: query
+ *         name: statut
+ *         schema:
+ *           type: string
+ *           enum: [ouvert, plein, terminé, annulé]
+ *         description: Filtrer par statut
  *     responses:
  *       200:
- *         description: Liste des trajets
+ *         description: Liste des trajets paginée
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Trajet'
+ *               $ref: '#/components/schemas/TrajetListResponse'
  *       500:
  *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
  */
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const from = searchParams.get('from');
-    const to = searchParams.get('to');
-    const departZoneId = searchParams.get('departZoneId');
-    const arriveeZoneId = searchParams.get('arriveeZoneId');
-    const conducteurId = searchParams.get('conducteurId');
+    const { page, limit } = parsePaginationParams(searchParams);
+    const offset = (page - 1) * limit;
 
-    const query = db.query.trajets.findMany({
-      where: (trajets, { and, eq, like }) => {
+    const from = searchParams.get("from");
+    const to = searchParams.get("to");
+    const departZoneId = searchParams.get("departZoneId");
+    const arriveeZoneId = searchParams.get("arriveeZoneId");
+    const conducteurId = searchParams.get("conducteurId");
+    const statut = searchParams.get("statut");
+
+    // Get total count
+    const countResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(trajets)
+      .where((t, { and, eq, like }) => {
         const conditions = [];
-        if (from) conditions.push(like(trajets.pointDepart, `%${from}%`));
-        if (to) conditions.push(like(trajets.destination, `%${to}%`));
-        if (departZoneId) conditions.push(eq(trajets.departZoneId, departZoneId));
-        if (arriveeZoneId) conditions.push(eq(trajets.arriveeZoneId, arriveeZoneId));
-        if (conducteurId) conditions.push(eq(trajets.conducteurId, conducteurId));
-        return and(...conditions);
+        if (from) conditions.push(like(t.pointDepart, `%${from}%`));
+        if (to) conditions.push(like(t.destination, `%${to}%`));
+        if (departZoneId) conditions.push(eq(t.departZoneId, departZoneId));
+        if (arriveeZoneId) conditions.push(eq(t.arriveeZoneId, arriveeZoneId));
+        if (conducteurId) conditions.push(eq(t.conducteurId, conducteurId));
+        if (statut) conditions.push(eq(t.statut, statut));
+        return conditions.length > 0 ? and(...conditions) : undefined;
+      });
+    const total = Number(countResult[0]?.count || 0);
+
+    // Get paginated data
+    const data = await db.query.trajets.findMany({
+      where: (t, { and, eq, like }) => {
+        const conditions = [];
+        if (from) conditions.push(like(t.pointDepart, `%${from}%`));
+        if (to) conditions.push(like(t.destination, `%${to}%`));
+        if (departZoneId) conditions.push(eq(t.departZoneId, departZoneId));
+        if (arriveeZoneId) conditions.push(eq(t.arriveeZoneId, arriveeZoneId));
+        if (conducteurId) conditions.push(eq(t.conducteurId, conducteurId));
+        if (statut) conditions.push(eq(t.statut, statut));
+        return conditions.length > 0 ? and(...conditions) : undefined;
       },
       with: {
         conducteur: {
           columns: {
             password: false,
+            refreshToken: false,
           },
         },
         departZone: true,
         arriveeZone: true,
       },
       orderBy: (trajets, { desc }) => [desc(trajets.createdAt)],
+      limit,
+      offset,
     });
 
-    const allTrajets = await query;
-    return NextResponse.json(allTrajets);
+    return paginatedResponse(data, page, limit, total);
   } catch (error) {
-    console.error('Error fetching trajets:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error("Error fetching trajets:", error);
+    return ApiErrors.serverError();
   }
 }
 
@@ -100,7 +149,7 @@ export async function GET(request: Request) {
  *     tags:
  *       - Trajets
  *     summary: Publier un nouveau trajet
- *     description: Permet à un conducteur de proposer un nouveau trajet. Tous les détails (zones, coordonnées) peuvent être renseignés.
+ *     description: Permet à un conducteur de proposer un nouveau trajet.
  *     requestBody:
  *       required: true
  *       content:
@@ -120,11 +169,9 @@ export async function GET(request: Request) {
  *                 type: string
  *               departZoneId:
  *                 type: string
- *                 format: uuid
  *                 nullable: true
  *               arriveeZoneId:
  *                 type: string
- *                 format: uuid
  *                 nullable: true
  *               dateHeure:
  *                 type: string
@@ -135,7 +182,6 @@ export async function GET(request: Request) {
  *                 maximum: 4
  *               conducteurId:
  *                 type: string
- *                 format: uuid
  *               departureLat:
  *                 type: number
  *                 nullable: true
@@ -157,40 +203,55 @@ export async function GET(request: Request) {
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Trajet'
+ *               $ref: '#/components/schemas/TrajetResponse'
  *       400:
  *         description: Données invalides
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse400'
  *       500:
  *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
  */
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const validatedData = trajetSchema.parse(body);
 
-    const newTrajet = await db.insert(trajets).values({
-      conducteurId: validatedData.conducteurId,
-      pointDepart: validatedData.pointDepart,
-      destination: validatedData.destination,
-      departZoneId: validatedData.departZoneId,
-      arriveeZoneId: validatedData.arriveeZoneId,
-      dateHeure: validatedData.dateHeure,
-      placesDisponibles: validatedData.placesDisponibles,
-      departureLat: validatedData.departureLat,
-      departureLng: validatedData.departureLng,
-      arrivalLat: validatedData.arrivalLat,
-      arrivalLng: validatedData.arrivalLng,
-      statut: validatedData.statut || 'ouvert',
-    }).returning();
+    const newTrajet = await db
+      .insert(trajets)
+      .values({
+        conducteurId: validatedData.conducteurId,
+        pointDepart: validatedData.pointDepart,
+        destination: validatedData.destination,
+        departZoneId: validatedData.departZoneId,
+        arriveeZoneId: validatedData.arriveeZoneId,
+        dateHeure: validatedData.dateHeure,
+        placesDisponibles: validatedData.placesDisponibles,
+        departureLat: validatedData.departureLat,
+        departureLng: validatedData.departureLng,
+        arrivalLat: validatedData.arrivalLat,
+        arrivalLng: validatedData.arrivalLng,
+        statut: validatedData.statut || "ouvert",
+      })
+      .returning();
 
-    return NextResponse.json(newTrajet[0], { status: 201 });
-  } catch (error: any) {
-    if (error.name === 'ZodError') {
-      return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 });
+    return successResponse(newTrajet[0], undefined, 201);
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      return ApiErrors.validationError(
+        "Validation failed",
+        undefined,
+        error.issues
+      );
     }
-    console.error('Error creating trajet:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error("Error creating trajet:", error);
+    return ApiErrors.serverError();
   }
 }

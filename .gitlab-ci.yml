@@ -41,9 +41,9 @@ lint:
     - corepack enable
     - corepack prepare pnpm@latest --activate
     - pnpm lint
+    - pnpm format:check
   dependencies:
     - install
-
 
 # Étape 2.5 : Tests unitaires
 test:

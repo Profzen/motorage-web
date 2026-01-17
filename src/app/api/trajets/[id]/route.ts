@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { trajets } from '@/lib/db/schema';
-import { trajetSchema } from '@/lib/validation';
-import { eq } from 'drizzle-orm';
+import { db } from "@/lib/db";
+import { trajets } from "@/lib/db/schema";
+import { trajetSchema } from "@/lib/validation";
+import { eq } from "drizzle-orm";
+import { successResponse, ApiErrors } from "@/lib/api-response";
+import { z } from "zod";
 
 /**
  * @openapi
@@ -23,9 +24,19 @@ import { eq } from 'drizzle-orm';
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Trajet'
+ *               $ref: '#/components/schemas/TrajetResponse'
  *       404:
  *         description: Trajet non trouvé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse404'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
  *     security:
  *       - bearerAuth: []
  *   put:
@@ -63,7 +74,25 @@ import { eq } from 'drizzle-orm';
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Trajet'
+ *               $ref: '#/components/schemas/TrajetResponse'
+ *       400:
+ *         description: Données invalides
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse400'
+ *       404:
+ *         description: Trajet non trouvé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse404'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
  *     security:
  *       - bearerAuth: []
  *   delete:
@@ -79,88 +108,110 @@ import { eq } from 'drizzle-orm';
  *     responses:
  *       200:
  *         description: Trajet supprimé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       404:
+ *         description: Trajet non trouvé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse404'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
  *     security:
  *       - bearerAuth: []
  */
 
 export async function GET(
-    request: Request,
-    { params }: { params: { id: string } }
+  _request: Request,
+  { params }: { params: { id: string } }
 ) {
-    try {
-        const trajet = await db.query.trajets.findFirst({
-            where: eq(trajets.id, params.id),
-            with: {
-                conducteur: {
-                    columns: {
-                        password: false,
-                    },
-                },
-                departZone: true,
-                arriveeZone: true,
-                reservations: {
-                    with: {
-                        etudiant: {
-                            columns: {
-                                password: false,
-                            },
-                        },
-                    },
-                },
+  try {
+    const trajet = await db.query.trajets.findFirst({
+      where: eq(trajets.id, params.id),
+      with: {
+        conducteur: {
+          columns: {
+            password: false,
+          },
+        },
+        departZone: true,
+        arriveeZone: true,
+        reservations: {
+          with: {
+            etudiant: {
+              columns: {
+                password: false,
+              },
             },
-        });
+          },
+        },
+      },
+    });
 
-        if (!trajet) {
-            return NextResponse.json({ error: 'Trajet non trouvé' }, { status: 404 });
-        }
-
-        return NextResponse.json(trajet);
-    } catch (error) {
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    if (!trajet) {
+      return ApiErrors.notFound("Trajet");
     }
+
+    return successResponse(trajet);
+  } catch {
+    return ApiErrors.serverError();
+  }
 }
 
 export async function PUT(
-    request: Request,
-    { params }: { params: { id: string } }
+  request: Request,
+  { params }: { params: { id: string } }
 ) {
-    try {
-        const body = await request.json();
-        const validatedData = trajetSchema.partial().parse(body);
+  try {
+    const body = await request.json();
+    const validatedData = trajetSchema.partial().parse(body);
 
-        const updated = await db.update(trajets)
-            .set(validatedData)
-            .where(eq(trajets.id, params.id))
-            .returning();
+    const updated = await db
+      .update(trajets)
+      .set(validatedData)
+      .where(eq(trajets.id, params.id))
+      .returning();
 
-        if (updated.length === 0) {
-            return NextResponse.json({ error: 'Trajet non trouvé' }, { status: 404 });
-        }
-
-        return NextResponse.json(updated[0]);
-    } catch (error: any) {
-        if (error.name === 'ZodError') {
-            return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 });
-        }
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    if (updated.length === 0) {
+      return ApiErrors.notFound("Trajet");
     }
+
+    return successResponse(updated[0]);
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      return ApiErrors.validationError(
+        "Validation failed",
+        undefined,
+        error.issues
+      );
+    }
+    return ApiErrors.serverError();
+  }
 }
 
 export async function DELETE(
-    request: Request,
-    { params }: { params: { id: string } }
+  _request: Request,
+  { params }: { params: { id: string } }
 ) {
-    try {
-        const deleted = await db.delete(trajets)
-            .where(eq(trajets.id, params.id))
-            .returning();
+  try {
+    const deleted = await db
+      .delete(trajets)
+      .where(eq(trajets.id, params.id))
+      .returning();
 
-        if (deleted.length === 0) {
-            return NextResponse.json({ error: 'Trajet non trouvé' }, { status: 404 });
-        }
-
-        return NextResponse.json({ message: 'Trajet supprimé avec succès' });
-    } catch (error) {
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    if (deleted.length === 0) {
+      return ApiErrors.notFound("Trajet");
     }
+
+    return successResponse({ message: "Trajet supprimé avec succès" });
+  } catch {
+    return ApiErrors.serverError();
+  }
 }

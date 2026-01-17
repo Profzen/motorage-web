@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { LocationRequester } from "@/components/LocationRequester";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,8 +16,16 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Miyi Ðekae - Plateforme d'Entraide Moto | Université de Lomé",
-  description: "La première plateforme d'entraide moto entre étudiants de l'Université de Lomé. Trouvez des trajets, demandez de l'aide, et rejoignez une communauté de motards passionnés et bienveillants.",
-  keywords: ["moto", "entraide", "covoiturage", "étudiants", "Université de Lomé", "Togo"],
+  description:
+    "La première plateforme d'entraide moto entre étudiants de l'Université de Lomé. Trouvez des trajets, demandez de l'aide, et rejoignez une communauté de motards passionnés et bienveillants.",
+  keywords: [
+    "moto",
+    "entraide",
+    "covoiturage",
+    "étudiants",
+    "Université de Lomé",
+    "Togo",
+  ],
   authors: [{ name: "Miyi Ðekae" }],
   creator: "Miyi Ðekae",
   publisher: "Miyi Ðekae",
@@ -32,7 +40,8 @@ export const metadata: Metadata = {
     url: "https://miyi-dekae.tg",
     siteName: "Miyi Ðekae",
     title: "Miyi Ðekae - Plateforme d'Entraide Moto",
-    description: "Connectez-vous, partagez et roulez en confiance avec la communauté moto de l'UL",
+    description:
+      "Connectez-vous, partagez et roulez en confiance avec la communauté moto de l'UL",
     images: [
       {
         url: "https://miyi-dekae.tg/og-image.png",
@@ -76,8 +85,8 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <LocationRequester />
           {children}
+          <Toaster position="top-center" richColors />
         </ThemeProvider>
       </body>
     </html>

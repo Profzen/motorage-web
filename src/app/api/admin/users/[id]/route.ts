@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import { successResponse, ApiErrors } from "@/lib/api-response";
+import { userSchema } from "@/lib/validation";
 
 /**
  * @openapi
@@ -35,52 +36,88 @@ import { eq } from 'drizzle-orm';
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/User'
+ *               $ref: '#/components/schemas/UserResponse'
+ *       404:
+ *         description: Utilisateur non trouvé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse404'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
  */
 
-import { userSchema } from '@/lib/validation';
-
 export async function PATCH(
-    request: Request,
-    { params }: { params: { id: string } }
+  request: Request,
+  { params }: { params: { id: string } }
 ) {
-    try {
-        const body = await request.json();
-        const validatedData = userSchema.partial().parse(body);
+  try {
+    const body = await request.json();
+    const validatedData = userSchema.partial().parse(body);
 
-        // Security: Don't allow password updates through this admin endpoint
-        // or handle it with appropriate hashing if needed. For now, omit it.
-        const { password: __, ...updateFields } = validatedData;
+    // Security: Don't allow password updates through this admin endpoint
+    const { ...updateFields } = validatedData;
 
-        const updated = await db.update(users)
-            .set(updateFields)
-            .where(eq(users.id, params.id))
-            .returning();
+    const updated = await db
+      .update(users)
+      .set(updateFields)
+      .where(eq(users.id, params.id))
+      .returning();
 
-        if (updated.length === 0) {
-            return NextResponse.json({ error: 'User not found' }, { status: 404 });
-        }
-
-        const { password: _, refreshToken: ___, ...userWithoutPassword } = updated[0];
-        return NextResponse.json(userWithoutPassword);
-    } catch (error: any) {
-        if (error.name === 'ZodError') {
-            return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 });
-        }
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    if (updated.length === 0) {
+      return ApiErrors.notFound("Utilisateur");
     }
+
+    const { ...userWithoutPassword } = updated[0];
+    return successResponse(userWithoutPassword);
+  } catch {
+    return ApiErrors.serverError();
+  }
 }
 
+/**
+ * @openapi
+ * /admin/users/{id}:
+ *   delete:
+ *     tags:
+ *       - Admin
+ *     summary: Supprimer un utilisateur
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Utilisateur supprimé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
+ *     security:
+ *       - BearerAuth: []
+ */
 export async function DELETE(
-    request: Request,
-    { params }: { params: { id: string } }
+  _request: Request,
+  { params }: { params: { id: string } }
 ) {
-    try {
-        await db.delete(users).where(eq(users.id, params.id));
-        return NextResponse.json({ message: 'User deleted' });
-    } catch (error) {
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-    }
+  try {
+    await db.delete(users).where(eq(users.id, params.id));
+    return successResponse({ message: "User deleted" });
+  } catch {
+    return ApiErrors.serverError();
+  }
 }

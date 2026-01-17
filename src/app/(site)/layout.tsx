@@ -4,15 +4,15 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 
 export default function SiteLayout({
-    children,
+  children,
 }: {
-    children: React.ReactNode;
+  children: React.ReactNode;
 }) {
-    return (
-        <div className="flex min-h-screen flex-col">
-            <Header />
-            <main className="flex-grow">{children}</main>
-            <Footer />
-        </div>
-    );
+  return (
+    <div className="flex min-h-screen flex-col">
+      <Header />
+      <main className="grow">{children}</main>
+      <Footer />
+    </div>
+  );
 }
