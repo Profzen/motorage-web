@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Bike, LayoutDashboard, Search, PlusCircle, LogOut, Menu, X } from "lucide-react";
+import { Bike, LayoutDashboard, LogOut, Menu, X } from "lucide-react";
 import { useAuthStore } from "@/lib/store";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,7 +14,8 @@ export function Header() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -42,7 +43,6 @@ export function Header() {
               href={link.href}
               className="group flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
             >
-              {link.icon && <link.icon className="h-4 w-4" />}
               <span>{link.label}</span>
             </Link>
           ))}
@@ -123,7 +123,6 @@ export function Header() {
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="flex items-center gap-3 text-base font-medium p-2 rounded-md hover:bg-muted transition-colors"
                 >
-                  {link.icon && <link.icon className="h-5 w-5 text-primary" />}
                   {link.label}
                 </Link>
               ))}

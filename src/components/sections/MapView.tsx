@@ -42,7 +42,8 @@ export function MapView({ trajets, center = { lat: 6.1256, lng: 1.2317 }, userLo
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
+    const timer = setTimeout(() => setIsMounted(true), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   if (!isMounted) return <div className="w-full h-90 bg-muted animate-pulse rounded-lg" />;
@@ -85,7 +86,7 @@ export function MapView({ trajets, center = { lat: 6.1256, lng: 1.2317 }, userLo
             icon={defaultIcon || undefined}
           >
             <Popup>
-              <div className="space-y-1 min-w-37.5">
+              <div className="space-y-1 min-w-40">
                 <p className="font-medium text-sm text-foreground">{t.departure.name} → {t.arrival.name}</p>
                 <div className="text-xs text-muted-foreground">
                   <p>Conducteur: {t.driver.name}</p>
