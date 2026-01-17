@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { reservations, trajets } from '@/lib/db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { reservationSchema } from '@/lib/validation';
 import { successResponse, ApiErrors } from '@/lib/api-response';
+import { z } from 'zod';
 
 /**
  * @openapi
@@ -141,9 +141,9 @@ export async function PATCH(
         }
 
         return successResponse(result.data);
-    } catch (error: any) {
-        if (error.name === 'ZodError') {
-            return ApiErrors.validationError('Validation failed', undefined, error.errors);
+    } catch (error: unknown) {
+        if (error instanceof z.ZodError) {
+            return ApiErrors.validationError('Validation failed', undefined, error.issues);
         }
         console.error('Error updating reservation:', error);
         return ApiErrors.serverError();

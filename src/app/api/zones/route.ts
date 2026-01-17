@@ -1,9 +1,8 @@
-import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { zones } from '@/lib/db/schema';
 import { zoneSchema } from '@/lib/validation';
-import { eq } from 'drizzle-orm';
 import { successResponse, ApiErrors } from '@/lib/api-response';
+import { z } from 'zod';
 
 /**
  * @openapi
@@ -88,11 +87,11 @@ export async function POST(request: Request) {
         }).returning();
 
         return successResponse(newZone[0], undefined, 201);
-    } catch (error: any) {
-        if (error.name === 'ZodError') {
-            return ApiErrors.validationError('Validation failed', undefined, error.errors);
+    } catch (error: unknown) {
+        if (error instanceof z.ZodError) {
+            return ApiErrors.validationError('Validation failed', undefined, error.issues);
         }
-        if (error.message?.includes('UNIQUE constraint failed')) {
+        if (error instanceof Error && error.message?.includes('UNIQUE constraint failed')) {
             return ApiErrors.validationError('Cette zone existe déjà', 'nom');
         }
         return ApiErrors.serverError();

@@ -1,11 +1,11 @@
 import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { authenticateRequest } from '@/lib/auth';
 import { successResponse, ApiErrors } from '@/lib/api-response';
 import { updateProfileSchema } from '@/lib/validation';
+import { z } from 'zod';
 
 /**
  * @openapi
@@ -114,7 +114,8 @@ export async function GET(request: Request) {
         }
 
         // Remove sensitive data
-        const { password: _, refreshToken: __, ...userWithoutSensitiveData } = user;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { password: _password, refreshToken: _refreshTokenInDb, ...userWithoutSensitiveData } = user;
 
         // Get user stats (could be expanded later)
         // For now, return basic stats based on role
@@ -168,16 +169,17 @@ export async function PATCH(request: Request) {
             return ApiErrors.notFound('Utilisateur');
         }
 
-        const { password: _, refreshToken: __, ...userWithoutSensitiveData } = updated[0];
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { password: _p, refreshToken: _rt, ...userWithoutSensitiveData } = updated[0];
 
         return successResponse({
             message: "Profil mis à jour avec succès",
             user: userWithoutSensitiveData
         });
-    } catch (error) {
+    } catch (error: unknown) {
         console.error('Update profile error:', error);
-        if (error instanceof Error && error.name === 'ZodError') {
-            return NextResponse.json({ error: error }, { status: 400 });
+        if (error instanceof z.ZodError) {
+            return ApiErrors.validationError('Validation failed', undefined, error.issues);
         }
         return ApiErrors.serverError();
     }

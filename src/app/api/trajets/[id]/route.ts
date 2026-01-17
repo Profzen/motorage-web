@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { trajets } from '@/lib/db/schema';
 import { trajetSchema } from '@/lib/validation';
 import { eq } from 'drizzle-orm';
 import { successResponse, ApiErrors } from '@/lib/api-response';
+import { z } from 'zod';
 
 /**
  * @openapi
@@ -129,7 +129,7 @@ import { successResponse, ApiErrors } from '@/lib/api-response';
  */
 
 export async function GET(
-    request: Request,
+    _request: Request,
     { params }: { params: { id: string } }
 ) {
     try {
@@ -160,7 +160,7 @@ export async function GET(
         }
 
         return successResponse(trajet);
-    } catch (error) {
+    } catch {
         return ApiErrors.serverError();
     }
 }
@@ -183,16 +183,16 @@ export async function PUT(
         }
 
         return successResponse(updated[0]);
-    } catch (error: any) {
-        if (error.name === 'ZodError') {
-            return ApiErrors.validationError('Validation failed', undefined, error.errors);
+    } catch (error: unknown) {
+        if (error instanceof z.ZodError) {
+            return ApiErrors.validationError('Validation failed', undefined, error.issues);
         }
         return ApiErrors.serverError();
     }
 }
 
 export async function DELETE(
-    request: Request,
+    _request: Request,
     { params }: { params: { id: string } }
 ) {
     try {
@@ -205,7 +205,7 @@ export async function DELETE(
         }
 
         return successResponse({ message: 'Trajet supprimé avec succès' });
-    } catch (error) {
+    } catch {
         return ApiErrors.serverError();
     }
 }

@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { zones } from '@/lib/db/schema';
 import { zoneSchema } from '@/lib/validation';
 import { eq } from 'drizzle-orm';
 import { successResponse, ApiErrors } from '@/lib/api-response';
+import { z } from 'zod';
 
 /**
  * @openapi
@@ -132,7 +132,7 @@ export async function GET(
         }
 
         return successResponse(zone);
-    } catch (error) {
+    } catch {
         return ApiErrors.serverError();
     }
 }
@@ -155,9 +155,9 @@ export async function PATCH(
         }
 
         return successResponse(updated[0]);
-    } catch (error: any) {
-        if (error.name === 'ZodError') {
-            return ApiErrors.validationError('Validation failed', undefined, error.errors);
+    } catch (error: unknown) {
+        if (error instanceof z.ZodError) {
+            return ApiErrors.validationError('Validation failed', undefined, error.issues);
         }
         return ApiErrors.serverError();
     }
@@ -177,7 +177,7 @@ export async function DELETE(
         }
 
         return successResponse({ message: 'Zone supprimée avec succès' });
-    } catch (error) {
+    } catch {
         return ApiErrors.serverError();
     }
 }

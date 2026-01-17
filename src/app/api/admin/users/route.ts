@@ -59,17 +59,6 @@ export async function GET(request: Request) {
         const { page, limit } = parsePaginationParams(searchParams);
         const offset = (page - 1) * limit;
 
-        const role = searchParams.get('role');
-        const statut = searchParams.get('statut');
-
-        // Build where conditions
-        const buildConditions = (users: any, { and, eq }: any) => {
-            const conditions = [];
-            if (role) conditions.push(eq(users.role, role));
-            if (statut) conditions.push(eq(users.statut, statut));
-            return conditions.length > 0 ? and(...conditions) : undefined;
-        };
-
         // Get total count
         const countResult = await db.select({ count: sql<number>`count(*)` })
             .from(users);

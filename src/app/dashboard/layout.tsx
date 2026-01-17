@@ -3,7 +3,6 @@
 import { DashboardSidebar } from "@/components/layout/DashboardSidebar"
 import { useSidebarStore } from "@/lib/store"
 import { motion } from "framer-motion"
-import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
 
 export default function DashboardLayout({
@@ -11,10 +10,11 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { isCollapsed, toggle, setOpen, isOpen } = useSidebarStore()
+  const { isCollapsed } = useSidebarStore()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true)
   }, [])
 

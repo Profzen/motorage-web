@@ -6,6 +6,7 @@ import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { successResponse, ApiErrors } from '@/lib/api-response';
 import { rateLimit } from '@/lib/rate-limit';
+import { z } from 'zod';
 
 /**
  * @openapi
@@ -83,7 +84,8 @@ export async function POST(request: Request) {
       return ApiErrors.invalidCredentials('password', 'Mot de passe incorrect');
     }
 
-    const { password: _, refreshToken: __, ...userWithoutPassword } = user;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _password, refreshToken: _refreshTokenInDb, ...userWithoutPassword } = user;
 
     // Generate Tokens
     const payload = { userId: user.id, email: user.email, role: user.role };
@@ -121,8 +123,8 @@ export async function POST(request: Request) {
       refreshToken
     });
   } catch (error: unknown) {
-    if (error instanceof Error && error.name === 'ZodError') {
-      return ApiErrors.validationError('Validation failed', undefined, (error as any).errors);
+    if (error instanceof z.ZodError) {
+      return ApiErrors.validationError('Validation failed', undefined, error.issues);
     }
     console.error('Login error:', error);
     return ApiErrors.serverError();

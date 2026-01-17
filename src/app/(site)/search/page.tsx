@@ -1,7 +1,5 @@
 "use client";
 
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,10 +17,21 @@ import {
   MapIcon,
 } from "lucide-react";
 import { useTrajetsStore, useReservationsStore, useAuthStore, useLocationStore, useNotificationsStore } from "@/lib/store";
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 const MapView = dynamic(() => import("@/components/sections/MapView").then(m => m.MapView), { ssr: false });
 import { RequestModal } from "@/components/ui/request-modal";
+
+const toRad = (deg: number) => (deg * Math.PI) / 180;
+const distanceKm = (a: { lat: number; lng: number }, b: { lat: number; lng: number }) => {
+  const R = 6371;
+  const dLat = toRad(b.lat - a.lat);
+  const dLon = toRad(b.lng - a.lng);
+  const la1 = toRad(a.lat);
+  const la2 = toRad(b.lat);
+  const aHarv = Math.sin(dLat / 2) ** 2 + Math.sin(dLon / 2) ** 2 * Math.cos(la1) * Math.cos(la2);
+  return 2 * R * Math.atan2(Math.sqrt(aHarv), Math.sqrt(1 - aHarv));
+};
 
 export default function SearchPage() {
   const trajets = useTrajetsStore((state) => state.trajets);
@@ -35,7 +44,6 @@ export default function SearchPage() {
   const [arrival, setArrival] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [radiusKm, setRadiusKm] = useState("10");
-  const [filteredTrajets, setFilteredTrajets] = useState(trajets);
   const [selectedTrajet, setSelectedTrajet] = useState<(typeof trajets)[0] | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [flash, setFlash] = useState<{ text: string; type: "success" | "error" } | null>(null);
@@ -43,18 +51,7 @@ export default function SearchPage() {
   const addReservation = useReservationsStore((state) => state.addReservation);
   const addNotification = useNotificationsStore((state) => state.addNotification);
 
-  const toRad = (deg: number) => (deg * Math.PI) / 180;
-  const distanceKm = (a: { lat: number; lng: number }, b: { lat: number; lng: number }) => {
-    const R = 6371;
-    const dLat = toRad(b.lat - a.lat);
-    const dLon = toRad(b.lng - a.lng);
-    const la1 = toRad(a.lat);
-    const la2 = toRad(b.lat);
-    const aHarv = Math.sin(dLat / 2) ** 2 + Math.sin(dLon / 2) ** 2 * Math.cos(la1) * Math.cos(la2);
-    return 2 * R * Math.atan2(Math.sqrt(aHarv), Math.sqrt(1 - aHarv));
-  };
-
-  useEffect(() => {
+  const filteredTrajets = useMemo(() => {
     let filtered = trajets;
 
     if (departure) {
@@ -81,7 +78,7 @@ export default function SearchPage() {
       });
     }
 
-    setFilteredTrajets(filtered);
+    return filtered;
   }, [departure, arrival, selectedDate, trajets, userLocation, radiusKm]);
 
   const handleViewDetails = (trajet: (typeof trajets)[0]) => {
@@ -94,7 +91,7 @@ export default function SearchPage() {
     setModalOpen(true);
   };
 
-  const handleConfirmRequest = (requestedSeats: number) => {
+  const handleConfirmRequest = () => {
     if (!selectedTrajet) return;
 
     addReservation({
@@ -252,7 +249,7 @@ export default function SearchPage() {
               )}
               {locationStatus === "error" && (
                 <div className="text-red-600">
-                  Impossible d'obtenir votre position. Réessayez.
+                  Impossible d&apos;obtenir votre position. Réessayez.
                 </div>
               )}
               {locationStatus === "granted" && userLocation && (

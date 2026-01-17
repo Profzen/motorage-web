@@ -1,9 +1,7 @@
 "use client";
 
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MapPin, Calendar, Clock, Users, ArrowRight } from "lucide-react";
@@ -46,7 +44,7 @@ export default function CreateRoutePage() {
 
       setFlash({ text: "Trajet publié avec succès !", type: "success" });
       setTimeout(() => router.push("/dashboard"), 1500);
-    } catch (error) {
+    } catch {
       setFlash({ text: "Erreur lors de la publication", type: "error" });
     } finally {
       setLoading(false);

@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { motos } from '@/lib/db/schema';
 import { motoSchema } from '@/lib/validation';
@@ -123,11 +122,12 @@ export async function POST(request: Request) {
         }).returning();
 
         return successResponse(newMoto[0], undefined, 201);
-    } catch (error: any) {
-        if (error.name === 'ZodError') {
-            return ApiErrors.validationError('Validation failed', undefined, error.errors);
+    } catch (error) {
+        if (error instanceof Error && error.name === 'ZodError') {
+            return ApiErrors.validationError('Validation failed', undefined, (error as { errors?: unknown[] }).errors);
         }
-        if (error.message?.includes('UNIQUE constraint failed')) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (message.includes('UNIQUE constraint failed')) {
             return ApiErrors.validationError('Cette immatriculation est déjà enregistrée', 'immatriculation');
         }
         console.error('Error creating moto:', error);

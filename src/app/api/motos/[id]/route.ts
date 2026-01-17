@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { motos } from '@/lib/db/schema';
 import { motoSchema } from '@/lib/validation';
@@ -119,7 +118,7 @@ import { successResponse, ApiErrors } from '@/lib/api-response';
  */
 
 export async function GET(
-    request: Request,
+    _request: Request,
     { params }: { params: { id: string } }
 ) {
     try {
@@ -132,7 +131,7 @@ export async function GET(
         }
 
         return successResponse(moto);
-    } catch (error) {
+    } catch {
         return ApiErrors.serverError();
     }
 }
@@ -155,9 +154,9 @@ export async function PUT(
         }
 
         return successResponse(updatedMoto[0]);
-    } catch (error: any) {
-        if (error.name === 'ZodError') {
-            return ApiErrors.validationError('Validation failed', undefined, error.errors);
+    } catch (error: unknown) {
+        if (error instanceof Error && error.name === 'ZodError') {
+            return ApiErrors.validationError('Validation failed', undefined, (error as { errors: unknown[] }).errors);
         }
         return ApiErrors.serverError();
     }
@@ -177,7 +176,7 @@ export async function DELETE(
         }
 
         return successResponse({ message: 'Moto deleted successfully' });
-    } catch (error) {
+    } catch {
         return ApiErrors.serverError();
     }
 }

@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { trajets, users } from '@/lib/db/schema';
-import { eq, and, like, sql } from 'drizzle-orm';
+import { trajets } from '@/lib/db/schema';
+import { sql } from 'drizzle-orm';
 import { trajetSchema } from '@/lib/validation';
 import { successResponse, paginatedResponse, ApiErrors, parsePaginationParams } from '@/lib/api-response';
+import { z } from 'zod';
 
 /**
  * @openapi
@@ -87,27 +87,33 @@ export async function GET(request: Request) {
     const conducteurId = searchParams.get('conducteurId');
     const statut = searchParams.get('statut');
 
-    // Build where conditions
-    const buildConditions = (trajets: any, { and, eq, like }: any) => {
-      const conditions = [];
-      if (from) conditions.push(like(trajets.pointDepart, `%${from}%`));
-      if (to) conditions.push(like(trajets.destination, `%${to}%`));
-      if (departZoneId) conditions.push(eq(trajets.departZoneId, departZoneId));
-      if (arriveeZoneId) conditions.push(eq(trajets.arriveeZoneId, arriveeZoneId));
-      if (conducteurId) conditions.push(eq(trajets.conducteurId, conducteurId));
-      if (statut) conditions.push(eq(trajets.statut, statut));
-      return conditions.length > 0 ? and(...conditions) : undefined;
-    };
-
     // Get total count
     const countResult = await db.select({ count: sql<number>`count(*)` })
       .from(trajets)
-      .where(buildConditions(trajets, { and, eq, like }));
+      .where((t, { and, eq, like }) => {
+        const conditions = [];
+        if (from) conditions.push(like(t.pointDepart, `%${from}%`));
+        if (to) conditions.push(like(t.destination, `%${to}%`));
+        if (departZoneId) conditions.push(eq(t.departZoneId, departZoneId));
+        if (arriveeZoneId) conditions.push(eq(t.arriveeZoneId, arriveeZoneId));
+        if (conducteurId) conditions.push(eq(t.conducteurId, conducteurId));
+        if (statut) conditions.push(eq(t.statut, statut));
+        return conditions.length > 0 ? and(...conditions) : undefined;
+      });
     const total = Number(countResult[0]?.count || 0);
 
     // Get paginated data
     const data = await db.query.trajets.findMany({
-      where: (trajets, ops) => buildConditions(trajets, ops),
+      where: (t, { and, eq, like }) => {
+        const conditions = [];
+        if (from) conditions.push(like(t.pointDepart, `%${from}%`));
+        if (to) conditions.push(like(t.destination, `%${to}%`));
+        if (departZoneId) conditions.push(eq(t.departZoneId, departZoneId));
+        if (arriveeZoneId) conditions.push(eq(t.arriveeZoneId, arriveeZoneId));
+        if (conducteurId) conditions.push(eq(t.conducteurId, conducteurId));
+        if (statut) conditions.push(eq(t.statut, statut));
+        return conditions.length > 0 ? and(...conditions) : undefined;
+      },
       with: {
         conducteur: {
           columns: {
@@ -228,9 +234,9 @@ export async function POST(request: Request) {
     }).returning();
 
     return successResponse(newTrajet[0], undefined, 201);
-  } catch (error: any) {
-    if (error.name === 'ZodError') {
-      return ApiErrors.validationError('Validation failed', undefined, error.errors);
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      return ApiErrors.validationError('Validation failed', undefined, error.issues);
     }
     console.error('Error creating trajet:', error);
     return ApiErrors.serverError();

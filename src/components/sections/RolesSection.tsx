@@ -49,7 +49,7 @@ export function RolesSection() {
             Une plateforme pour tous les profils
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Que vous soyez conducteur, passager ou en quête d'entraide, trouvez votre place dans notre communauté.
+            Que vous soyez conducteur, passager ou en quête d&apos;entraide, trouvez votre place dans notre communauté.
           </p>
         </div>
 

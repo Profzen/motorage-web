@@ -4,8 +4,8 @@ import { cookies } from 'next/headers';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { NextResponse } from 'next/server';
 import { successResponse, ApiErrors } from '@/lib/api-response';
+import { z } from 'zod';
 
 /**
  * @openapi
@@ -61,7 +61,8 @@ export async function POST(request: Request) {
     }).returning();
 
     const user = newUser[0];
-    const { password: _, refreshToken: __, ...userWithoutPassword } = user;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _password, refreshToken: _refreshTokenInDb, ...userWithoutPassword } = user;
 
     // Generate Tokens
     const payload = { userId: user.id, email: user.email, role: user.role };
@@ -99,8 +100,8 @@ export async function POST(request: Request) {
     }, undefined, 201);
   } catch (error: unknown) {
     const errorMsg = error instanceof Error ? error.message : '';
-    if (error instanceof Error && error.name === 'ZodError') {
-      return ApiErrors.validationError('Validation failed', undefined, (error as any).errors);
+    if (error instanceof z.ZodError) {
+      return ApiErrors.validationError('Validation failed', undefined, error.issues);
     }
     if (errorMsg.includes('UNIQUE constraint failed')) {
       return ApiErrors.validationError('Cet email est déjà utilisé', 'email');

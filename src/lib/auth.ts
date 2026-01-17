@@ -58,7 +58,7 @@ export async function verifyRefreshToken(token: string) {
     try {
         const { payload } = await jwtVerify(token, JWT_REFRESH_SECRET);
         return payload;
-    } catch (error) {
+    } catch {
         return null;
     }
 }

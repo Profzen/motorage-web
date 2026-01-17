@@ -1,5 +1,3 @@
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -137,7 +135,7 @@ export default function ContactPage() {
                   <option value="">Sélectionnez une catégorie</option>
                   <option value="bug">Signaler un bug</option>
                   <option value="feature">Suggestion de fonctionnalité</option>
-                  <option value="support">Besoin d'assistance</option>
+                  <option value="support">Besoin d&apos;assistance</option>
                   <option value="partnership">Partenariat</option>
                   <option value="other">Autre</option>
                 </select>

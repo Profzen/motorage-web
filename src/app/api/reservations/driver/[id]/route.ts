@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { reservations, trajets } from '@/lib/db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { trajets } from '@/lib/db/schema';
+import { sql } from 'drizzle-orm';
 import { successResponse, ApiErrors } from '@/lib/api-response';
 
 /**

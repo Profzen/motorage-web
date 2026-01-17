@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
@@ -63,7 +62,7 @@ export async function PATCH(
         const validatedData = userSchema.partial().parse(body);
 
         // Security: Don't allow password updates through this admin endpoint
-        const { password: __, ...updateFields } = validatedData;
+        const { ...updateFields } = validatedData;
 
         const updated = await db.update(users)
             .set(updateFields)
@@ -74,12 +73,9 @@ export async function PATCH(
             return ApiErrors.notFound('Utilisateur');
         }
 
-        const { password: _, refreshToken: ___, ...userWithoutPassword } = updated[0];
+        const { ...userWithoutPassword } = updated[0];
         return successResponse(userWithoutPassword);
-    } catch (error: any) {
-        if (error.name === 'ZodError') {
-            return ApiErrors.validationError('Validation failed', undefined, error.errors);
-        }
+    } catch {
         return ApiErrors.serverError();
     }
 }
@@ -114,13 +110,13 @@ export async function PATCH(
  *       - BearerAuth: []
  */
 export async function DELETE(
-    request: Request,
+    _request: Request,
     { params }: { params: { id: string } }
 ) {
     try {
         await db.delete(users).where(eq(users.id, params.id));
         return successResponse({ message: 'User deleted' });
-    } catch (error) {
+    } catch {
         return ApiErrors.serverError();
     }
 }

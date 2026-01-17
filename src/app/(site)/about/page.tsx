@@ -1,5 +1,3 @@
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Target, Heart, Zap } from "lucide-react";
 
@@ -101,8 +99,8 @@ export default function AboutPage() {
                 </CardHeader>
                 <CardContent className="text-sm text-muted-foreground space-y-2">
                   <p>Trouvez rapidement des trajets disponibles</p>
-                  <p>Demandez de l'aide en cas de panne mécanique</p>
-                  <p>Connectez-vous à d'autres étudiants passionnés</p>
+                  <p>Demandez de l&apos;aide en cas de panne mécanique</p>
+                  <p>Connectez-vous à d&apos;autres étudiants passionnés</p>
                 </CardContent>
               </Card>
             </div>
@@ -116,7 +114,7 @@ export default function AboutPage() {
           <div className="mx-auto max-w-3xl text-center">
             <h2 className="text-3xl font-bold mb-6">Qui sommes-nous ?</h2>
             <p className="text-muted-foreground mb-8">
-              Une petite équipe d'étudiants passionnés par la technologie et l'entraide. Nous utilisons nos compétences pour créer des solutions qui font la différence dans la vie des étudiants.
+              Une petite équipe d&apos;étudiants passionnés par la technologie et l&apos;entraide. Nous utilisons nos compétences pour créer des solutions qui font la différence dans la vie des étudiants.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="p-4 bg-surface rounded-lg">

@@ -82,7 +82,7 @@ export async function POST(request: Request) {
         });
 
         if (result.error) {
-            return result.error as any;
+            return result.error as Response;
         }
 
         // Send notification to conductor
@@ -95,9 +95,9 @@ export async function POST(request: Request) {
         });
 
         return successResponse(result.data, undefined, 201);
-    } catch (error: any) {
-        if (error.name === 'ZodError') {
-            return ApiErrors.badRequest(error.errors[0].message);
+    } catch (error: unknown) {
+        if (error instanceof Error && error.name === 'ZodError') {
+            return ApiErrors.badRequest((error as { errors: { message: string }[] }).errors[0].message);
         }
         console.error('Reservation error:', error);
         return ApiErrors.serverError();
