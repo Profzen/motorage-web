@@ -15,7 +15,7 @@ export default function AuthLayout({
                     <div className="bg-primary h-10 w-10 rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                         <Bike className="text-primary-foreground h-6 w-6" />
                     </div>
-                    <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
+                    <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-linear-to-r from-foreground to-foreground/70">
                         Miyi Ðekae
                     </span>
                 </Link>
@@ -29,3 +29,4 @@ export default function AuthLayout({
         </div>
     );
 }
+

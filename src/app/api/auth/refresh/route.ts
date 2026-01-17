@@ -3,7 +3,8 @@ import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { cookies } from 'next/headers';
-import { verifyRefreshToken, signJWT, signRefreshToken } from '@/lib/auth';
+import { verifyRefreshToken, signJWT, signRefreshToken, extractRefreshTokenFromRequest } from '@/lib/auth';
+import { successResponse, ApiErrors } from '@/lib/api-response';
 
 /**
  * @openapi
@@ -12,37 +13,55 @@ import { verifyRefreshToken, signJWT, signRefreshToken } from '@/lib/auth';
  *     tags:
  *       - Auth
  *     summary: Rafraîchir les tokens de session
- *     description: Utilise un refresh token valide (via cookie) pour générer de nouveaux access et refresh tokens.
+ *     description: |
+ *       Utilise un refresh token valide pour générer de nouveaux access et refresh tokens.
+ *       **Mobile**: Envoyer le refreshToken dans le body JSON.
+ *       **Web**: Le refreshToken est lu depuis les cookies automatiquement.
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *                 description: Le refresh token (requis pour mobile, optionnel si cookie présent)
  *     responses:
  *       200:
  *         description: Tokens rafraîchis avec succès
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 token:
- *                   type: string
- *                 refreshToken:
- *                   type: string
+ *               $ref: '#/components/schemas/AuthTokensResponse'
  *       401:
  *         description: Refresh token invalide ou expiré
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse401'
  *       500:
  *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
  */
-export async function POST() {
+export async function POST(request: Request) {
     try {
         const cookieStore = await cookies();
-        const refreshToken = cookieStore.get('refreshToken')?.value;
+        const cookieRefreshToken = cookieStore.get('refreshToken')?.value;
+
+        // Support both body (mobile) and cookie (web)
+        const refreshToken = await extractRefreshTokenFromRequest(request, cookieRefreshToken);
 
         if (!refreshToken) {
-            return NextResponse.json({ error: 'Refresh token manquant' }, { status: 401 });
+            return ApiErrors.validationError('Refresh token manquant', 'refreshToken');
         }
 
         const payload = await verifyRefreshToken(refreshToken);
 
         if (!payload || !payload.userId) {
-            return NextResponse.json({ error: 'Refresh token invalide' }, { status: 401 });
+            return ApiErrors.tokenInvalid();
         }
 
         // Verify token against database
@@ -51,7 +70,7 @@ export async function POST() {
         });
 
         if (!user || user.refreshToken !== refreshToken) {
-            return NextResponse.json({ error: 'Session expirée ou révoquée' }, { status: 401 });
+            return ApiErrors.tokenExpired();
         }
 
         // Generate new tokens (Rotation)
@@ -64,8 +83,8 @@ export async function POST() {
             .set({ refreshToken: newRefreshToken })
             .where(eq(users.id, user.id));
 
-        // Set new cookies
-        cookieStore.set('token', newAccessToken, {
+        // Set new cookies (for web clients)
+        cookieStore.set('token', newAccessToken as string, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
@@ -73,7 +92,7 @@ export async function POST() {
             path: '/',
         });
 
-        cookieStore.set('refreshToken', newRefreshToken, {
+        cookieStore.set('refreshToken', newRefreshToken as string, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
@@ -81,12 +100,13 @@ export async function POST() {
             path: '/',
         });
 
-        return NextResponse.json({
+        // Return tokens in response (for mobile clients)
+        return successResponse({
             token: newAccessToken,
             refreshToken: newRefreshToken
         });
     } catch (error) {
         console.error('Refresh token error:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return ApiErrors.serverError();
     }
 }

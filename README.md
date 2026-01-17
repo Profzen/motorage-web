@@ -1,21 +1,28 @@
-# MOTORAGE - Plateforme d'Entraide Moto
+# MIYI ÐEKAE - Console d'Administration Web
 
-MOTORAGE est une plateforme web moderne et performante conçue pour faciliter l'entraide et le partage de trajets à moto entre les membres de la communauté de l'Université de Lomé (UL).
+MIYI ÐEKAE (anciennement MOTORAGE) est une plateforme de gestion centralisée pour la flotte motocycliste de l''Université de Lomé (UL). Cette interface Web est **exclusivement dédiée à l''administration** et à la supervision du service.
 
-![MOTORAGE Banner](/public/screenshots/screenshot-landing.png)
+![MIYI ÐEKAE Dashboard](/public/screenshots/screenshot-landing.png)
 
-## 🌟 Fonctionnalités Clés
+## 📌 Vision du Projet
 
-- **Tableau de Bord SaaS Moderne** : Une interface utilisateur sophistiquée, réactive et optimisée pour la gestion quotidienne.
-  - Sidebar rétractable avec mode icônes et tooltips.
-  - Navigation dynamique filtrée par rôle (Passager vs Conducteur).
-  - Thème clair, sombre et système (Glassmorphism & Radix UI).
-- **Gestion de Profil Complète** : Mise à jour des informations personnelles et suppression sécurisée du compte.
-- **Système de Notifications en Temps Réel** : Alertes centralisées pour les réservations, confirmations et mises à jour système.
-- **Historique de Réservations** : Suivi détaillé de l'état des trajets pour les passagers (en attente, confirmé, terminé, annulé).
-- **Gestion de Garage (Conducteurs)** : Ajout et gestion du parc moto personnel.
-- **Géolocalisation intelligente** : Suggestion automatique des points de départ et d'arrivée basés sur les zones clés de l'université.
-- **Documentation API Interactive** : Swagger/OpenAPI intégré pour faciliter le développement et l'intégration.
+Le projet Miyi Ðekae est scindé en deux écosystèmes :
+1.  **Mobile (User-Facing)** : Réservé aux Étudiants (Passagers) et Conducteurs pour la réservation et le suivi temps réel.
+2.  **Web (Admin Console)** : Réservé à l''équipe administrative pour la gestion des dossiers, la sécurité et l''analyse des flux.
+
+## 🌟 Fonctionnalités Web (Administration)
+
+- **Console d''Administration SaaS** : Interface moderne pilotée par les données.
+  - **Tableau de Bord Stratégique** : KPIs en temps réel (Utilisateurs actifs, Validations en attente, Litiges).
+  - **Supervision des Flux** : Vue d''ensemble des trajets en cours sur le campus.
+- **Gestion de la Sécurité** :
+  - **Validation des Motards** : Interface de contrôle des pièces justificatives (Permis, Assurance).
+  - **Gestion des Litiges** : Système de traitement des signalements utilisateurs.
+- **Contrôle d''Accès Strict** :
+  - **Portail Sécurisé** : Authentification unique pour le personnel habilité.
+  - **Pas d''Inscription Publique** : Comptes créés uniquement par les administrateurs via script sécurisé.
+  - **Redirection Mobile** : Guidage intelligent des utilisateurs lambda vers les stores mobiles.
+- **Documentation API Interactive** : Swagger/OpenAPI 3.0 intégré pour le développement.
 
 ## 🛠 Stack Technique
 
@@ -24,84 +31,64 @@ MOTORAGE est une plateforme web moderne et performante conçue pour faciliter l'
 - **Styling** : [Tailwind CSS 4](https://tailwindcss.com/)
 - **Composants** : [Radix UI](https://www.radix-ui.com/) & [Lucide Icons](https://lucide.dev/)
 - **Animations** : [Framer Motion](https://www.framer.com/motion/)
-- **Gestion d'état** : [Zustand](https://github.com/pmndrs/zustand)
+- **Gestion d''état** : [Zustand](https://github.com/pmndrs/zustand)
 - **Base de données** : [Turso (SQLite)](https://turso.tech/) avec [Drizzle ORM](https://orm.drizzle.team/)
-- **Documentation API** : [Swagger UI](https://swagger.io/) & [OpenAPI 3.0](https://www.openapis.org/)
-- **Tests** : [Vitest](https://vitest.dev/) & [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/)
 
-## 🚀 Installation et Configuration
+## 🚀 Installation & Administration
 
-1. **Cloner le dépôt**
-   ```bash
-   git clone <repository-url>
-   cd projet-motorage-web
-   ```
-
-2. **Installer les dépendances**
+1. **Installation**
    ```bash
    pnpm install
    ```
 
-3. **Configurer les variables d'environnement**
-   Créez un fichier `.env` à la racine :
-   ```env
-   # Database (Turso)
-   TURSO_DATABASE_URL=libsql://your-db-name.turso.io
-   TURSO_AUTH_TOKEN=your-auth-token
-
-   # Authentication (JWT)
-   JWT_SECRET=your-secure-secret-key
-   JWT_REFRESH_SECRET=your-secure-refresh-key
-   JWT_EXPIRES_IN=15m
-   JWT_REFRESH_EXPIRES_IN=7d
-   ```
-
-4. **Synchroniser la base de données**
+2. **Synchroniser la base de données**
    ```bash
    pnpm db:push
    ```
 
-5. **Lancer le serveur de développement**
+3. **Créer le premier administrateur**
+   Puisque l''inscription publique est désactivée, utilisez le script de création :
+   ```bash
+   pnpm admin:create "votre-email@univ-lome.tg" "votreMotDePasse"
+   ```
+
+4. **Lancer le serveur**
    ```bash
    pnpm dev
    ```
-   Accédez à [http://localhost:3000](http://localhost:3000).
 
 ## 📖 Documentation API
 
-L'application expose une documentation interactive Swagger pour explorer et tester les endpoints API :
-- **URL** : `http://localhost:3000/api-docs`
+L''application expose une documentation interactive :
+- **Swagger UI** : `http://localhost:3000/api-docs`
 
-## 📁 Structure du Projet
+## 📁 Structure du Portail
 
 ```text
 src/
-├── app/                  # Routes Next.js (Pages & API)
-│   ├── api/              # Endpoints API (Auth, Trajets, etc.)
-│   ├── api-docs/         # Documentation Swagger UI
-│   ├── dashboard/        # Layout et Pages du Tableau de bord
-│   └── page.tsx          # Page d'accueil (Landing Page)
-├── components/           # Composants UI, Layout et Sections
-│   ├── ui/               # Composants atomiques (Radix/Shadcn)
-│   ├── layout/           # Sidebar, Header, Footer
-│   └── dashboard/        # Composants spécifiques au dashboard
-├── lib/                  # Utilitaires et Logique
-│   ├── db/               # Schéma Drizzle et DB config
-│   └── store.ts          # Orchestration d'état Zustand
-└── app/globals.css       # Tailwind CSS 4 & Thèmes
+├── app/                  
+│   ├── (auth)/           # Portail de connexion sécurisé
+│   ├── (site)/           # Landing page institutionnelle
+│   ├── dashboard/        # Console d''administration Web
+│   └── api/              # Endpoints (Validations, Utilisateurs, Flux)
+├── components/           
+│   ├── dashboard/        # Widgets KPI et Monitoring
+│   └── layout/           # Sidebar administrative dynamique
+├── scripts/              # Outils de maintenance (Create Admin)
+└── lib/                  
+    ├── db/               # Schéma relationnel Drizzle
+    └── store.ts          # État global (Auth & Sidebar)
 ```
 
-## 🧪 Tests et Qualité
+## 🧪 Qualité
 
-- Lancer les tests unitaires : `pnpm test`
-- Vérifier le linting : `pnpm lint`
-- Ouvrir Drizzle Studio : `pnpm db:studio`
+- **Tests** : `pnpm test`
+- **Linting** : `pnpm lint`
+- **Data Browser** : `pnpm db:studio`
 
-## 📈 État d'avancement
-
-- [x] Sprint 1 : Cadrage, Maquettage et Base technique.
-- [x] Sprint 2 : Authentification, Dashboard SaaS, Notifications et Profil.
-- [ ] Sprint 3 (En cours) : Logique de Matching avancée, Messagerie et Évaluations.
-
----
-Conçu avec ❤️ pour les étudiants de l'Université de Lomé.
+## 📊 État du Jalon 3
+- [x] Pivot vers Interface 100% Administrative.
+- [x] Suppression des fonctions User (Mobile Only).
+- [x] Création du Tableau de bord SaaS moderne.
+- [x] Sécurisation du portail (Désactivation inscription).
+- [x] Script de provisionnement des administrateurs.

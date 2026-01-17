@@ -110,3 +110,92 @@ export const reservationsRelations = relations(reservations, ({ one }) => ({
     references: [users.id],
   }),
 }));
+// Table DEMANDES CONDUCTEURS (Onboarding Requests)
+export const onboardingRequests = sqliteTable('onboarding_requests', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  permisNumero: text('permis_numero').notNull(),
+  permisImage: text('permis_image'), // URL de l'image stockée
+  motoMarque: text('moto_marque').notNull(),
+  motoModele: text('moto_modele').notNull(),
+  motoImmatriculation: text('moto_immatriculation').notNull(),
+  statut: text('statut').notNull().default('en_attente'), // en_attente, approuvé, rejeté
+  commentaireAdmin: text('commentaire_admin'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const onboardingRequestsRelations = relations(onboardingRequests, ({ one }) => ({
+  user: one(users, {
+    fields: [onboardingRequests.userId],
+    references: [users.id],
+  }),
+}));
+
+// Table NOTIFICATIONS
+export const notifications = sqliteTable('notifications', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  type: text('type').notNull(), // onboarding, reservation, system, trajet
+  title: text('title').notNull(),
+  message: text('message').notNull(),
+  isRead: integer('is_read', { mode: 'boolean' }).notNull().default(false),
+  data: text('data'), // JSON string for extra info
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id],
+  }),
+}));
+// Table SIGNALEMENTS & LITIGES
+export const reports = sqliteTable('reports', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  reporterId: text('reporter_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  reportedId: text('reported_id').references(() => users.id, { onDelete: 'cascade' }),
+  trajetId: text('trajet_id').references(() => trajets.id, { onDelete: 'set null' }),
+  type: text('type').notNull(), // comportement, retard, securite, autre
+  titre: text('titre').notNull(),
+  description: text('description').notNull(),
+  statut: text('statut').notNull().default('en_attente'), // en_attente, en_cours, resolu, rejete
+  commentaireAdmin: text('commentaire_admin'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const reportsRelations = relations(reports, ({ one }) => ({
+  reporter: one(users, {
+    fields: [reports.reporterId],
+    references: [users.id],
+    relationName: 'reporter',
+  }),
+  reported: one(users, {
+    fields: [reports.reportedId],
+    references: [users.id],
+    relationName: 'reported',
+  }),
+  trajet: one(trajets, {
+    fields: [reports.trajetId],
+    references: [trajets.id],
+  }),
+}));
+// Table LOGS D'AUDIT (Analytics & Sécurité)
+export const auditLogs = sqliteTable('audit_logs', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id').references(() => users.id, { onDelete: 'set null' }),
+  action: text('action').notNull(), // login, update_profile, approve_driver, create_trajet, etc.
+  targetId: text('target_id'), // ID de la ressource concernée
+  details: text('details'), // JSON string contextuel
+  ip: text('ip'),
+  userAgent: text('user_agent'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  user: one(users, {
+    fields: [auditLogs.userId],
+    references: [users.id],
+  }),
+}));

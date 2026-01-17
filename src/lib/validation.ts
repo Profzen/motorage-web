@@ -55,3 +55,27 @@ export const reservationSchema = z.object({
     etudiantId: z.string().min(1, "L'ID de l'étudiant est requis"),
     statut: z.enum(['en_attente', 'confirmé', 'refusé', 'terminé', 'annulé']).default('en_attente'),
 });
+
+export const updateProfileSchema = z.object({
+    nom: z.string().min(2, "Le nom doit contenir au moins 2 caractères").optional(),
+    prenom: z.string().min(2, "Le prénom doit contenir au moins 2 caractères").optional(),
+    email: z.email("Adresse email invalide").optional(),
+    phone: z.string().optional(),
+});
+
+export const updatePasswordSchema = z.object({
+    currentPassword: z.string().min(1, "L'ancien mot de passe est requis"),
+    newPassword: z.string().min(8, "Le nouveau mot de passe doit contenir au moins 8 caractères"),
+    confirmPassword: z.string().min(1, "La confirmation est requise"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Les nouveaux mots de passe ne correspondent pas",
+    path: ["confirmPassword"],
+});
+
+export const onboardingRequestSchema = z.object({
+    permisNumero: z.string().min(5, "Le numéro de permis est requis"),
+    permisImage: z.string().url("L'URL de l'image du permis est invalide").optional(),
+    motoMarque: z.string().min(1, "La marque de la moto est requise"),
+    motoModele: z.string().min(1, "Le modèle de la moto est requis"),
+    motoImmatriculation: z.string().min(4, "L'immatriculation est requise"),
+});

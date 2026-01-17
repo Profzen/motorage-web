@@ -41,6 +41,7 @@ lint:
     - corepack enable
     - corepack prepare pnpm@latest --activate
     - pnpm lint
+    - pnpm format:check
   dependencies:
     - install
 

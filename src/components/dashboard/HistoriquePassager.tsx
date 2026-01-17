@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useReservationsStore, useTrajetsStore, useAuthStore } from '@/lib/store';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, Clock, Calendar, User, Bike, XCircle } from 'lucide-react';
+import { MapPin, Clock, Calendar, User, XCircle } from 'lucide-react';
 
 export function HistoriquePassager() {
   const { user } = useAuthStore();
@@ -14,7 +14,8 @@ export function HistoriquePassager() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   if (!mounted || !user) return null;
@@ -61,7 +62,7 @@ export function HistoriquePassager() {
             </div>
             <h3 className="text-lg font-semibold">Aucun trajet trouvé</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Vous n'avez pas encore effectué de réservation.
+              Vous n&apos;avez pas encore effectué de réservation.
             </p>
           </CardContent>
         </Card>

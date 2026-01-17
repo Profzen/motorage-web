@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { motos } from '@/lib/db/schema';
 import { motoSchema } from '@/lib/validation';
 import { eq } from 'drizzle-orm';
+import { successResponse, ApiErrors } from '@/lib/api-response';
 
 /**
  * @openapi
@@ -20,8 +21,22 @@ import { eq } from 'drizzle-orm';
  *     responses:
  *       200:
  *         description: Détails de la moto
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/MotoResponse'
  *       404:
  *         description: Moto non trouvée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse404'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
  *   put:
  *     tags:
  *       - Motos
@@ -50,8 +65,28 @@ import { eq } from 'drizzle-orm';
  *     responses:
  *       200:
  *         description: Moto mise à jour
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/MotoResponse'
  *       400:
  *         description: Données invalides
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse400'
+ *       404:
+ *         description: Moto non trouvée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse404'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
  *   delete:
  *     tags:
  *       - Motos
@@ -65,6 +100,22 @@ import { eq } from 'drizzle-orm';
  *     responses:
  *       200:
  *         description: Moto supprimée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       404:
+ *         description: Moto non trouvée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse404'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
  */
 
 export async function GET(
@@ -77,12 +128,12 @@ export async function GET(
         });
 
         if (!moto) {
-            return NextResponse.json({ error: 'Moto not found' }, { status: 404 });
+            return ApiErrors.notFound('Moto');
         }
 
-        return NextResponse.json(moto);
+        return successResponse(moto);
     } catch (error) {
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return ApiErrors.serverError();
     }
 }
 
@@ -100,15 +151,15 @@ export async function PUT(
             .returning();
 
         if (updatedMoto.length === 0) {
-            return NextResponse.json({ error: 'Moto not found' }, { status: 404 });
+            return ApiErrors.notFound('Moto');
         }
 
-        return NextResponse.json(updatedMoto[0]);
+        return successResponse(updatedMoto[0]);
     } catch (error: any) {
         if (error.name === 'ZodError') {
-            return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 });
+            return ApiErrors.validationError('Validation failed', undefined, error.errors);
         }
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return ApiErrors.serverError();
     }
 }
 
@@ -122,11 +173,11 @@ export async function DELETE(
             .returning();
 
         if (deletedMoto.length === 0) {
-            return NextResponse.json({ error: 'Moto not found' }, { status: 404 });
+            return ApiErrors.notFound('Moto');
         }
 
-        return NextResponse.json({ message: 'Moto deleted successfully' });
+        return successResponse({ message: 'Moto deleted successfully' });
     } catch (error) {
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return ApiErrors.serverError();
     }
 }

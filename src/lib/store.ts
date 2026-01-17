@@ -61,7 +61,8 @@ interface AuthStore {
   login: (email: string, password: string) => Promise<void>;
   register: (nom: string, prenom: string, email: string, password: string) => Promise<void>;
   logout: () => void;
-  updateUser: (user: Partial<User>) => void;
+  updateUser: (user: Partial<User>) => Promise<void>;
+  updatePassword: (data: Record<string, string>) => Promise<void>;
   deleteAccount: (id: string) => void;
 }
 
@@ -122,10 +123,10 @@ interface LocationStore {
 // Store d'authentification
 export const useAuthStore = create<AuthStore>()(
   persist(
-    (set) => ({
+    (set: (next: Partial<AuthStore> | ((state: AuthStore) => Partial<AuthStore>)) => void) => ({
       user: null,
       isLoggedIn: false,
-      login: async (email, password) => {
+      login: async (email: string, password: string) => {
         try {
           const response = await fetch('/api/auth/login', {
             method: 'POST',
@@ -136,16 +137,16 @@ export const useAuthStore = create<AuthStore>()(
           const data = await response.json();
 
           if (!response.ok) {
-            throw new Error(data.error || 'Erreur lors de la connexion');
+            throw new Error(data.error?.message || 'Erreur lors de la connexion');
           }
 
-          set({ user: data.user, isLoggedIn: true });
+          set({ user: data.data.user, isLoggedIn: true });
         } catch (error) {
           console.error('Login error:', error);
           throw error;
         }
       },
-      register: async (nom, prenom, email, password) => {
+      register: async (nom: string, prenom: string, email: string, password: string) => {
         try {
           const response = await fetch('/api/auth/register', {
             method: 'POST',
@@ -156,10 +157,10 @@ export const useAuthStore = create<AuthStore>()(
           const data = await response.json();
 
           if (!response.ok) {
-            throw new Error(data.error || 'Erreur lors de l\'inscription');
+            throw new Error(data.error?.message || 'Erreur lors de l\'inscription');
           }
 
-          set({ user: data.user, isLoggedIn: true });
+          set({ user: data.data.user, isLoggedIn: true });
         } catch (error) {
           console.error('Registration error:', error);
           throw error;
@@ -169,13 +170,48 @@ export const useAuthStore = create<AuthStore>()(
         fetch('/api/auth/logout', { method: 'POST' }).catch(console.error);
         set({ user: null, isLoggedIn: false });
       },
-      updateUser: (userData) => {
-        set((state) => ({
-          user: state.user ? { ...state.user, ...userData } : null,
-        }));
+      updateUser: async (userData: Partial<User>) => {
+        try {
+          const response = await fetch('/api/me', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(userData),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error?.message || 'Erreur lors de la mise à jour du profil');
+          }
+
+          set((state: AuthStore) => ({
+            user: state.user ? { ...state.user, ...userData } : null,
+          }));
+        } catch (error) {
+          console.error('Update user error:', error);
+          throw error;
+        }
       },
-      deleteAccount: (id) => {
-        set((state) => ({
+      updatePassword: async (passwordData: Record<string, string>) => {
+        try {
+          const response = await fetch('/api/me/password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(passwordData),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error?.message || 'Erreur lors du changement de mot de passe');
+          }
+        } catch (error) {
+          console.error('Update password error:', error);
+          throw error;
+        }
+      },
+      deleteAccount: (id: string) => {
+        set((state: AuthStore) => ({
           user: state.user?.id === id ? null : state.user,
           isLoggedIn: state.user?.id === id ? false : state.isLoggedIn,
         }));
@@ -295,6 +331,9 @@ export const useTrajetsStore = create<TrajetsStore>()((set, get) => ({
       return coordsBook[key] ?? { lat: 6.1256, lng: 1.2317 };
     };
 
+    const startCoords = resolve(data.pointDepart);
+    const endCoords = resolve(data.destination);
+
     const newTrajet: Trajet = {
       id: `trajet-${Date.now()}`,
       conducteurId: data.conducteurId,
@@ -304,7 +343,10 @@ export const useTrajetsStore = create<TrajetsStore>()((set, get) => ({
       dateHeure: data.dateHeure,
       placesDisponibles: data.placesDisponibles,
       statut: 'ouvert',
-      ...resolve(data.pointDepart),
+      departureLat: startCoords.lat,
+      departureLng: startCoords.lng,
+      arrivalLat: endCoords.lat,
+      arrivalLng: endCoords.lng,
       createdAt: new Date().toISOString(),
     };
 
@@ -431,12 +473,12 @@ interface SidebarStore {
 
 export const useSidebarStore = create<SidebarStore>()(
   persist(
-    (set) => ({
+    (set: (next: Partial<SidebarStore> | ((state: SidebarStore) => Partial<SidebarStore>)) => void) => ({
       isOpen: false,
       isCollapsed: false,
-      toggle: () => set((state) => ({ isOpen: !state.isOpen })),
-      setOpen: (open) => set({ isOpen: open }),
-      setCollapsed: (collapsed) => set({ isCollapsed: collapsed }),
+      toggle: () => set((state: SidebarStore) => ({ isOpen: !state.isOpen })),
+      setOpen: (open: boolean) => set({ isOpen: open }),
+      setCollapsed: (collapsed: boolean) => set({ isCollapsed: collapsed }),
     }),
     {
       name: 'sidebar-storage',

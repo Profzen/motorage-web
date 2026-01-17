@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { motos } from '@/lib/db/schema';
 import { motoSchema } from '@/lib/validation';
 import { eq } from 'drizzle-orm';
+import { successResponse, ApiErrors } from '@/lib/api-response';
 
 /**
  * @openapi
@@ -24,13 +25,15 @@ import { eq } from 'drizzle-orm';
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Moto'
+ *               $ref: '#/components/schemas/MotoListResponse'
  *       500:
  *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
  *   post:
  *     tags:
  *       - Motos
@@ -66,13 +69,21 @@ import { eq } from 'drizzle-orm';
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Moto'
+ *               $ref: '#/components/schemas/MotoResponse'
  *       400:
  *         description: Données invalides
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse400'
  *       500:
  *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
  */
 
 export async function GET(request: Request) {
@@ -87,10 +98,10 @@ export async function GET(request: Request) {
             results = await db.select().from(motos);
         }
 
-        return NextResponse.json(results);
+        return successResponse(results);
     } catch (error) {
         console.error('Error fetching motos:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return ApiErrors.serverError();
     }
 }
 
@@ -100,7 +111,7 @@ export async function POST(request: Request) {
         const validatedData = motoSchema.parse(body);
 
         if (!validatedData.proprietaireId) {
-            return NextResponse.json({ error: 'proprietaireId is required' }, { status: 400 });
+            return ApiErrors.validationError('proprietaireId is required', 'proprietaireId');
         }
 
         const newMoto = await db.insert(motos).values({
@@ -111,15 +122,15 @@ export async function POST(request: Request) {
             proprietaireId: validatedData.proprietaireId,
         }).returning();
 
-        return NextResponse.json(newMoto[0], { status: 201 });
+        return successResponse(newMoto[0], undefined, 201);
     } catch (error: any) {
         if (error.name === 'ZodError') {
-            return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 });
+            return ApiErrors.validationError('Validation failed', undefined, error.errors);
         }
         if (error.message?.includes('UNIQUE constraint failed')) {
-            return NextResponse.json({ error: 'Cette immatriculation est déjà enregistrée' }, { status: 400 });
+            return ApiErrors.validationError('Cette immatriculation est déjà enregistrée', 'immatriculation');
         }
         console.error('Error creating moto:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return ApiErrors.serverError();
     }
 }

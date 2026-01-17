@@ -57,7 +57,7 @@ export function NotificationBell() {
                 <X className="h-4 w-4" />
               </Button>
             </CardHeader>
-            <CardContent className="max-h-[400px] overflow-y-auto p-0 border-t">
+            <CardContent className="max-h-100 overflow-y-auto p-0 border-t">
               {userNotifications.length === 0 ? (
                 <div className="p-4 text-center text-sm text-muted-foreground">
                   Aucune notification

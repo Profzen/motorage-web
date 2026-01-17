@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { successResponse, ApiErrors } from '@/lib/api-response';
+import { userSchema } from '@/lib/validation';
 
 /**
  * @openapi
@@ -35,12 +37,22 @@ import { eq } from 'drizzle-orm';
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/User'
+ *               $ref: '#/components/schemas/UserResponse'
+ *       404:
+ *         description: Utilisateur non trouvé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse404'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
  */
-
-import { userSchema } from '@/lib/validation';
 
 export async function PATCH(
     request: Request,
@@ -51,7 +63,6 @@ export async function PATCH(
         const validatedData = userSchema.partial().parse(body);
 
         // Security: Don't allow password updates through this admin endpoint
-        // or handle it with appropriate hashing if needed. For now, omit it.
         const { password: __, ...updateFields } = validatedData;
 
         const updated = await db.update(users)
@@ -60,27 +71,56 @@ export async function PATCH(
             .returning();
 
         if (updated.length === 0) {
-            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+            return ApiErrors.notFound('Utilisateur');
         }
 
         const { password: _, refreshToken: ___, ...userWithoutPassword } = updated[0];
-        return NextResponse.json(userWithoutPassword);
+        return successResponse(userWithoutPassword);
     } catch (error: any) {
         if (error.name === 'ZodError') {
-            return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 });
+            return ApiErrors.validationError('Validation failed', undefined, error.errors);
         }
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return ApiErrors.serverError();
     }
 }
 
+/**
+ * @openapi
+ * /admin/users/{id}:
+ *   delete:
+ *     tags:
+ *       - Admin
+ *     summary: Supprimer un utilisateur
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Utilisateur supprimé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
+ *     security:
+ *       - BearerAuth: []
+ */
 export async function DELETE(
     request: Request,
     { params }: { params: { id: string } }
 ) {
     try {
         await db.delete(users).where(eq(users.id, params.id));
-        return NextResponse.json({ message: 'User deleted' });
+        return successResponse({ message: 'User deleted' });
     } catch (error) {
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return ApiErrors.serverError();
     }
 }

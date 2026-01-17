@@ -87,7 +87,7 @@ export function RolesSection() {
                     {role.features.map((feature, idx) => (
                       <li key={idx} className="flex items-start gap-2 text-sm">
                         <span
-                          className={`mt-1 h-1.5 w-1.5 rounded-full flex-shrink-0 ${
+                          className={`mt-1 h-1.5 w-1.5 rounded-full shrink-0 ${
                             role.color === "primary"
                               ? "bg-primary"
                               : role.color === "secondary"
@@ -108,3 +108,4 @@ export function RolesSection() {
     </section>
   );
 }
+

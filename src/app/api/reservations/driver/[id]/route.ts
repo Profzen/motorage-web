@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { reservations, trajets } from '@/lib/db/schema';
 import { eq, sql } from 'drizzle-orm';
+import { successResponse, ApiErrors } from '@/lib/api-response';
 
 /**
  * @openapi
@@ -19,6 +20,18 @@ import { eq, sql } from 'drizzle-orm';
  *     responses:
  *       200:
  *         description: Liste des demandes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ReservationListResponse'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
+ *     security:
+ *       - BearerAuth: []
  */
 
 export async function GET(
@@ -36,14 +49,15 @@ export async function GET(
                 etudiant: {
                     columns: {
                         password: false,
+                        refreshToken: false,
                     }
                 },
             }
         });
 
-        return NextResponse.json(receivedRequests);
+        return successResponse(receivedRequests);
     } catch (error) {
         console.error('Error fetching driver requests:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return ApiErrors.serverError();
     }
 }

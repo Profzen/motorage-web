@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { successResponse } from '@/lib/api-response';
 
 /**
  * @openapi
@@ -12,6 +13,10 @@ import { NextResponse } from 'next/server';
  *     responses:
  *       200:
  *         description: Déconnexion réussie
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
  */
 export async function POST() {
     const cookieStore = await cookies();
@@ -19,5 +24,5 @@ export async function POST() {
     cookieStore.delete('token');
     cookieStore.delete('refreshToken');
 
-    return NextResponse.json({ message: 'Déconnecté avec succès' });
+    return successResponse({ message: 'Déconnecté avec succès' });
 }

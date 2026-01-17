@@ -11,8 +11,9 @@ export default function SiteLayout({
     return (
         <div className="flex min-h-screen flex-col">
             <Header />
-            <main className="flex-grow">{children}</main>
+            <main className="grow">{children}</main>
             <Footer />
         </div>
     );
 }
+

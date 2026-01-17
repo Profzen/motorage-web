@@ -1,84 +1,73 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuthStore, useTrajetsStore, useMotosStore, useReservationsStore, useNotificationsStore } from '@/lib/store';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { useAuthStore } from '@/lib/store';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  UserIcon,
-  Bike,
-  History as HistoryIcon,
   LogOut,
   Trash2,
-  CheckCircle2,
   AlertCircle,
-  Calendar,
   Settings,
-  MapPin,
-  Bell,
-  Plus,
-  Edit
+  Edit,
+  ClipboardCheck,
+  Smartphone,
+  ExternalLink,
+  ShieldCheck,
+  KeyRound
 } from 'lucide-react';
-import { HistoriquePassager } from '@/components/dashboard/HistoriquePassager';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { AdminDashboard } from '@/components/dashboard/AdminDashboard';
 
+interface ProfileData {
+  nom: string;
+  prenom: string;
+  email: string;
+}
 
 export default function DashboardPage() {
   const { user, logout, updateUser, deleteAccount } = useAuthStore();
-  const { getTrajetsByDriver } = useTrajetsStore();
-  const { getMotosByDriver } = useMotosStore();
-  const { notifications, markAsRead, markAllAsRead } = useNotificationsStore();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [profileData, setProfileData] = useState({
-    nom: user?.nom || '',
-    prenom: user?.prenom || '',
-    email: user?.email || '',
+  const [profileData, setProfileData] = useState<ProfileData>({
+    nom: '',
+    prenom: '',
+    email: '',
   });
 
-  // Pour le conducteur
-  const rides = mounted && user?.id ? getTrajetsByDriver(user.id) : [];
-  const motos = mounted && user?.id ? getMotosByDriver(user.id) : [];
-
-  // Pour le passager
-  const { reservations } = useReservationsStore();
-  const { trajets } = useTrajetsStore();
-  const userReservations = mounted && user?.id ? reservations.filter(r => r.etudiantId === user.id) : [];
-
-  // Activité combinée pour la liste
-  const activities = user?.role === 'conducteur'
-    ? rides.map(r => ({ ...r, activityType: 'conducteur' }))
-    : userReservations.map(res => {
-      const trajet = trajets.find(t => t.id === res.trajetId);
-      return {
-        ...trajet,
-        id: res.id,
-        dateHeure: res.createdAt,
-        activityType: 'passager',
-        pointDepart: trajet?.pointDepart || 'N/A',
-        destination: trajet?.destination || 'N/A'
-      };
-    });
+  useEffect(() => {
+    if (user) {
+      const timer = setTimeout(() => {
+        setProfileData({
+          nom: user.nom,
+          prenom: user.prenom,
+          email: user.email,
+        });
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [user]);
 
   useEffect(() => {
-    if (!user) {
+    if (mounted && !user) {
       router.push('/login');
     }
-  }, [user, router]);
+  }, [user, router, mounted]);
 
-  if (!user) return null;
+  if (!user || !mounted) return null;
 
   const handleUpdateProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,7 +76,7 @@ export default function DashboardPage() {
   };
 
   const handleDeleteAccount = () => {
-    if (confirm('Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.')) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer votre compte ?')) {
       deleteAccount(user.id);
       logout();
       router.push('/');
@@ -98,352 +87,327 @@ export default function DashboardPage() {
     const roles: Record<string, string> = {
       conducteur: 'Conducteur',
       passager: 'Passager',
-      administrateur: 'Admin',
+      administrateur: 'Administrateur',
+      visiteur: 'Visiteur'
     };
     return roles[role] || role;
   };
 
-  return (
-    <div className="container mx-auto py-8 px-4 space-y-10 max-w-6xl">
-      {/* Header avec action rapide selon le rôle */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b pb-8">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-black tracking-tight">
-            {user.role === 'conducteur' ? 'Espace Conducteur' : user.role === 'administrateur' ? 'Administration' : 'Espace Passager'}
-          </h1>
-          <p className="text-muted-foreground font-medium">
-            Bonjour <span className="text-foreground font-bold">{user.prenom}</span>, ravi de vous revoir sur Miyi Ðekae.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {/* Action rapide selon le rôle */}
-          {user.role === 'conducteur' ? (
-            <Button onClick={() => router.push('/trajets/nouveau')} className="rounded-xl font-bold shadow-lg shadow-primary/20">
-              <Plus className="w-4 h-4 mr-2" /> Publier un trajet
+  // Si l'utilisateur est un ADMIN
+  if (user.role === 'administrateur') {
+    return (
+      <div className="container mx-auto py-8 px-4 space-y-10 max-w-6xl">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b pb-8">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-black tracking-tight flex items-center gap-3">
+              <ShieldCheck className="w-8 h-8 text-primary" />
+              Console d&apos;Administration
+            </h1>
+            <p className="text-muted-foreground font-medium">
+              Session sécurisée activée pour <span className="text-foreground font-bold">{user.prenom}</span>.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button onClick={() => router.push('/dashboard/drivers')} className="rounded-xl font-bold bg-amber-500 hover:bg-amber-600 shadow-lg shadow-amber-500/20 text-white border-0 h-11 px-6">
+              <ClipboardCheck className="w-4 h-4 mr-2" /> 12 dossiers
             </Button>
-          ) : user.role === 'passager' ? (
-            <Button onClick={() => router.push('/trajets')} className="rounded-xl font-bold shadow-lg shadow-primary/20">
-              <MapPin className="w-4 h-4 mr-2" /> Trouver un trajet
+            <Button variant="outline" onClick={() => setIsEditingProfile(!isEditingProfile)} className="rounded-xl font-bold h-11 px-6">
+              <Settings className="w-4 h-4 mr-2" /> Profil
             </Button>
-          ) : null}
-          <Button variant="outline" onClick={() => setIsEditingProfile(!isEditingProfile)} className="rounded-xl font-bold">
-            <Settings className="w-4 h-4 mr-2" /> Profil
-          </Button>
-          <Button variant="ghost" onClick={logout} className="rounded-xl text-destructive hover:bg-destructive/10 font-bold">
-            <LogOut className="w-4 h-4 mr-2" /> Déconnexion
-          </Button>
+            <Button variant="ghost" onClick={logout} className="rounded-xl text-destructive hover:bg-destructive/10 font-bold h-11 px-6">
+              <LogOut className="w-4 h-4 mr-2" />
+            </Button>
+          </div>
         </div>
+
+        {isEditingProfile && (
+          <ProfileEditor 
+            profileData={profileData} 
+            setProfileData={setProfileData} 
+            handleUpdateProfile={handleUpdateProfile} 
+            setIsEditingProfile={setIsEditingProfile}
+            handleDeleteAccount={handleDeleteAccount}
+          />
+        )}
+
+        <AdminDashboard />
       </div>
+    );
+  }
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        {/* Colonne de Gauche : Résumé & Activité */}
-        <div className="lg:col-span-2 space-y-10">
-          {/* Quick Stats selon le rôle */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <Card className="border shadow-sm rounded-2xl bg-card/30 backdrop-blur-sm">
-              <CardContent className="p-6 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                  <MapPin className="w-6 h-6" />
-                </div>
-                <div>
-                  <div className="text-2xl font-black">
-                    {user.role === 'conducteur' ? rides.length : userReservations.length}
-                  </div>
-                  <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    {user.role === 'conducteur' ? 'Trajets publiés' : 'Réservations'}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            {user.role === 'conducteur' && (
-              <Card className="border shadow-sm rounded-2xl bg-card/30 backdrop-blur-sm">
-                <CardContent className="p-6 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600">
-                    <Bell className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-black">3</div>
-                    <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Demandes en attente</div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-            <Card className="border shadow-sm rounded-2xl bg-card/30 backdrop-blur-sm">
-              <CardContent className="p-6 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center text-green-600">
-                  <CheckCircle2 className="w-6 h-6" />
-                </div>
-                <div>
-                  <div className="text-2xl font-black">4.9</div>
-                  <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Note globale</div>
-                </div>
-              </CardContent>
-            </Card>
+  // Si l'utilisateur est un PASSAGER ou CONDUCTEUR (Vue Web restreinte)
+  return (
+    <div className="container mx-auto py-12 px-4 max-w-4xl">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+        <div className="md:col-span-2 space-y-8">
+          <div className="bg-primary/5 border border-primary/10 rounded-3xl p-8 md:p-12 text-center space-y-6">
+            <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto text-primary">
+              <Smartphone className="w-10 h-10 animate-bounce" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-3xl font-black tracking-tight">Utilisez l&apos;App Mobile</h2>
+              <p className="text-muted-foreground font-medium">
+                Bonjour {user.prenom}, les fonctionnalités de <span className="text-foreground font-bold">{user.role}</span> sont exclusivement disponibles sur notre application mobile.
+              </p>
+            </div>
+            <div className="flex flex-wrap justify-center gap-4 pt-4">
+              <Button className="rounded-xl font-black px-8 h-12 shadow-xl shadow-primary/20">
+                Télécharger l&apos;App
+              </Button>
+              <Button variant="outline" className="rounded-xl font-black px-8 h-12">
+                En savoir plus
+              </Button>
+            </div>
           </div>
 
-          {isEditingProfile && (
-            <Card className="border-0 shadow-2xl bg-primary/5 backdrop-blur-md ring-1 ring-primary/20 animate-in fade-in zoom-in-95 duration-500">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-primary text-2xl">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Edit className="w-6 h-6" />
-                  </div>
-                  Modifier mon profil
-                </CardTitle>
-                <CardDescription className="pl-11">Mettez à jour vos informations personnelles pour rester connecté.</CardDescription>
-              </CardHeader>
-              <CardContent className="pl-11 pr-6 pb-8">
-                <form onSubmit={handleUpdateProfile} className="space-y-6 max-w-2xl">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="prenom" className="text-sm font-semibold">Prénom</Label>
-                      <Input
-                        id="prenom"
-                        className="h-11 bg-background/50"
-                        value={profileData.prenom}
-                        onChange={e => setProfileData({ ...profileData, prenom: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="nom" className="text-sm font-semibold">Nom</Label>
-                      <Input
-                        id="nom"
-                        className="h-11 bg-background/50"
-                        value={profileData.nom}
-                        onChange={e => setProfileData({ ...profileData, nom: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-sm font-semibold">Email Universitaire</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      className="h-11 bg-background/50"
-                      value={profileData.email}
-                      onChange={e => setProfileData({ ...profileData, email: e.target.value })}
-                    />
-                  </div>
-                  <div className="pt-6 flex flex-wrap gap-4 border-t border-primary/10 mt-6">
-                    <Button type="submit" className="h-11 px-8 rounded-xl font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-all">Enregistrer les modifications</Button>
-                    <Button type="button" variant="outline" onClick={() => setIsEditingProfile(false)} className="h-11 px-6 rounded-xl">Annuler</Button>
-                    <div className="flex-grow"></div>
-                    <Button type="button" variant="ghost" className="text-destructive hover:bg-destructive/10 h-11 px-4 rounded-xl transition-all" onClick={handleDeleteAccount}>
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Supprimer le compte
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          )}
-
-          <div className="grid grid-cols-1 gap-8">
-            {/* Liste d'activité récente minimaliste */}
-            <Card className="border shadow-sm bg-card/30 backdrop-blur-sm rounded-2xl overflow-hidden">
-              <CardHeader className="p-6 border-b border-border/50">
-                <CardTitle className="text-lg font-black tracking-tight flex items-center gap-2">
-                  <HistoryIcon className="w-5 h-5 text-primary" />
-                  Dernière activité
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="divide-y divide-border/30">
-                  {activities.slice(0, 3).map((act: any, i) => (
-                    <div key={i} className="p-4 flex items-center justify-between hover:bg-primary/5 transition-colors">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-muted/40 flex items-center justify-center">
-                          <MapPin className="w-5 h-5 text-muted-foreground" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold tracking-tight">{act.pointDepart} → {act.destination}</p>
-                          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest">{new Date(act.dateHeure).toLocaleDateString()}</p>
-                        </div>
-                      </div>
-                      <Badge variant="outline" className={cn(
-                        "text-[10px] font-bold border-primary/20",
-                        act.activityType === 'conducteur' ? "text-primary border-primary/20" : "text-blue-500 border-blue-500/20"
-                      )}>
-                        {act.activityType === 'conducteur' ? 'CONDUCTEUR' : 'PASSAGER'}
-                      </Badge>
-                    </div>
-                  ))}
-                  {activities.length === 0 && (
-                    <div className="p-10 text-center">
-                      <p className="text-sm text-muted-foreground italic">Aucun trajet récent à afficher.</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+             <Card className="border-0 shadow-sm bg-card/50 rounded-2xl">
+               <CardHeader className="pb-2">
+                 <CardTitle className="text-sm font-bold flex items-center gap-2">
+                   <AlertCircle className="w-4 h-4 text-amber-500" />
+                   Pourquoi ?
+                 </CardTitle>
+               </CardHeader>
+               <CardContent>
+                 <p className="text-xs text-muted-foreground leading-relaxed font-medium">
+                   Pour garantir votre sécurité et permettre la géolocalisation en temps réel, Miyi Ðekae nécessite l&apos;usage d&apos;un smartphone.
+                 </p>
+               </CardContent>
+             </Card>
+             <Card className="border-0 shadow-sm bg-card/50 rounded-2xl">
+               <CardHeader className="pb-2">
+                 <CardTitle className="text-sm font-bold flex items-center gap-2">
+                   <ExternalLink className="w-4 h-4 text-blue-500" />
+                   Web Admin
+                 </CardTitle>
+               </CardHeader>
+               <CardContent>
+                 <p className="text-xs text-muted-foreground leading-relaxed font-medium">
+                   Cette interface Web est réservée à la gestion administrative de l&apos;Université de Lomé.
+                 </p>
+               </CardContent>
+             </Card>
           </div>
         </div>
 
-        {/* Colonne de Droite : Profil & Notifications Simplifiées */}
         <div className="space-y-8">
-          <Card className="border shadow-sm bg-card/30 backdrop-blur-sm rounded-2xl overflow-hidden text-center p-8">
+          <Card className="border shadow-lg bg-card rounded-3xl overflow-hidden text-center p-8">
             <div className="flex flex-col items-center gap-4">
-              <Avatar className="h-20 w-20 border-4 border-background shadow-lg">
-                <AvatarFallback className="bg-primary/10 text-primary text-xl font-black">
-                  {mounted ? user.prenom[0] : 'U'}
+              <Avatar className="h-24 w-24 border-4 border-background shadow-xl">
+                <AvatarFallback className="bg-primary/10 text-primary text-2xl font-black">
+                  {user.prenom[0]}
                 </AvatarFallback>
               </Avatar>
               <div className="space-y-1">
-                <h2 className="text-xl font-black tracking-tight">{mounted ? `${user.prenom} ${user.nom}` : 'Profil'}</h2>
-                <Badge variant="secondary" className="font-bold text-[10px] tracking-widest uppercase">
-                  {mounted ? getRoleLabel(user.role) : '...'}
+                <h2 className="text-xl font-black tracking-tight">{`${user.prenom} ${user.nom}`}</h2>
+                <Badge variant="secondary" className="font-bold text-[10px] tracking-widest uppercase px-3">
+                  {getRoleLabel(user.role)}
                 </Badge>
               </div>
-            </div>
-          </Card>
-          <Card className="border shadow-sm bg-card/30 backdrop-blur-sm rounded-2xl overflow-hidden">
-            <CardHeader className="p-6 border-b border-border/50">
-              <CardTitle className="text-sm font-bold flex items-center gap-2">
-                <Bell className="w-4 h-4 text-primary" />
-                Notifications
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {notifications.length === 0 ? (
-                <div className="text-center py-10 px-6">
-                  <p className="text-xs font-bold text-muted-foreground/50 italic">Aucune notification</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-border/30">
-                  {notifications.slice(0, 3).map(notif => (
-                    <div
-                      key={notif.id}
-                      className={cn(
-                        "p-4 transition-all cursor-pointer hover:bg-primary/5",
-                        !notif.lu ? 'bg-primary/5 border-l-2 border-l-primary' : 'bg-transparent'
-                      )}
-                      onClick={() => markAsRead(notif.id)}
-                    >
-                      <div className="flex justify-between items-start mb-1">
-                        <div className="font-bold text-xs tracking-tight">{notif.titre}</div>
-                        <span className="text-[10px] text-muted-foreground font-medium uppercase">
-                          {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                      <div className="text-[10px] text-muted-foreground leading-relaxed line-clamp-1">
-                        {notif.message}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-            <CardFooter className="p-2 border-t">
-              <Button variant="ghost" className="w-full h-8 text-[10px] font-bold uppercase tracking-widest">
-                Tout voir
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
-      </div>
-
-      {/* Section Rôle (Bas du dashboard) */}
-      <div className="space-y-8 pt-4">
-        {!mounted ? (
-          <div className="h-20 flex items-center justify-center">
-            <p className="text-muted-foreground animate-pulse font-bold tracking-widest uppercase text-xs">Synchronisation des données...</p>
-          </div>
-        ) : user.role === 'conducteur' ? (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {rides.length === 0 ? (
-                <Card className="md:col-span-2 border-dashed border-2 bg-muted/10 rounded-2xl">
-                  <CardContent className="py-12 text-center">
-                    <h3 className="text-lg font-bold mb-2">Aucun trajet publié</h3>
-                    <p className="text-muted-foreground mb-6 max-w-sm mx-auto text-sm">Commencez à partager vos trajets Moto pour aider d'autres étudiants.</p>
-                    <Button variant="default" className="rounded-xl px-8" onClick={() => router.push('/trajets')}>Publier mon premier trajet</Button>
-                  </CardContent>
-                </Card>
-              ) : (
-                rides.map(r => (
-                  <Card key={r.id} className="overflow-hidden border shadow-sm bg-card/50 hover:border-primary/50 transition-all rounded-2xl group">
-                    <CardHeader className="pb-4">
-                      <div className="flex justify-between items-center mb-2">
-                        <Badge variant={r.statut === 'ouvert' ? 'default' : 'secondary'} className="rounded-full px-3 py-0.5 font-bold uppercase text-[10px]">
-                          {r.statut === 'ouvert' ? 'Actif' : 'Terminé'}
-                        </Badge>
-                        <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1.5 uppercase">
-                          <Calendar className="w-3 h-3" />
-                          {new Date(r.dateHeure).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <CardTitle className="text-lg font-black tracking-tight">
-                        {r.pointDepart} → {r.destination}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="py-2">
-                      <div className="text-sm font-semibold flex items-center gap-2 text-muted-foreground">
-                        <CheckCircle2 className="w-4 h-4 text-green-500" />
-                        <span>{r.placesDisponibles} places restantes</span>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="py-4 flex gap-2 border-t mt-4">
-                      <Button variant="ghost" size="sm" className="flex-1 h-9 rounded-lg font-bold text-xs uppercase">Gérer</Button>
-                      <Button variant="ghost" size="sm" className="h-9 w-9 rounded-lg text-destructive hover:bg-destructive/10"><Trash2 className="w-4 h-4" /></Button>
-                    </CardFooter>
-                  </Card>
-                ))
-              )}
-            </div>
-
-            <div className="pt-10">
-              <h2 className="text-xl font-black tracking-tight flex items-center gap-3 mb-6 uppercase">
-                <Bike className="w-5 h-5 text-primary" />
-                Mon Garage
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {motos.map(m => (
-                  <Card key={m.id} className="border shadow-sm bg-card/50 rounded-2xl group hover:border-primary/50 transition-all">
-                    <CardContent className="p-6 flex items-center gap-4">
-                      <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
-                        <Bike className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <div className="font-bold text-sm">{m.marque} {m.modele}</div>
-                        <div className="text-[10px] font-black text-muted-foreground uppercase">{m.immatriculation}</div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-                <Card className="border-2 border-dashed border-border/50 bg-primary/5 hover:bg-primary/10 hover:border-primary transition-all cursor-pointer flex items-center justify-center p-6 rounded-2xl group" onClick={() => router.push('/garage')}>
-                  <div className="flex flex-col items-center gap-2">
-                    <Plus className="w-5 h-5 text-primary" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-primary">Ajouter</span>
-                  </div>
-                </Card>
+              <div className="w-full pt-6 space-y-2">
+                <Button variant="outline" onClick={() => setIsEditingProfile(!isEditingProfile)} className="w-full rounded-xl font-bold h-11">
+                  <Settings className="w-4 h-4 mr-2" /> Mon Profil
+                </Button>
+                <Button variant="ghost" onClick={logout} className="w-full rounded-xl text-destructive hover:bg-destructive/10 font-bold h-11">
+                  <LogOut className="w-4 h-4 mr-2" /> Déconnexion
+                </Button>
               </div>
             </div>
-          </>
-        ) : user.role === 'passager' ? (
-          <div className="space-y-6">
-            <h2 className="text-xl font-black tracking-tight flex items-center gap-3 uppercase">
-              <HistoryIcon className="w-5 h-5 text-primary" />
-              Mes Réservations
-            </h2>
-            <div className="bg-card/30 backdrop-blur-xl rounded-2xl border shadow-sm p-4">
-              <HistoriquePassager />
+          </Card>
+
+          {isEditingProfile && (
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+              <ProfileEditor 
+                profileData={profileData} 
+                setProfileData={setProfileData} 
+                handleUpdateProfile={handleUpdateProfile} 
+                setIsEditingProfile={setIsEditingProfile}
+                handleDeleteAccount={handleDeleteAccount}
+              />
+            </motion.div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface ProfileEditorProps {
+  profileData: ProfileData;
+  setProfileData: (data: ProfileData) => void;
+  handleUpdateProfile: (e: React.FormEvent) => void;
+  setIsEditingProfile: (value: boolean) => void;
+  handleDeleteAccount: () => void;
+}
+
+function ProfileEditor({ profileData, setProfileData, handleUpdateProfile, setIsEditingProfile, handleDeleteAccount }: ProfileEditorProps) {
+  const { updatePassword } = useAuthStore();
+  const [showPasswordSection, setShowPasswordSection] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [passwordStatus, setPasswordStatus] = useState<{ type: 'error' | 'success', message: string } | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const onUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setPasswordStatus(null);
+    try {
+      await updatePassword(passwordData);
+      setPasswordStatus({ type: 'success', message: 'Mot de passe mis à jour !' });
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setTimeout(() => setShowPasswordSection(false), 2000);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Une erreur est survenue';
+      setPasswordStatus({ type: 'error', message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 mb-10">
+      <Card className="border-0 shadow-2xl bg-primary/5 backdrop-blur-md ring-1 ring-primary/20 rounded-3xl">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-3 text-primary text-2xl">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Edit className="w-6 h-6" />
             </div>
-          </div>
-        ) : (
-          <div className="bg-card/20 backdrop-blur-xl rounded-3xl p-16 text-center border shadow-sm">
-            <div className="w-20 h-20 bg-primary/5 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <AlertCircle className="w-10 h-10 text-primary/40" />
+            Modifier mon profil
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6 pb-8">
+          <form onSubmit={handleUpdateProfile} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="prenom" className="text-sm font-semibold">Prénom</Label>
+                <Input
+                  id="prenom"
+                  className="h-11 bg-background/50 rounded-xl"
+                  value={profileData.prenom}
+                  onChange={e => setProfileData({ ...profileData, prenom: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="nom" className="text-sm font-semibold">Nom</Label>
+                <Input
+                  id="nom"
+                  className="h-11 bg-background/50 rounded-xl"
+                  value={profileData.nom}
+                  onChange={e => setProfileData({ ...profileData, nom: e.target.value })}
+                />
+              </div>
             </div>
-            <h2 className="text-2xl font-black mb-2 tracking-tight">Compte en attente</h2>
-            <p className="text-muted-foreground max-w-md mx-auto text-sm font-medium">
-              L'audit de votre profil <span className="text-primary font-bold">{(user.role)}</span> est en cours.
-            </p>
-            <Button variant="outline" className="mt-8 rounded-xl px-10 h-11 font-bold" onClick={logout}>
-              Déconnexion
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-semibold">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                className="h-11 bg-background/50 rounded-xl"
+                value={profileData.email}
+                onChange={e => setProfileData({ ...profileData, email: e.target.value })}
+              />
+            </div>
+            <div className="pt-6 flex flex-wrap gap-4 border-t border-primary/10 mt-6">
+              <Button type="submit" className="h-11 px-8 rounded-xl font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-all grow md:grow-0">
+                Enregistrer les infos
+              </Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setShowPasswordSection(!showPasswordSection)} 
+                className="h-11 px-6 rounded-xl font-bold"
+              >
+                <KeyRound className="w-4 h-4 mr-2" /> 
+                {showPasswordSection ? 'Annuler le changement' : 'Changer de mot de passe'}
+              </Button>
+              <Button type="button" variant="ghost" onClick={() => setIsEditingProfile(false)} className="h-11 px-6 rounded-xl ml-auto">Fermer</Button>
+            </div>
+          </form>
+
+          <AnimatePresence>
+            {showPasswordSection && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="mt-8 pt-8 border-t border-primary/10 space-y-6">
+                  <div className="flex items-center gap-2 text-primary font-bold">
+                    <ShieldCheck className="w-5 h-5" />
+                    Sécurité du compte
+                  </div>
+                  
+                  {passwordStatus && (
+                    <div className={cn(
+                      "p-4 rounded-xl text-sm font-medium flex items-center gap-2",
+                      passwordStatus.type === 'success' ? "bg-emerald-500/10 text-emerald-500" : "bg-destructive/10 text-destructive"
+                    )}>
+                      <AlertCircle className="w-4 h-4" />
+                      {passwordStatus.message}
+                    </div>
+                  )}
+
+                  <form onSubmit={onUpdatePassword} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="current">Mot de passe actuel</Label>
+                        <Input
+                          id="current"
+                          type="password"
+                          className="h-10 rounded-xl bg-background/50"
+                          value={passwordData.currentPassword}
+                          onChange={e => setPasswordData({...passwordData, currentPassword: e.target.value})}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new">Nouveau mot de passe</Label>
+                        <Input
+                          id="new"
+                          type="password"
+                          className="h-10 rounded-xl bg-background/50"
+                          value={passwordData.newPassword}
+                          onChange={e => setPasswordData({...passwordData, newPassword: e.target.value})}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="confirm">Confirmer</Label>
+                        <Input
+                          id="confirm"
+                          type="password"
+                          className="h-10 rounded-xl bg-background/50"
+                          value={passwordData.confirmPassword}
+                          onChange={e => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <Button 
+                      type="submit" 
+                      disabled={loading}
+                      className="w-full md:w-auto px-10 h-11 rounded-xl bg-primary shadow-lg shadow-primary/20 font-bold"
+                    >
+                      {loading ? 'Mise à jour...' : 'Mettre à jour le mot de passe'}
+                    </Button>
+                  </form>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div className="pt-6 border-t border-destructive/10 flex justify-end">
+            <Button type="button" variant="ghost" className="text-destructive hover:bg-destructive/10 h-11 px-4 rounded-xl" onClick={handleDeleteAccount}>
+              <Trash2 className="w-4 h-4 mr-2" /> Supprimer mon compte
             </Button>
           </div>
-        )}
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

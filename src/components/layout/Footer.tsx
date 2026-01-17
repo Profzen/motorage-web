@@ -1,4 +1,4 @@
-import { Bike, Mail, MapPin, Phone } from "lucide-react";
+import { Bike, Mail, MapPin } from "lucide-react";
 import Link from "next/link";
 
 export function Footer() {
@@ -17,11 +17,11 @@ export function Footer() {
             </p>
             <div className="space-y-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 flex-shrink-0" />
+                <MapPin className="h-4 w-4 shrink-0" />
                 <span>Université de Lomé, Togo</span>
               </div>
               <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 flex-shrink-0" />
+                <Mail className="h-4 w-4 shrink-0" />
                 <a href="mailto:contact@miyi-dekae.tg" className="hover:text-primary transition-colors">
                   contact@miyi-dekae.tg
                 </a>

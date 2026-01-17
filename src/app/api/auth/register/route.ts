@@ -5,6 +5,7 @@ import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
+import { successResponse, ApiErrors } from '@/lib/api-response';
 
 /**
  * @openapi
@@ -13,7 +14,9 @@ import { NextResponse } from 'next/server';
  *     tags:
  *       - Auth
  *     summary: Créer un nouveau compte
- *     description: Enregistre un nouvel étudiant sur la plateforme et connecte automatiquement l'utilisateur avec un système de refresh token.
+ *     description: |
+ *       Enregistre un nouvel étudiant sur la plateforme et connecte automatiquement l'utilisateur avec un système de refresh token.
+ *       Renvoie les tokens dans le corps de la réponse pour les clients mobiles.
  *     requestBody:
  *       required: true
  *       content:
@@ -26,18 +29,19 @@ import { NextResponse } from 'next/server';
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 user:
- *                   $ref: '#/components/schemas/User'
- *                 token:
- *                   type: string
- *                 refreshToken:
- *                   type: string
+ *               $ref: '#/components/schemas/LoginResponse'
  *       400:
  *         description: Données invalides ou email déjà utilisé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse400'
  *       500:
  *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
  */
 export async function POST(request: Request) {
   try {
@@ -88,20 +92,20 @@ export async function POST(request: Request) {
       path: '/',
     });
 
-    return NextResponse.json({
+    return successResponse({
       user: userWithoutPassword,
       token: accessToken,
       refreshToken
-    }, { status: 201 });
+    }, undefined, 201);
   } catch (error: unknown) {
     const errorMsg = error instanceof Error ? error.message : '';
     if (error instanceof Error && error.name === 'ZodError') {
-      return NextResponse.json({ error: 'Validation failed', details: (error as any).errors }, { status: 400 });
+      return ApiErrors.validationError('Validation failed', undefined, (error as any).errors);
     }
     if (errorMsg.includes('UNIQUE constraint failed')) {
-      return NextResponse.json({ error: 'Cet email est déjà utilisé' }, { status: 400 });
+      return ApiErrors.validationError('Cet email est déjà utilisé', 'email');
     }
     console.error('Registration error:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return ApiErrors.serverError();
   }
 }

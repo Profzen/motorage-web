@@ -4,7 +4,8 @@ import { cookies } from 'next/headers';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { NextResponse } from 'next/server';
+import { successResponse, ApiErrors } from '@/lib/api-response';
+import { rateLimit } from '@/lib/rate-limit';
 
 /**
  * @openapi
@@ -13,7 +14,10 @@ import { NextResponse } from 'next/server';
  *     tags:
  *       - Auth
  *     summary: Connecter un utilisateur
- *     description: Authentifie un utilisateur avec son email et son mot de passe, et crée une session sécurisée avec refresh token.
+ *     description: |
+ *       Authentifie un utilisateur avec son email et son mot de passe.
+ *       **Mobile**: Les tokens sont retournés dans le body JSON.
+ *       **Web**: Les tokens sont également stockés dans des cookies HttpOnly.
  *     requestBody:
  *       required: true
  *       content:
@@ -35,21 +39,32 @@ import { NextResponse } from 'next/server';
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 user:
- *                   $ref: '#/components/schemas/User'
- *                 token:
- *                   type: string
- *                 refreshToken:
- *                   type: string
+ *               $ref: '#/components/schemas/LoginResponse'
  *       401:
  *         description: Identifiants invalides
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse401'
+ *       429:
+ *         description: Trop de tentatives
  *       500:
  *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
  */
 export async function POST(request: Request) {
   try {
+    // Rate limit: 5 attempts per minute per IP for login
+    const ip = request.headers.get('x-forwarded-for') || 'anonymous';
+    const limit = rateLimit(ip, 5, 60000); // 5 attempts per 60s
+    
+    if (!limit.success) {
+      return ApiErrors.custom('Trop de tentatives. Veuillez réessayer plus tard.', 429);
+    }
+
     const body = await request.json();
     const validatedData = loginSchema.parse(body);
 
@@ -59,19 +74,13 @@ export async function POST(request: Request) {
 
     // Vérifier si l'utilisateur existe
     if (!user) {
-      return NextResponse.json({
-        error: 'Aucun compte trouvé avec cet email',
-        field: 'email'
-      }, { status: 401 });
+      return ApiErrors.invalidCredentials('email', 'Aucun compte trouvé avec cet email');
     }
 
     // Vérifier le mot de passe
     const isPasswordValid = await comparePassword(validatedData.password, user.password);
     if (!isPasswordValid) {
-      return NextResponse.json({
-        error: 'Mot de passe incorrect',
-        field: 'password'
-      }, { status: 401 });
+      return ApiErrors.invalidCredentials('password', 'Mot de passe incorrect');
     }
 
     const { password: _, refreshToken: __, ...userWithoutPassword } = user;
@@ -86,7 +95,7 @@ export async function POST(request: Request) {
       .set({ refreshToken })
       .where(eq(users.id, user.id));
 
-    // Set cookies
+    // Set cookies (for web clients)
     const cookieStore = await cookies();
 
     cookieStore.set('token', accessToken, {
@@ -105,16 +114,17 @@ export async function POST(request: Request) {
       path: '/',
     });
 
-    return NextResponse.json({
+    // Return standardized response (for mobile and web)
+    return successResponse({
       user: userWithoutPassword,
       token: accessToken,
       refreshToken
     });
   } catch (error: unknown) {
     if (error instanceof Error && error.name === 'ZodError') {
-      return NextResponse.json({ error: 'Validation failed', details: (error as any).errors }, { status: 400 });
+      return ApiErrors.validationError('Validation failed', undefined, (error as any).errors);
     }
     console.error('Login error:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return ApiErrors.serverError();
   }
 }

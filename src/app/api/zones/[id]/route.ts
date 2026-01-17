@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { zones } from '@/lib/db/schema';
 import { zoneSchema } from '@/lib/validation';
 import { eq } from 'drizzle-orm';
+import { successResponse, ApiErrors } from '@/lib/api-response';
 
 /**
  * @openapi
@@ -20,8 +21,22 @@ import { eq } from 'drizzle-orm';
  *     responses:
  *       200:
  *         description: Détails de la zone
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ZoneResponse'
  *       404:
  *         description: Zone non trouvée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse404'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
  *   patch:
  *     tags:
  *       - Zones
@@ -46,10 +61,30 @@ import { eq } from 'drizzle-orm';
  *     responses:
  *       200:
  *         description: Zone mise à jour
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ZoneResponse'
  *       400:
  *         description: Données invalides
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse400'
+ *       404:
+ *         description: Zone non trouvée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse404'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
  *   delete:
  *     tags:
  *       - Zones
@@ -63,8 +98,24 @@ import { eq } from 'drizzle-orm';
  *     responses:
  *       200:
  *         description: Zone supprimée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       404:
+ *         description: Zone non trouvée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse404'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
  */
 
 export async function GET(
@@ -77,12 +128,12 @@ export async function GET(
         });
 
         if (!zone) {
-            return NextResponse.json({ error: 'Zone not found' }, { status: 404 });
+            return ApiErrors.notFound('Zone');
         }
 
-        return NextResponse.json(zone);
+        return successResponse(zone);
     } catch (error) {
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return ApiErrors.serverError();
     }
 }
 
@@ -100,15 +151,15 @@ export async function PATCH(
             .returning();
 
         if (updated.length === 0) {
-            return NextResponse.json({ error: 'Zone not found' }, { status: 404 });
+            return ApiErrors.notFound('Zone');
         }
 
-        return NextResponse.json(updated[0]);
+        return successResponse(updated[0]);
     } catch (error: any) {
         if (error.name === 'ZodError') {
-            return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 });
+            return ApiErrors.validationError('Validation failed', undefined, error.errors);
         }
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return ApiErrors.serverError();
     }
 }
 
@@ -122,11 +173,11 @@ export async function DELETE(
             .returning();
 
         if (deleted.length === 0) {
-            return NextResponse.json({ error: 'Zone not found' }, { status: 404 });
+            return ApiErrors.notFound('Zone');
         }
 
-        return NextResponse.json({ message: 'Zone supprimée avec succès' });
+        return successResponse({ message: 'Zone supprimée avec succès' });
     } catch (error) {
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return ApiErrors.serverError();
     }
 }

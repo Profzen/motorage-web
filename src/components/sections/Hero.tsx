@@ -91,19 +91,19 @@ export function Hero() {
             className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-12 pt-10 border-t border-border/60"
           >
             <div className="flex items-center justify-center gap-3 p-4 rounded-xl bg-muted/50 transition-colors hover:bg-muted">
-              <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
+              <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
                 <MapPin className="h-5 w-5 text-accent" />
               </div>
               <span className="text-sm font-semibold">Trajets localisés</span>
             </div>
             <div className="flex items-center justify-center gap-3 p-4 rounded-xl bg-muted/50 transition-colors hover:bg-muted">
-              <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
+              <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
                 <Wrench className="h-5 w-5 text-accent" />
               </div>
               <span className="text-sm font-semibold">Dépannage rapide</span>
             </div>
             <div className="flex items-center justify-center gap-3 p-4 rounded-xl bg-muted/50 transition-colors hover:bg-muted">
-              <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
+              <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
                 <Bike className="h-5 w-5 text-accent" />
               </div>
               <span className="text-sm font-semibold">Gratuit & sécurisé</span>
@@ -113,8 +113,9 @@ export function Hero() {
       </div>
 
       {/* Background decorations - subtle */}
-      <div className="absolute top-1/2 left-1/2 -z-10 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/5 blur-3xl opacity-50"></div>
-      <div className="absolute top-0 right-0 -z-10 h-[400px] w-[400px] rounded-full bg-secondary/5 blur-3xl opacity-30"></div>
+      <div className="absolute top-1/2 left-1/2 -z-10 h-150 w-150 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/5 blur-3xl opacity-50"></div>
+      <div className="absolute top-0 right-0 -z-10 h-100 w-100 rounded-full bg-secondary/5 blur-3xl opacity-30"></div>
     </section>
   );
 }
+

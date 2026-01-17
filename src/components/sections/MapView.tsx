@@ -45,7 +45,7 @@ export function MapView({ trajets, center = { lat: 6.1256, lng: 1.2317 }, userLo
     setIsMounted(true);
   }, []);
 
-  if (!isMounted) return <div className="w-full h-[360px] bg-muted animate-pulse rounded-lg" />;
+  if (!isMounted) return <div className="w-full h-90 bg-muted animate-pulse rounded-lg" />;
 
   // Filter out any trajets with invalid coordinates to prevent Leaflet crashes
   const validTrajets = trajets.filter(t => 
@@ -55,7 +55,7 @@ export function MapView({ trajets, center = { lat: 6.1256, lng: 1.2317 }, userLo
   );
 
   return (
-    <div className="w-full h-[360px] rounded-lg overflow-hidden border border-border relative z-0">
+    <div className="w-full h-90 rounded-lg overflow-hidden border border-border relative z-0">
       <MapContainer 
         center={[center.lat, center.lng]} 
         zoom={13} 

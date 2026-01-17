@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { reservations } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { successResponse, ApiErrors } from '@/lib/api-response';
 
 /**
  * @openapi
@@ -19,6 +20,18 @@ import { eq } from 'drizzle-orm';
  *     responses:
  *       200:
  *         description: Historique des réservations
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ReservationListResponse'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
+ *     security:
+ *       - BearerAuth: []
  */
 
 export async function GET(
@@ -34,6 +47,7 @@ export async function GET(
                         conducteur: {
                             columns: {
                                 password: false,
+                                refreshToken: false,
                             }
                         }
                     }
@@ -42,9 +56,9 @@ export async function GET(
             orderBy: (reservations, { desc }) => [desc(reservations.createdAt)],
         });
 
-        return NextResponse.json(history);
+        return successResponse(history);
     } catch (error) {
         console.error('Error fetching passenger history:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return ApiErrors.serverError();
     }
 }

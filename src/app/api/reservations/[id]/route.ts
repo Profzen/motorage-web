@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { reservations, trajets } from '@/lib/db/schema';
 import { eq, sql } from 'drizzle-orm';
+import { reservationSchema } from '@/lib/validation';
+import { successResponse, ApiErrors } from '@/lib/api-response';
 
 /**
  * @openapi
@@ -35,11 +37,27 @@ import { eq, sql } from 'drizzle-orm';
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Reservation'
+ *               $ref: '#/components/schemas/ReservationResponse'
  *       400:
  *         description: Impossible de confirmer (plus de places)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse400'
+ *       404:
+ *         description: Réservation non trouvée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse404'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
  *   delete:
  *     tags:
  *       - Réservations
@@ -53,12 +71,19 @@ import { eq, sql } from 'drizzle-orm';
  *     responses:
  *       200:
  *         description: Réservation annulée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse500'
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
  */
-
-
-import { reservationSchema } from '@/lib/validation';
 
 export async function PATCH(
     request: Request,
@@ -69,7 +94,7 @@ export async function PATCH(
         const { statut } = reservationSchema.partial().parse(body);
 
         if (!statut) {
-            return NextResponse.json({ error: 'Statut is required' }, { status: 400 });
+            return ApiErrors.validationError('Statut is required', 'statut');
         }
 
         const result = await db.transaction(async (tx) => {
@@ -81,13 +106,13 @@ export async function PATCH(
             });
 
             if (!reservation) {
-                return { error: 'Réservation non trouvée', status: 404 };
+                return { error: ApiErrors.notFound('Réservation') };
             }
 
             // Logic for confirming: decrement placesDisponibles
             if (statut === 'confirmé' && reservation.statut !== 'confirmé') {
                 if (reservation.trajet.placesDisponibles <= 0) {
-                    return { error: 'Plus de places disponibles', status: 400 };
+                    return { error: ApiErrors.validationError('Plus de places disponibles', undefined) };
                 }
 
                 // Update trajet places
@@ -108,20 +133,20 @@ export async function PATCH(
                 .where(eq(reservations.id, params.id))
                 .returning();
 
-            return { data: updated[0], status: 200 };
+            return { data: updated[0] };
         });
 
-        if ('error' in result) {
-            return NextResponse.json({ error: result.error }, { status: result.status });
+        if (result.error) {
+            return result.error;
         }
 
-        return NextResponse.json(result.data);
+        return successResponse(result.data);
     } catch (error: any) {
         if (error.name === 'ZodError') {
-            return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 });
+            return ApiErrors.validationError('Validation failed', undefined, error.errors);
         }
         console.error('Error updating reservation:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return ApiErrors.serverError();
     }
 }
 
@@ -148,9 +173,9 @@ export async function DELETE(
             await tx.delete(reservations).where(eq(reservations.id, params.id));
         });
 
-        return NextResponse.json({ message: 'Réservation annulée' });
+        return successResponse({ message: 'Réservation annulée' });
     } catch (error) {
         console.error('Error deleting reservation:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return ApiErrors.serverError();
     }
 }

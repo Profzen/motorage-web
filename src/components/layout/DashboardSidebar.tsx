@@ -8,24 +8,23 @@ import {
   LayoutDashboard,
   MapPin,
   Bike,
-  History,
   Settings,
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Bell,
   Search,
-  Plus,
   Moon,
   Sun,
   Monitor,
   User as UserIcon,
   ChevronDown,
-  Menu,
-  X,
   CreditCard,
-  Package,
-  Users
+  Users,
+  BarChart3,
+  FileWarning,
+  ShieldAlert,
+  ClipboardCheck,
+  ArrowRightLeft
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -45,91 +44,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
-
-// Navigation pour les PASSAGERS
-const PASSAGER_NAV_ITEMS = [
-  {
-    title: "Tableau de Bord",
-    icon: LayoutDashboard,
-    href: "/dashboard",
-    badge: null,
-  },
-  {
-    title: "Explorer",
-    icon: Search,
-    href: "/trajets",
-    badge: null,
-  },
-  {
-    title: "Mes Réservations",
-    icon: Package,
-    href: "/dashboard/reservations",
-    badge: null,
-  },
-  {
-    title: "Historique",
-    icon: History,
-    href: "/historique",
-    badge: null,
-  },
-  {
-    title: "Paramètres",
-    icon: Settings,
-    href: "/settings",
-    badge: null,
-  },
-]
-
-// Navigation pour les CONDUCTEURS
-const CONDUCTEUR_NAV_ITEMS = [
-  {
-    title: "Tableau de Bord",
-    icon: LayoutDashboard,
-    href: "/dashboard",
-    badge: null,
-  },
-  {
-    title: "Mes Trajets",
-    icon: MapPin,
-    href: "#",
-    badge: null,
-    children: [
-      { title: "Publier un trajet", href: "/trajets/nouveau" },
-      { title: "Gérer mes trajets", href: "/dashboard/trajets" },
-    ]
-  },
-  {
-    title: "Demandes",
-    icon: Bell,
-    href: "/dashboard/demandes",
-    badge: "3",
-  },
-  {
-    title: "Mon Garage",
-    icon: Bike,
-    href: "/garage",
-    badge: null,
-  },
-  {
-    title: "Historique",
-    icon: History,
-    href: "/historique",
-    badge: null,
-  },
-  {
-    title: "Paramètres",
-    icon: Settings,
-    href: "/settings",
-    badge: null,
-  },
-]
 
 // Navigation pour les ADMINISTRATEURS
 const ADMIN_NAV_ITEMS = [
   {
-    title: "Tableau de Bord",
+    title: "Vue d'ensemble",
     icon: LayoutDashboard,
     href: "/dashboard",
     badge: null,
@@ -137,39 +57,80 @@ const ADMIN_NAV_ITEMS = [
   {
     title: "Utilisateurs",
     icon: Users,
-    href: "/admin/users",
-    badge: "Nouveau",
+    href: "/dashboard/users",
+    badge: null,
+  },
+  {
+    title: "Validation Motards",
+    icon: ClipboardCheck,
+    href: "/dashboard/drivers",
+    badge: "12",
+  },
+  {
+    title: "Flux de Trajets",
+    icon: ArrowRightLeft,
+    href: "/dashboard/flux",
+    badge: "Live",
+  },
+  {
+    title: "Signalements",
+    icon: ShieldAlert,
+    href: "/dashboard/reports",
+    badge: "2",
+  },
+  {
+    title: "Statistiques",
+    icon: BarChart3,
+    href: "/dashboard/stats",
+    badge: null,
   },
   {
     title: "Zones",
     icon: MapPin,
-    href: "/admin/zones",
+    href: "/admin/config",
+    badge: null,
+  }
+]
+
+// Navigation pour les UTILISATEURS LAMBDA (Passagers / Conducteurs)
+const USER_NAV_ITEMS = [
+  {
+    title: "Tableau de Bord",
+    icon: LayoutDashboard,
+    href: "/dashboard",
+    badge: null,
+  },
+  {
+    title: "Signaler un problème",
+    icon: FileWarning,
+    href: "/dashboard/report-issue",
+    badge: null,
+  },
+  {
+    title: "Mes Signalements",
+    icon: ShieldAlert,
+    href: "/dashboard/my-reports",
     badge: null,
   },
   {
     title: "Paramètres",
     icon: Settings,
-    href: "/settings",
+    href: "/dashboard/settings",
     badge: null,
-  },
+  }
 ]
 
 // Fonction pour récupérer les items de navigation selon le rôle
 const getNavItems = (role: string | undefined) => {
-  switch (role) {
-    case 'conducteur':
-      return CONDUCTEUR_NAV_ITEMS;
-    case 'administrateur':
-      return ADMIN_NAV_ITEMS;
-    case 'passager':
-    default:
-      return PASSAGER_NAV_ITEMS;
+  if (role === 'administrateur') {
+    return ADMIN_NAV_ITEMS
   }
+  return USER_NAV_ITEMS
 }
 
 export function DashboardSidebar() {
   const { user, logout } = useAuthStore()
-  const { isCollapsed, isOpen, setCollapsed, setOpen, toggle } = useSidebarStore()
+  const { isCollapsed, isOpen, setCollapsed, setOpen } = useSidebarStore()
   const { setTheme } = useTheme()
   const pathname = usePathname()
   const [searchFocused, setSearchFocused] = React.useState(false)
@@ -213,7 +174,7 @@ export function DashboardSidebar() {
         className={cn(
           "fixed top-0 left-0 h-screen z-50 bg-card/70 border-r flex flex-col transition-all duration-500 ease-in-out",
           "backdrop-blur-xl shadow-2xl shadow-primary/5",
-          "before:absolute before:inset-0 before:bg-gradient-to-b before:from-primary/5 before:to-transparent before:pointer-events-none",
+          "before:absolute before:inset-0 before:bg-linear-to-b before:from-primary/5 before:to-transparent before:pointer-events-none",
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}
       >
@@ -357,7 +318,18 @@ export function DashboardSidebar() {
   )
 }
 
-function SidebarItem({ item, isCollapsed, isActive }: any) {
+interface NavItem {
+  title: string
+  icon: React.ElementType
+  href: string
+  badge: string | null
+  children?: {
+    title: string
+    href: string
+  }[]
+}
+
+function SidebarItem({ item, isCollapsed, isActive }: { item: NavItem; isCollapsed: boolean; isActive: boolean }) {
   const [isOpen, setIsOpen] = React.useState(false)
   const hasChildren = item.children && item.children.length > 0
 
@@ -385,7 +357,7 @@ function SidebarItem({ item, isCollapsed, isActive }: any) {
               exit={{ height: 0, opacity: 0 }}
               className="pl-11 space-y-1 overflow-hidden"
             >
-              {item.children.map((child: any) => (
+              {item.children?.map((child) => (
                 <Link
                   key={child.title}
                   href={child.href}
