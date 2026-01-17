@@ -1,4 +1,5 @@
 import { TrendingUp, Users, MapPin } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const stats = [
   {
@@ -23,14 +24,14 @@ export function StatsSection() {
     <section className="from-primary/5 to-secondary/5 border-y bg-linear-to-r py-16">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-          {stats.map((stat, index) => {
+          {stats.map((stat) => {
             const Icon = stat.icon;
             return (
               <div
-                key={index}
+                key={stat.label}
                 className="flex flex-col items-center justify-center text-center"
               >
-                <div className="bg-primary/10 mb-4 flex h-14 w-14 items-center justify-center rounded-full">
+                <div className="bg-primary/10 mb-4 flex h-14 w-14 items-center justify-center rounded-full transition-transform hover:scale-110">
                   <Icon className="text-primary h-7 w-7" />
                 </div>
                 <div className="text-foreground mb-2 text-3xl font-bold md:text-4xl">

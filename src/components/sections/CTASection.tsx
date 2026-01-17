@@ -14,20 +14,11 @@ export function CTASection() {
             grande communauté de motards de l&apos;UL.
           </p>
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Link href="/register" className="w-full sm:w-auto">
+            <Link href="/login" className="w-full sm:w-auto">
               <Button
                 size="lg"
                 variant="secondary"
                 className="h-12 w-full px-8 font-semibold"
-              >
-                Créer mon compte
-              </Button>
-            </Link>
-            <Link href="/login" className="w-full sm:w-auto">
-              <Button
-                size="lg"
-                variant="outline"
-                className="h-12 w-full border-white/40 bg-transparent px-8 text-white transition-colors hover:bg-white/10 hover:text-white"
               >
                 Se connecter
               </Button>

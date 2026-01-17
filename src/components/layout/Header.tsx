@@ -90,12 +90,13 @@ export function Header() {
             ) : mounted ? (
               <>
                 <Link href="/login">
-                  <Button variant="ghost" size="sm">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-primary/20 hover:bg-primary/10 hover:text-primary rounded-xl font-bold transition-all"
+                  >
                     Connexion
                   </Button>
-                </Link>
-                <Link href="/register">
-                  <Button size="sm">Inscription</Button>
                 </Link>
               </>
             ) : null}
@@ -161,20 +162,14 @@ export function Header() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-3">
                     <Link
                       href="/login"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
-                      <Button variant="outline" className="w-full">
+                      <Button variant="default" className="w-full">
                         Connexion
                       </Button>
-                    </Link>
-                    <Link
-                      href="/register"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      <Button className="w-full">Inscription</Button>
                     </Link>
                   </div>
                 )}

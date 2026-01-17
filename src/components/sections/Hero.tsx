@@ -52,41 +52,16 @@ export function Hero() {
 
           <motion.p
             variants={itemVariants}
-            className="text-muted-foreground mb-4 text-lg leading-relaxed font-medium md:text-xl"
+            className="text-muted-foreground mb-10 text-lg leading-relaxed font-medium md:text-xl"
           >
-            Pas de panne, pas de stress. Trouvez de l&apos;aide immédiatement ou
-            proposez vos trajets.
-          </motion.p>
-          <motion.p
-            variants={itemVariants}
-            className="text-muted-foreground/80 mx-auto mb-10 max-w-2xl text-base leading-relaxed"
-          >
-            La première plateforme d&apos;entraide moto pensée par et pour les
-            étudiants de l&apos;Université de Lomé.
+            Pas de panne, pas de stress. La première plateforme d&apos;entraide
+            moto pensée par et pour les étudiants de l&apos;Université de Lomé.
           </motion.p>
 
           <motion.div
             variants={itemVariants}
             className="mb-20 flex flex-col items-center justify-center gap-4 sm:flex-row"
           >
-            <Link href="/register" className="w-full sm:w-auto">
-              <Button
-                size="lg"
-                className="shadow-primary/20 hover:shadow-primary/30 h-14 w-full px-8 text-base font-bold shadow-lg transition-all hover:shadow-xl"
-              >
-                Rejoindre Miyi Ðekae
-                <ChevronRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-            <Link href="/search" className="w-full sm:w-auto">
-              <Button
-                size="lg"
-                variant="secondary"
-                className="h-14 w-full px-8 text-base font-semibold"
-              >
-                Demander une aide
-              </Button>
-            </Link>
             <Link href="/about" className="w-full sm:w-auto">
               <Button
                 size="lg"

@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Star } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const testimonials = [
   {
@@ -46,9 +47,9 @@ export function TestimonialsSection() {
         </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {testimonials.map((testimonial, index) => (
+          {testimonials.map((testimonial) => (
             <Card
-              key={index}
+              key={testimonial.name}
               className="border-none shadow-sm transition-shadow hover:shadow-md"
             >
               <CardContent className="pt-6">
@@ -61,7 +62,7 @@ export function TestimonialsSection() {
                   ))}
                 </div>
                 <p className="text-muted-foreground mb-4 text-sm italic">
-                  &quot;{testimonial.message}&quot;
+                  &ldquo;{testimonial.message}&rdquo;
                 </p>
                 <div className="flex items-center gap-2">
                   <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
