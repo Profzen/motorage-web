@@ -119,7 +119,7 @@ export async function GET(request: Request) {
         });
 
         return successResponse(myReports);
-    } catch (error) {
+    } catch {
         return ApiErrors.serverError();
     }
 }

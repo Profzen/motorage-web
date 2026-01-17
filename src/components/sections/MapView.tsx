@@ -85,7 +85,7 @@ export function MapView({ trajets, center = { lat: 6.1256, lng: 1.2317 }, userLo
             icon={defaultIcon || undefined}
           >
             <Popup>
-              <div className="space-y-1 min-w-[150px]">
+              <div className="space-y-1 min-w-37.5">
                 <p className="font-medium text-sm text-foreground">{t.departure.name} → {t.arrival.name}</p>
                 <div className="text-xs text-muted-foreground">
                   <p>Conducteur: {t.driver.name}</p>
