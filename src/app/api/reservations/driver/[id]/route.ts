@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { trajets } from "@/lib/db/schema";
 import { sql } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
+import { NextRequest } from "next/server";
 
 /**
  * @openapi
@@ -34,10 +35,11 @@ import { successResponse, ApiErrors } from "@/lib/api-response";
  */
 
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const receivedRequests = await db.query.reservations.findMany({
       where: (reservations, { exists }) =>
         exists(
@@ -45,7 +47,7 @@ export async function GET(
             .select()
             .from(trajets)
             .where(
-              sql`${trajets.id} = ${reservations.trajetId} AND ${trajets.conducteurId} = ${params.id}`
+              sql`${trajets.id} = ${reservations.trajetId} AND ${trajets.conducteurId} = ${id}`
             )
         ),
       with: {

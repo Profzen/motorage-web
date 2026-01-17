@@ -3,6 +3,7 @@ import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
 import { userSchema } from "@/lib/validation";
+import { NextRequest } from "next/server";
 
 /**
  * @openapi
@@ -54,10 +55,11 @@ import { userSchema } from "@/lib/validation";
  */
 
 export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const validatedData = userSchema.partial().parse(body);
 
@@ -67,7 +69,7 @@ export async function PATCH(
     const updated = await db
       .update(users)
       .set(updateFields)
-      .where(eq(users.id, params.id))
+      .where(eq(users.id, id))
       .returning();
 
     if (updated.length === 0) {
@@ -111,11 +113,12 @@ export async function PATCH(
  *       - BearerAuth: []
  */
 export async function DELETE(
-  _request: Request,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await db.delete(users).where(eq(users.id, params.id));
+    const { id } = await params;
+    await db.delete(users).where(eq(users.id, id));
     return successResponse({ message: "User deleted" });
   } catch {
     return ApiErrors.serverError();

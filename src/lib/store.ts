@@ -133,11 +133,7 @@ interface LocationStore {
 // Store d'authentification
 export const useAuthStore = create<AuthStore>()(
   persist(
-    (
-      set: (
-        next: Partial<AuthStore> | ((state: AuthStore) => Partial<AuthStore>)
-      ) => void
-    ) => ({
+    (set) => ({
       user: null,
       isLoggedIn: false,
       login: async (email: string, password: string) => {
@@ -504,13 +500,7 @@ interface SidebarStore {
 
 export const useSidebarStore = create<SidebarStore>()(
   persist(
-    (
-      set: (
-        next:
-          | Partial<SidebarStore>
-          | ((state: SidebarStore) => Partial<SidebarStore>)
-      ) => void
-    ) => ({
+    (set) => ({
       isOpen: false,
       isCollapsed: false,
       toggle: () => set((state: SidebarStore) => ({ isOpen: !state.isOpen })),

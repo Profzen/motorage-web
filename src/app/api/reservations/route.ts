@@ -6,6 +6,7 @@ import { successResponse, ApiErrors } from "@/lib/api-response";
 import { authenticateRequest } from "@/lib/auth";
 import { createNotification } from "@/lib/notifications";
 import { cookies } from "next/headers";
+import { z } from "zod";
 
 /**
  * @openapi
@@ -99,9 +100,11 @@ export async function POST(request: Request) {
 
     return successResponse(result.data, undefined, 201);
   } catch (error: unknown) {
-    if (error instanceof Error && error.name === "ZodError") {
-      return ApiErrors.badRequest(
-        (error as { errors: { message: string }[] }).errors[0].message
+    if (error instanceof z.ZodError) {
+      return ApiErrors.validationError(
+        "Validation failed",
+        undefined,
+        error.issues
       );
     }
     console.error("Reservation error:", error);

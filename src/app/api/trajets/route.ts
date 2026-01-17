@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { trajets } from "@/lib/db/schema";
-import { sql } from "drizzle-orm";
+import { sql, and, eq, like } from "drizzle-orm";
 import { trajetSchema } from "@/lib/validation";
 import {
   successResponse,
@@ -92,34 +92,26 @@ export async function GET(request: Request) {
     const conducteurId = searchParams.get("conducteurId");
     const statut = searchParams.get("statut");
 
+    const conditions = [];
+    if (from) conditions.push(like(trajets.pointDepart, `%${from}%`));
+    if (to) conditions.push(like(trajets.destination, `%${to}%`));
+    if (departZoneId) conditions.push(eq(trajets.departZoneId, departZoneId));
+    if (arriveeZoneId)
+      conditions.push(eq(trajets.arriveeZoneId, arriveeZoneId));
+    if (conducteurId) conditions.push(eq(trajets.conducteurId, conducteurId));
+    if (statut) conditions.push(eq(trajets.statut, statut));
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
     // Get total count
     const countResult = await db
       .select({ count: sql<number>`count(*)` })
       .from(trajets)
-      .where((t, { and, eq, like }) => {
-        const conditions = [];
-        if (from) conditions.push(like(t.pointDepart, `%${from}%`));
-        if (to) conditions.push(like(t.destination, `%${to}%`));
-        if (departZoneId) conditions.push(eq(t.departZoneId, departZoneId));
-        if (arriveeZoneId) conditions.push(eq(t.arriveeZoneId, arriveeZoneId));
-        if (conducteurId) conditions.push(eq(t.conducteurId, conducteurId));
-        if (statut) conditions.push(eq(t.statut, statut));
-        return conditions.length > 0 ? and(...conditions) : undefined;
-      });
+      .where(whereClause);
     const total = Number(countResult[0]?.count || 0);
 
     // Get paginated data
     const data = await db.query.trajets.findMany({
-      where: (t, { and, eq, like }) => {
-        const conditions = [];
-        if (from) conditions.push(like(t.pointDepart, `%${from}%`));
-        if (to) conditions.push(like(t.destination, `%${to}%`));
-        if (departZoneId) conditions.push(eq(t.departZoneId, departZoneId));
-        if (arriveeZoneId) conditions.push(eq(t.arriveeZoneId, arriveeZoneId));
-        if (conducteurId) conditions.push(eq(t.conducteurId, conducteurId));
-        if (statut) conditions.push(eq(t.statut, statut));
-        return conditions.length > 0 ? and(...conditions) : undefined;
-      },
+      where: whereClause,
       with: {
         conducteur: {
           columns: {

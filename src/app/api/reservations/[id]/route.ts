@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { reservationSchema } from "@/lib/validation";
 import { successResponse, ApiErrors } from "@/lib/api-response";
 import { z } from "zod";
+import { NextRequest } from "next/server";
 
 /**
  * @openapi
@@ -86,10 +87,11 @@ import { z } from "zod";
  */
 
 export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { statut } = reservationSchema.partial().parse(body);
 
@@ -99,7 +101,7 @@ export async function PATCH(
 
     const result = await db.transaction(async (tx) => {
       const reservation = await tx.query.reservations.findFirst({
-        where: eq(reservations.id, params.id),
+        where: eq(reservations.id, id),
         with: {
           trajet: true,
         },
@@ -141,7 +143,7 @@ export async function PATCH(
       const updated = await tx
         .update(reservations)
         .set({ statut })
-        .where(eq(reservations.id, params.id))
+        .where(eq(reservations.id, id))
         .returning();
 
       return { data: updated[0] };
@@ -166,13 +168,14 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     await db.transaction(async (tx) => {
       const reservation = await tx.query.reservations.findFirst({
-        where: eq(reservations.id, params.id),
+        where: eq(reservations.id, id),
       });
 
       if (reservation?.statut === "confirmé") {
@@ -188,7 +191,7 @@ export async function DELETE(
         }
       }
 
-      await tx.delete(reservations).where(eq(reservations.id, params.id));
+      await tx.delete(reservations).where(eq(reservations.id, id));
     });
 
     return successResponse({ message: "Réservation annulée" });

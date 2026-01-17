@@ -4,6 +4,7 @@ import { zoneSchema } from "@/lib/validation";
 import { eq } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
 import { z } from "zod";
+import { NextRequest } from "next/server";
 
 /**
  * @openapi
@@ -119,12 +120,13 @@ import { z } from "zod";
  */
 
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const zone = await db.query.zones.findFirst({
-      where: eq(zones.id, params.id),
+      where: eq(zones.id, id),
     });
 
     if (!zone) {
@@ -138,17 +140,18 @@ export async function GET(
 }
 
 export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const validatedData = zoneSchema.partial().parse(body);
 
     const updated = await db
       .update(zones)
       .set(validatedData)
-      .where(eq(zones.id, params.id))
+      .where(eq(zones.id, id))
       .returning();
 
     if (updated.length === 0) {
@@ -169,14 +172,12 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const deleted = await db
-      .delete(zones)
-      .where(eq(zones.id, params.id))
-      .returning();
+    const { id } = await params;
+    const deleted = await db.delete(zones).where(eq(zones.id, id)).returning();
 
     if (deleted.length === 0) {
       return ApiErrors.notFound("Zone");

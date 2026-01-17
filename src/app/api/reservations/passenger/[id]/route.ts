@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { reservations } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
+import { NextRequest } from "next/server";
 
 /**
  * @openapi
@@ -34,12 +35,13 @@ import { successResponse, ApiErrors } from "@/lib/api-response";
  */
 
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const history = await db.query.reservations.findMany({
-      where: eq(reservations.etudiantId, params.id),
+      where: eq(reservations.etudiantId, id),
       with: {
         trajet: {
           with: {
