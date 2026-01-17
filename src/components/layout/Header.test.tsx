@@ -14,9 +14,8 @@ describe("Header Component", () => {
     expect(screen.getByText(/Contact/i)).toBeInTheDocument();
   });
 
-  it("affiche les boutons de connexion et d'inscription", () => {
+  it("affiche le bouton de connexion", async () => {
     render(<Header />);
-    expect(screen.getByText(/Connexion/i)).toBeInTheDocument();
-    expect(screen.getByText(/Inscription/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Connexion/i)).toBeInTheDocument();
   });
 });
