@@ -4,6 +4,7 @@ import { trajetSchema } from "@/lib/validation";
 import { eq } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
 import { z } from "zod";
+import { NextRequest } from "next/server";
 
 /**
  * @openapi
@@ -129,12 +130,13 @@ import { z } from "zod";
  */
 
 export async function GET(
-  _request: Request,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const trajet = await db.query.trajets.findFirst({
-      where: eq(trajets.id, params.id),
+      where: eq(trajets.id, id),
       with: {
         conducteur: {
           columns: {
@@ -166,17 +168,18 @@ export async function GET(
 }
 
 export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const validatedData = trajetSchema.partial().parse(body);
 
     const updated = await db
       .update(trajets)
       .set(validatedData)
-      .where(eq(trajets.id, params.id))
+      .where(eq(trajets.id, id))
       .returning();
 
     if (updated.length === 0) {
@@ -197,13 +200,14 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: Request,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const deleted = await db
       .delete(trajets)
-      .where(eq(trajets.id, params.id))
+      .where(eq(trajets.id, id))
       .returning();
 
     if (deleted.length === 0) {

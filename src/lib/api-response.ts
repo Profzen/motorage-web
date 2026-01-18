@@ -139,4 +139,8 @@ export const ApiErrors = {
     errorResponse("INVALID_CREDENTIALS", message, 401, { field }),
   tokenExpired: () => errorResponse("TOKEN_EXPIRED", "Token expiré", 401),
   tokenInvalid: () => errorResponse("TOKEN_INVALID", "Token invalide", 401),
+  conflict: (field: string, message: string) =>
+    errorResponse("CONFLICT", message, 409, { field }),
+  custom: (message: string, status = 400, code = "ERROR") =>
+    errorResponse(code, message, status),
 };

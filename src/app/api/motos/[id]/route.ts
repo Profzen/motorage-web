@@ -3,6 +3,8 @@ import { motos } from "@/lib/db/schema";
 import { motoSchema } from "@/lib/validation";
 import { eq } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
+import { NextRequest } from "next/server";
+import { z } from "zod";
 
 /**
  * @openapi
@@ -118,12 +120,13 @@ import { successResponse, ApiErrors } from "@/lib/api-response";
  */
 
 export async function GET(
-  _request: Request,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const moto = await db.query.motos.findFirst({
-      where: eq(motos.id, params.id),
+      where: eq(motos.id, id),
     });
 
     if (!moto) {
@@ -137,30 +140,31 @@ export async function GET(
 }
 
 export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const validatedData = motoSchema.partial().parse(body);
 
-    const updatedMoto = await db
+    const updated = await db
       .update(motos)
       .set(validatedData)
-      .where(eq(motos.id, params.id))
+      .where(eq(motos.id, id))
       .returning();
 
-    if (updatedMoto.length === 0) {
+    if (updated.length === 0) {
       return ApiErrors.notFound("Moto");
     }
 
-    return successResponse(updatedMoto[0]);
+    return successResponse(updated[0]);
   } catch (error: unknown) {
-    if (error instanceof Error && error.name === "ZodError") {
+    if (error instanceof z.ZodError) {
       return ApiErrors.validationError(
         "Validation failed",
         undefined,
-        (error as { errors: unknown[] }).errors
+        error.issues
       );
     }
     return ApiErrors.serverError();
@@ -168,16 +172,14 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const deletedMoto = await db
-      .delete(motos)
-      .where(eq(motos.id, params.id))
-      .returning();
+    const { id } = await params;
+    const deleted = await db.delete(motos).where(eq(motos.id, id)).returning();
 
-    if (deletedMoto.length === 0) {
+    if (deleted.length === 0) {
       return ApiErrors.notFound("Moto");
     }
 

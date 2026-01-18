@@ -2,8 +2,10 @@
 
 import { DashboardSidebar } from "@/components/layout/DashboardSidebar";
 import { useSidebarStore } from "@/lib/store";
-import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
+import { Menu, Bike } from "lucide-react";
 
 export default function DashboardLayout({
   children,
@@ -12,9 +14,9 @@ export default function DashboardLayout({
 }) {
   const { isCollapsed } = useSidebarStore();
   const [mounted, setMounted] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -44,7 +46,7 @@ export default function DashboardLayout({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setOpen(!isOpen)}
+            onClick={() => setIsOpen(!isOpen)}
             className="hover:bg-primary/10 hover:text-primary rounded-xl transition-all"
           >
             <Menu className="h-6 w-6" />
@@ -56,6 +58,3 @@ export default function DashboardLayout({
     </div>
   );
 }
-
-import { Menu, Bike } from "lucide-react";
-import { Button } from "@/components/ui/button";

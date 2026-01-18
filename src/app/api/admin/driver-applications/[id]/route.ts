@@ -7,6 +7,7 @@ import { createNotification } from "@/lib/notifications";
 import { deletePublicFile } from "@/lib/file-storage";
 import { cookies } from "next/headers";
 import { z } from "zod";
+import { NextRequest } from "next/server";
 
 const validateSchema = z.object({
   statut: z.enum(["approuvé", "rejeté"]),
@@ -68,8 +69,8 @@ const validateSchema = z.object({
  *               $ref: '#/components/schemas/ErrorResponse404'
  */
 export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const cookieStore = await cookies();

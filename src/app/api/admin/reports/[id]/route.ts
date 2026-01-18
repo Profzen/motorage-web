@@ -6,6 +6,7 @@ import { authenticateRequest } from "@/lib/auth";
 import { createNotification } from "@/lib/notifications";
 import { cookies } from "next/headers";
 import { z } from "zod";
+import { NextRequest } from "next/server";
 
 const updateReportSchema = z.object({
   statut: z.enum(["en_cours", "resolu", "rejete"]),
@@ -41,8 +42,8 @@ const updateReportSchema = z.object({
  *         description: Signalement mis à jour
  */
 export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const cookieStore = await cookies();
