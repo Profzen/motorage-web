@@ -3,7 +3,7 @@
 import { DashboardSidebar } from "@/components/layout/DashboardSidebar";
 import { useSidebarStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { Menu, Bike } from "lucide-react";
 
@@ -17,6 +17,7 @@ export default function DashboardLayout({
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 

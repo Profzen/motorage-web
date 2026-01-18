@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Bike, MapPin, Wrench, ChevronRight } from "lucide-react";
+import { Bike, MapPin, Wrench } from "lucide-react";
 import { motion } from "framer-motion";
 
 export function Hero() {
