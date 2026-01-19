@@ -143,7 +143,7 @@ export function AdminDashboard() {
             <CardTitle className="flex items-center gap-2 text-xl font-bold">
               <ClipboardCheck className="h-5 w-5 text-amber-500" />À valider
             </CardTitle>
-            <CardDescription>Documents motards en attente</CardDescription>
+            <CardDescription>Documents conducteurs en attente</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">

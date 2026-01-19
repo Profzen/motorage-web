@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { onboardingRequests, users, motos } from "@/lib/db/schema";
+import { onboardingRequests, users, vehicules } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
 import { authenticateRequest } from "@/lib/auth";
@@ -21,7 +21,7 @@ const validateSchema = z.object({
  *     tags:
  *       - Admin
  *     summary: Valider ou rejeter une demande de conducteur (Admin)
- *     description: Met à jour le statut d'une demande. Si approuvée, change le rôle de l'utilisateur et crée sa moto.
+ *     description: Met à jour le statut d'une demande. Si approuvée, change le rôle de l'utilisateur et crée son véhicule.
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -98,63 +98,94 @@ export async function PATCH(
       return ApiErrors.badRequest("Cette demande a déjà été traitée");
     }
 
-    // Transactions are better here, but let's do sequential for simplicity with Turso for now
-    // 1. Update Application Status
-    await db
-      .update(onboardingRequests)
-      .set({ statut, commentaireAdmin, updatedAt: new Date().toISOString() })
-      .where(eq(onboardingRequests.id, id));
+    const result = await db.transaction(async (tx) => {
+      // 1. Update Application Status
+      await tx
+        .update(onboardingRequests)
+        .set({ statut, commentaireAdmin, updatedAt: new Date().toISOString() })
+        .where(eq(onboardingRequests.id, id));
 
-    if (statut === "approuvé") {
-      // 2. Update User Role
-      await db
-        .update(users)
-        .set({ role: "conducteur" })
-        .where(eq(users.id, application.userId));
+      if (statut === "approuvé") {
+        // 2. Update User Role
+        await tx
+          .update(users)
+          .set({ role: "conducteur" })
+          .where(eq(users.id, application.userId));
 
-      // 3. Create Moto entry
-      await db.insert(motos).values({
-        marque: application.motoMarque,
-        modele: application.motoModele,
-        immatriculation: application.motoImmatriculation,
-        proprietaireId: application.userId,
-        disponibilite: true,
-      });
+        // 3. Create or Update Vehicule entry
+        // We check if a vehicle for this app already exists (it shouldn't but safe check)
+        const existingVehicle = await tx.query.vehicules.findFirst({
+          where: eq(
+            vehicules.immatriculation,
+            application.vehiculeImmatriculation
+          ),
+        });
 
-      // 4. Send Notification
-      await createNotification({
-        userId: application.userId,
-        type: "onboarding",
-        title: "Demande approuvée !",
-        message:
-          "Félicitations, vous êtes désormais conducteur sur Miyi Ðekae.",
-        data: { onboardingId: id },
-      });
-    } else {
-      // Send Rejection Notification
-      await createNotification({
-        userId: application.userId,
-        type: "onboarding",
-        title: "Demande refusée",
-        message:
-          commentaireAdmin ||
-          "Votre demande pour devenir conducteur a été rejetée.",
-        data: { onboardingId: id },
-      });
-    }
+        if (existingVehicle) {
+          await tx
+            .update(vehicules)
+            .set({
+              statut: "approuvé",
+              proprietaireId: application.userId,
+            })
+            .where(eq(vehicules.id, existingVehicle.id));
+        } else {
+          await tx.insert(vehicules).values({
+            type: application.vehiculeType || "moto",
+            marque: application.vehiculeMarque,
+            modele: application.vehiculeModele,
+            immatriculation: application.vehiculeImmatriculation,
+            proprietaireId: application.userId,
+            disponibilite: true,
+            statut: "approuvé",
+          });
+        }
+
+        // 4. Send Notification
+        await createNotification({
+          userId: application.userId,
+          type: "onboarding",
+          title: "Demande approuvée !",
+          message:
+            "Félicitations, vous êtes désormais conducteur sur Miyi Ðekae.",
+          data: { onboardingId: id },
+        });
+
+        return {
+          success: true,
+          message: "Utilisateur promu conducteur et véhicule validé",
+        };
+      } else {
+        // Send Rejection Notification
+        await createNotification({
+          userId: application.userId,
+          type: "onboarding",
+          title: "Demande refusée",
+          message:
+            commentaireAdmin ||
+            "Votre demande pour devenir conducteur a été rejetée.",
+          data: { onboardingId: id },
+        });
+        return { success: true, message: "Demande rejetée" };
+      }
+    });
 
     // Purge documents after validation to save space (local storage)
     if (application.permisImage) {
-      await deletePublicFile(application.permisImage);
-      // Update the DB to nullify the URL as the file is gone
-      await db
-        .update(onboardingRequests)
-        .set({ permisImage: null })
-        .where(eq(onboardingRequests.id, id));
+      try {
+        await deletePublicFile(application.permisImage);
+        await db
+          .update(onboardingRequests)
+          .set({ permisImage: null })
+          .where(eq(onboardingRequests.id, id));
+      } catch (e) {
+        console.warn("Could not delete file:", e);
+      }
     }
 
     return successResponse({
       message: `Demande ${statut} avec succès.`,
+      data: result,
     });
   } catch (error) {
     console.error("Validate driver application error:", error);

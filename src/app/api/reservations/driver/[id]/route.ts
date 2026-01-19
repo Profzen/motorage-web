@@ -2,6 +2,8 @@ import { db } from "@/lib/db";
 import { trajets } from "@/lib/db/schema";
 import { sql } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
+import { authenticateRequest } from "@/lib/auth";
+import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
 
 /**
@@ -20,26 +22,29 @@ import { NextRequest } from "next/server";
  *     responses:
  *       200:
  *         description: Liste des demandes
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ReservationListResponse'
- *       500:
- *         description: Erreur serveur
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse500'
  *     security:
  *       - BearerAuth: []
  */
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get("token")?.value;
+    const authPayload = await authenticateRequest(request, cookieToken);
+
+    if (!authPayload) return ApiErrors.unauthorized();
+
+    // Check ownership or admin
+    if (authPayload.userId !== id && authPayload.role !== "administrateur") {
+      return ApiErrors.forbidden(
+        "Vous n'êtes pas autorisé à voir ces demandes"
+      );
+    }
+
     const receivedRequests = await db.query.reservations.findMany({
       where: (reservations, { exists }) =>
         exists(
@@ -59,6 +64,7 @@ export async function GET(
           },
         },
       },
+      orderBy: (reservations, { desc }) => [desc(reservations.createdAt)],
     });
 
     return successResponse(receivedRequests);

@@ -94,7 +94,7 @@ export default function LoginPage() {
             Miyi Ðekae.
           </h1>
           <p className="text-muted-foreground font-medium text-balance">
-            Console de gestion de la flotte motocycliste de l&apos;Université de
+            Console de gestion de la flotte de véhicules de l&apos;Université de
             Lomé.
           </p>
         </div>

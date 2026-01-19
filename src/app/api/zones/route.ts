@@ -2,6 +2,8 @@ import { db } from "@/lib/db";
 import { zones } from "@/lib/db/schema";
 import { zoneSchema } from "@/lib/validation";
 import { successResponse, ApiErrors } from "@/lib/api-response";
+import { authenticateRequest } from "@/lib/auth";
+import { cookies } from "next/headers";
 import { z } from "zod";
 
 /**
@@ -78,6 +80,14 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get("token")?.value;
+    const authPayload = await authenticateRequest(request, cookieToken);
+
+    if (!authPayload || authPayload.role !== "administrateur") {
+      return ApiErrors.forbidden("Seul un administrateur peut créer une zone");
+    }
+
     const body = await request.json();
     const validatedData = zoneSchema.parse(body);
 

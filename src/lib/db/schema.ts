@@ -10,18 +10,23 @@ export const users = sqliteTable("users", {
   prenom: text("prenom").notNull(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(), // Pour l'authentification
-  role: text("role").notNull().default("passager"), // visiteur, passager, conducteur, administrateur
+  role: text("role").notNull().default("passager"), // passager, conducteur, administrateur
   statut: text("statut").notNull().default("actif"), // actif, suspendu, etc.
   avatar: text("avatar"),
   phone: text("phone"),
+  homeZoneId: text("home_zone_id").references(() => zones.id),
   refreshToken: text("refresh_token"),
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
-export const usersRelations = relations(users, ({ many }) => ({
-  motos: many(motos),
+export const usersRelations = relations(users, ({ many, one }) => ({
+  vehicules: many(vehicules),
   trajets: many(trajets),
   reservations: many(reservations),
+  homeZone: one(zones, {
+    fields: [users.homeZoneId],
+    references: [zones.id],
+  }),
 }));
 
 // Table ZONES
@@ -39,27 +44,32 @@ export const zonesRelations = relations(zones, ({ many }) => ({
   trajetsArrivee: many(trajets, { relationName: "arriveeZone" }),
 }));
 
-// Table MOTOS
-export const motos = sqliteTable("motos", {
+// Table VÉHICULES
+export const vehicules = sqliteTable("vehicules", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
+  type: text("type").notNull().default("moto"), // moto, voiture, etc.
   marque: text("marque").notNull(),
   modele: text("modele").notNull(),
   immatriculation: text("immatriculation").notNull().unique(),
+  image: text("image"), // URL de l'image (Uploadthing)
   disponibilite: integer("disponibilite", { mode: "boolean" })
     .notNull()
     .default(true),
+  statut: text("statut").notNull().default("en_attente"), // en_attente, approuvé, rejeté
+  commentaireAdmin: text("commentaire_admin"),
   proprietaireId: text("proprietaire_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
 });
 
-export const motosRelations = relations(motos, ({ one }) => ({
+export const vehiculesRelations = relations(vehicules, ({ one, many }) => ({
   proprietaire: one(users, {
-    fields: [motos.proprietaireId],
+    fields: [vehicules.proprietaireId],
     references: [users.id],
   }),
+  trajets: many(trajets),
 }));
 
 // Table TRAJETS
@@ -67,6 +77,9 @@ export const trajets = sqliteTable("trajets", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
+  vehiculeId: text("vehicule_id").references(() => vehicules.id, {
+    onDelete: "set null",
+  }),
   pointDepart: text("point_depart").notNull(),
   destination: text("destination").notNull(),
   departZoneId: text("depart_zone_id").references(() => zones.id),
@@ -91,6 +104,10 @@ export const trajetsRelations = relations(trajets, ({ one, many }) => ({
   conducteur: one(users, {
     fields: [trajets.conducteurId],
     references: [users.id],
+  }),
+  vehicule: one(vehicules, {
+    fields: [trajets.vehiculeId],
+    references: [vehicules.id],
   }),
   departZone: one(zones, {
     fields: [trajets.departZoneId],
@@ -140,9 +157,10 @@ export const onboardingRequests = sqliteTable("onboarding_requests", {
     .references(() => users.id, { onDelete: "cascade" }),
   permisNumero: text("permis_numero").notNull(),
   permisImage: text("permis_image"), // URL de l'image stockée
-  motoMarque: text("moto_marque").notNull(),
-  motoModele: text("moto_modele").notNull(),
-  motoImmatriculation: text("moto_immatriculation").notNull(),
+  vehiculeType: text("vehicule_type").notNull().default("moto"),
+  vehiculeMarque: text("vehicule_marque").notNull(),
+  vehiculeModele: text("vehicule_modele").notNull(),
+  vehiculeImmatriculation: text("vehicule_immatriculation").notNull(),
   statut: text("statut").notNull().default("en_attente"), // en_attente, approuvé, rejeté
   commentaireAdmin: text("commentaire_admin"),
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
@@ -240,3 +258,27 @@ export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+// Table PUSH_SUBSCRIPTIONS (Pour les notifications mobiles)
+export const pushSubscriptions = sqliteTable("push_subscriptions", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  endpoint: text("endpoint").notNull(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const pushSubscriptionsRelations = relations(
+  pushSubscriptions,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [pushSubscriptions.userId],
+      references: [users.id],
+    }),
+  })
+);

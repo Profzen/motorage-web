@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
   MapPin,
-  Bike,
+  Car,
   Settings,
   LogOut,
   ChevronLeft,
@@ -66,7 +66,7 @@ const ADMIN_NAV_ITEMS = [
     badge: null,
   },
   {
-    title: "Validation Motards",
+    title: "Validation Conducteurs",
     icon: ClipboardCheck,
     href: "/dashboard/drivers",
     badge: "12",
@@ -194,7 +194,7 @@ export function DashboardSidebar() {
         <div className="flex h-16 shrink-0 items-center justify-between px-4">
           <Link href="/" className="flex items-center gap-3 overflow-hidden">
             <div className="bg-primary shadow-primary/20 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-lg">
-              <Bike className="text-primary-foreground h-6 w-6" />
+              <Car className="text-primary-foreground h-6 w-6" />
             </div>
             {!isCollapsed && (
               <motion.span
@@ -265,7 +265,7 @@ export function DashboardSidebar() {
                   className="hover:bg-muted/50 h-auto w-full justify-start gap-3 rounded-xl p-2"
                 >
                   <Avatar className="border-background h-10 w-10 border-2 shadow-sm">
-                    <AvatarImage src={user?.avatar} />
+                    <AvatarImage src={user?.avatar || undefined} />
                     <AvatarFallback className="bg-primary/10 text-primary font-bold">
                       {user?.prenom?.[0]}
                       {user?.nom?.[0]}

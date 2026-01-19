@@ -61,7 +61,7 @@ export default function CreateRoutePage() {
           Publier un trajet
         </h1>
         <p className="text-muted-foreground">
-          Proposez une place sur votre moto pour un trajet régulier
+          Proposez une place dans votre véhicule pour un trajet régulier
         </p>
       </div>
 

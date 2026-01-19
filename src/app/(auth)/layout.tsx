@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bike } from "lucide-react";
+import { Car } from "lucide-react";
 
 export default function AuthLayout({
   children,
@@ -16,7 +16,7 @@ export default function AuthLayout({
           className="group inline-flex items-center gap-2 transition-all duration-300"
         >
           <div className="bg-primary shadow-primary/20 flex h-10 w-10 items-center justify-center rounded-xl shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
-            <Bike className="text-primary-foreground h-6 w-6" />
+            <Car className="text-primary-foreground h-6 w-6" />
           </div>
           <span className="from-foreground to-foreground/70 bg-linear-to-r bg-clip-text text-xl font-bold tracking-tight text-transparent">
             Miyi Ðekae

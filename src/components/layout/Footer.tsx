@@ -1,4 +1,4 @@
-import { Bike, Mail, MapPin } from "lucide-react";
+import { Car, Mail, MapPin } from "lucide-react";
 import Link from "next/link";
 
 export function Footer() {
@@ -9,13 +9,13 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
             <Link href="/" className="mb-4 flex items-center gap-2">
-              <Bike className="text-primary h-6 w-6" />
+              <Car className="text-primary h-6 w-6" />
               <span className="text-xl font-bold tracking-tight">
                 Miyi Ðekae
               </span>
             </Link>
             <p className="text-muted-foreground mb-6 max-w-sm text-sm leading-relaxed">
-              La première plateforme d&apos;entraide moto entre étudiants.
+              La première plateforme d&apos;entraide véhicule entre étudiants.
               Connectez-vous, partagez et roulez en confiance.
             </p>
             <div className="text-muted-foreground space-y-2 text-sm">

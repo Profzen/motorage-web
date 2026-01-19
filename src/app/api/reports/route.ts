@@ -1,9 +1,15 @@
 import { db } from "@/lib/db";
 import { reports } from "@/lib/db/schema";
-import { successResponse, ApiErrors } from "@/lib/api-response";
+import {
+  successResponse,
+  paginatedResponse,
+  ApiErrors,
+  parsePaginationParams,
+} from "@/lib/api-response";
 import { authenticateRequest } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { z } from "zod";
+import { eq, desc, sql } from "drizzle-orm";
 
 const reportSchema = z.object({
   reportedId: z.string().optional(),
@@ -118,12 +124,23 @@ export async function GET(request: Request) {
 
     if (!authPayload) return ApiErrors.unauthorized();
 
+    const { searchParams } = new URL(request.url);
+    const { page, limit } = parsePaginationParams(searchParams);
+    const offset = (page - 1) * limit;
+
     const myReports = await db.query.reports.findMany({
-      where: (reports, { eq }) => eq(reports.reporterId, authPayload.userId),
-      orderBy: (reports, { desc }) => [desc(reports.createdAt)],
+      where: eq(reports.reporterId, authPayload.userId),
+      orderBy: [desc(reports.createdAt)],
+      limit,
+      offset,
     });
 
-    return successResponse(myReports);
+    const totalResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(reports)
+      .where(eq(reports.reporterId, authPayload.userId));
+
+    return paginatedResponse(myReports, page, limit, totalResult[0].count);
   } catch {
     return ApiErrors.serverError();
   }

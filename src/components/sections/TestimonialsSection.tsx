@@ -13,7 +13,7 @@ const testimonials = [
     name: "Kofi M.",
     role: "Étudiant, année 3",
     message:
-      "Une super communauté. J'ai pu aider plusieurs camarades avec ma moto. Fier de contribuer !",
+      "Une super communauté. J'ai pu aider plusieurs camarades avec mon véhicule. Fier de contribuer !",
     rating: 5,
   },
   {

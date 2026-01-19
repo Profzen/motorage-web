@@ -6,10 +6,10 @@ export interface User {
   nom: string;
   prenom: string;
   email: string;
-  role: "visiteur" | "passager" | "conducteur" | "administrateur";
+  role: "passager" | "conducteur" | "administrateur";
   statut: string;
-  avatar?: string;
-  phone?: string;
+  avatar?: string | null;
+  phone?: string | null;
 }
 
 export interface Notification {
@@ -22,12 +22,14 @@ export interface Notification {
   createdAt: string;
 }
 
-export interface Moto {
+export interface Vehicule {
   id: string;
   proprietaireId: string;
   marque: string;
   modele: string;
   immatriculation: string;
+  image?: string;
+  type: string;
   disponibilite: boolean;
 }
 
@@ -71,12 +73,12 @@ interface AuthStore {
   deleteAccount: (id: string) => void;
 }
 
-interface MotosStore {
-  motos: Moto[];
-  addMoto: (moto: Moto) => void;
-  removeMoto: (id: string) => void;
-  updateMoto: (id: string, data: Partial<Moto>) => void;
-  getMotosByDriver: (driverId: string) => Moto[];
+interface VehiculesStore {
+  vehicules: Vehicule[];
+  addVehicule: (vehicule: Vehicule) => void;
+  removeVehicule: (id: string) => void;
+  updateVehicule: (id: string, data: Partial<Vehicule>) => void;
+  getVehiculesByDriver: (driverId: string) => Vehicule[];
 }
 
 interface TrajetsStore {
@@ -246,35 +248,38 @@ export const useAuthStore = create<AuthStore>()(
   )
 );
 
-// Store des motos
-export const useMotosStore = create<MotosStore>()((set, get) => ({
-  motos: [
+// Store des véhicules
+export const useVehiculesStore = create<VehiculesStore>()((set, get) => ({
+  vehicules: [
     {
       id: "1",
       proprietaireId: "driver1",
       marque: "Honda",
       modele: "CB150",
       immatriculation: "TG-2022-001",
+      type: "moto",
       disponibilite: true,
     },
   ],
-  addMoto: (moto) => {
+  addVehicule: (vehicule) => {
     set((state) => ({
-      motos: [...state.motos, moto],
+      vehicules: [...state.vehicules, vehicule],
     }));
   },
-  removeMoto: (id) => {
+  removeVehicule: (id) => {
     set((state) => ({
-      motos: state.motos.filter((m) => m.id !== id),
+      vehicules: state.vehicules.filter((m) => m.id !== id),
     }));
   },
-  updateMoto: (id, data) => {
+  updateVehicule: (id, data) => {
     set((state) => ({
-      motos: state.motos.map((m) => (m.id === id ? { ...m, ...data } : m)),
+      vehicules: state.vehicules.map((m) =>
+        m.id === id ? { ...m, ...data } : m
+      ),
     }));
   },
-  getMotosByDriver: (driverId) => {
-    return get().motos.filter((m) => m.proprietaireId === driverId);
+  getVehiculesByDriver: (driverId) => {
+    return get().vehicules.filter((m) => m.proprietaireId === driverId);
   },
 }));
 

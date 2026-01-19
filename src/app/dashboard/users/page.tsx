@@ -12,7 +12,7 @@ import {
   MoreVertical,
   CheckCircle2,
   Clock,
-  Bike,
+  Car,
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -97,7 +97,7 @@ export default function UsersPage() {
       case "conducteur":
         return (
           <Badge className="bg-primary text-primary-foreground hover:bg-primary/90">
-            <Bike className="mr-1 h-3 w-3" /> Conducteur
+            <Car className="mr-1 h-3 w-3" /> Conducteur
           </Badge>
         );
       case "passager":

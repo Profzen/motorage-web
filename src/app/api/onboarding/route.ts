@@ -1,18 +1,11 @@
 import { db } from "@/lib/db";
-import { onboardingRequests } from "@/lib/db/schema";
+import { onboardingRequests, users } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
 import { authenticateRequest } from "@/lib/auth";
+import { onboardingRequestSchema } from "@/lib/validation";
 import { cookies } from "next/headers";
 import { z } from "zod";
-
-const onboardingSchema = z.object({
-  permisNumero: z.string().min(5, "Numéro de permis invalide"),
-  motoMarque: z.string().min(2, "Marque de moto requise"),
-  motoModele: z.string().min(2, "Modèle de moto requis"),
-  motoImmatriculation: z.string().min(3, "Plaque d'immatriculation requise"),
-  permisImage: z.string().url("URL de l'image du permis invalide"),
-});
 
 /**
  * @openapi
@@ -21,7 +14,7 @@ const onboardingSchema = z.object({
  *     tags:
  *       - Onboarding
  *     summary: Soumettre une demande pour devenir conducteur
- *     description: Permet à un passager de soumettre ses informations de conducteur et de moto.
+ *     description: Permet à un passager de soumettre ses informations pour devenir conducteur. La demande sera examinée par un administrateur.
  *     security:
  *       - BearerAuth: []
  *     requestBody:
@@ -29,43 +22,12 @@ const onboardingSchema = z.object({
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - permisNumero
- *               - motoMarque
- *               - motoModele
- *               - motoImmatriculation
- *               - permisImage
- *             properties:
- *               permisNumero:
- *                 type: string
- *               motoMarque:
- *                 type: string
- *               motoModele:
- *                 type: string
- *               motoImmatriculation:
- *                 type: string
- *               permisImage:
- *                 type: string
+ *             $ref: '#/components/schemas/OnboardingRequest'
  *     responses:
  *       201:
  *         description: Demande soumise avec succès
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/MessageResponse'
  *       400:
  *         description: Demande déjà existante ou données invalides
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse400'
- *       401:
- *         description: Non autorisé
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse401'
  */
 export async function POST(request: Request) {
   try {
@@ -77,10 +39,20 @@ export async function POST(request: Request) {
       return ApiErrors.unauthorized();
     }
 
-    const body = await request.json();
-    const validatedData = onboardingSchema.parse(body);
+    // 1. Vérifier si l'utilisateur est déjà conducteur
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, authPayload.userId),
+    });
 
-    // Check if there's already a pending or approved request
+    if (user?.role === "conducteur") {
+      return ApiErrors.badRequest("Vous êtes déjà enregistré comme conducteur");
+    }
+
+    // 2. Valider les données
+    const body = await request.json();
+    const validatedData = onboardingRequestSchema.parse(body);
+
+    // 3. Vérifier s'il y a déjà une demande en attente
     const existingRequest = await db.query.onboardingRequests.findFirst({
       where: and(
         eq(onboardingRequests.userId, authPayload.userId),
@@ -92,30 +64,31 @@ export async function POST(request: Request) {
       return ApiErrors.badRequest("Vous avez déjà une demande en attente.");
     }
 
-    // Create the request
-    await db.insert(onboardingRequests).values({
-      userId: authPayload.userId,
-      permisNumero: validatedData.permisNumero,
-      motoMarque: validatedData.motoMarque,
-      motoModele: validatedData.motoModele,
-      motoImmatriculation: validatedData.motoImmatriculation,
-      permisImage: validatedData.permisImage,
-      statut: "en_attente",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
+    // 4. Créer la demande
+    const newRequest = await db
+      .insert(onboardingRequests)
+      .values({
+        userId: authPayload.userId,
+        ...validatedData,
+        statut: "en_attente",
+      })
+      .returning();
 
     return successResponse(
       {
-        message:
-          "Votre demande a été soumise avec succès et est en attente de validation.",
+        message: "Votre demande a été soumise avec succès.",
+        application: newRequest[0],
       },
       undefined,
       201
     );
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return ApiErrors.badRequest(error.issues[0].message);
+      return ApiErrors.validationError(
+        "Données invalides",
+        undefined,
+        error.issues
+      );
     }
     console.error("Onboarding submission error:", error);
     return ApiErrors.serverError();

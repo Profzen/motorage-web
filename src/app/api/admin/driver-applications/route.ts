@@ -75,9 +75,10 @@ export async function GET(request: Request) {
         id: onboardingRequests.id,
         permisNumero: onboardingRequests.permisNumero,
         permisImage: onboardingRequests.permisImage,
-        motoMarque: onboardingRequests.motoMarque,
-        motoModele: onboardingRequests.motoModele,
-        motoImmatriculation: onboardingRequests.motoImmatriculation,
+        vehiculeType: onboardingRequests.vehiculeType,
+        vehiculeMarque: onboardingRequests.vehiculeMarque,
+        vehiculeModele: onboardingRequests.vehiculeModele,
+        vehiculeImmatriculation: onboardingRequests.vehiculeImmatriculation,
         statut: onboardingRequests.statut,
         createdAt: onboardingRequests.createdAt,
         user: {

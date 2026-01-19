@@ -22,13 +22,15 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AdminDashboard } from "@/components/dashboard/AdminDashboard";
+import { UploadButton } from "@/lib/uploadthing";
 
 interface ProfileData {
   nom: string;
   prenom: string;
   email: string;
+  avatar?: string | null;
 }
 
 export default function DashboardPage() {
@@ -46,6 +48,7 @@ export default function DashboardPage() {
     nom: "",
     prenom: "",
     email: "",
+    avatar: null,
   });
 
   useEffect(() => {
@@ -55,6 +58,7 @@ export default function DashboardPage() {
           nom: user.nom,
           prenom: user.prenom,
           email: user.email,
+          avatar: user.avatar || null,
         });
       }, 0);
       return () => clearTimeout(timer);
@@ -88,7 +92,6 @@ export default function DashboardPage() {
       conducteur: "Conducteur",
       passager: "Passager",
       administrateur: "Administrateur",
-      visiteur: "Visiteur",
     };
     return roles[role] || role;
   };
@@ -161,9 +164,8 @@ export default function DashboardPage() {
                 Utilisez l&apos;App Mobile
               </h2>
               <p className="text-muted-foreground font-medium">
-                Bonjour {user.prenom}, les fonctionnalités de{" "}
-                <span className="text-foreground font-bold">{user.role}</span>{" "}
-                sont exclusivement disponibles sur notre application mobile.
+                Bonjour {user.prenom}, les fonctionnalités de votre compte sont
+                exclusivement disponibles sur notre application mobile.
               </p>
             </div>
             <div className="flex flex-wrap justify-center gap-4 pt-4">
@@ -216,6 +218,7 @@ export default function DashboardPage() {
           <Card className="bg-card overflow-hidden rounded-3xl border p-8 text-center shadow-lg">
             <div className="flex flex-col items-center gap-4">
               <Avatar className="border-background h-24 w-24 border-4 shadow-xl">
+                <AvatarImage src={user.avatar || undefined} />
                 <AvatarFallback className="bg-primary/10 text-primary text-2xl font-black">
                   {user.prenom[0]}
                 </AvatarFallback>
@@ -333,6 +336,42 @@ function ProfileEditor({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6 pb-8">
+          <div className="flex flex-col items-center gap-4 py-4 md:flex-row md:gap-8">
+            <Avatar className="ring-primary/10 ring-offset-background h-24 w-24 ring-4 ring-offset-4">
+              <AvatarImage src={profileData.avatar || undefined} />
+              <AvatarFallback className="bg-primary/10 text-primary text-2xl font-black uppercase">
+                {profileData.prenom[0]}
+              </AvatarFallback>
+            </Avatar>
+            <div className="space-y-3 text-center md:text-left">
+              <div className="space-y-1">
+                <h4 className="font-bold">Photo de profil</h4>
+                <p className="text-muted-foreground text-xs">
+                  JPG, PNG ou GIF. Max 2MB.
+                </p>
+              </div>
+              <UploadButton
+                endpoint="avatar"
+                onClientUploadComplete={(res) => {
+                  if (res?.[0]) {
+                    setProfileData({ ...profileData, avatar: res[0].url });
+                  }
+                }}
+                onUploadError={(error: Error) => {
+                  alert(`Erreur d'upload: ${error.message}`);
+                }}
+                appearance={{
+                  button:
+                    "bg-primary text-primary-foreground h-9 px-4 text-sm font-bold rounded-lg",
+                  allowedContent: "hidden",
+                }}
+                content={{
+                  button: "Changer la photo",
+                }}
+              />
+            </div>
+          </div>
+
           <form onSubmit={handleUpdateProfile} className="space-y-6">
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div className="space-y-2">
