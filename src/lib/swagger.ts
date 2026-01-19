@@ -1,4 +1,5 @@
 import swaggerJsdoc from "swagger-jsdoc";
+import path from "path";
 
 const options = {
   definition: {
@@ -728,7 +729,10 @@ const options = {
       },
     },
   },
-  apis: ["./src/app/api/**/*.ts"],
+  apis: [
+    path.join(process.cwd(), "src/app/api/**/*.ts"),
+    path.join(process.cwd(), "src/app/api/**/*.js"),
+  ],
 };
 
 export const getApiDocs = () => {
