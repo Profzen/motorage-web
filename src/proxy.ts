@@ -26,16 +26,21 @@ export async function proxy(request: NextRequest) {
     const response = new NextResponse(null, { status: 204 });
     if (origin && allowedOrigins.includes(origin)) {
       response.headers.set("Access-Control-Allow-Origin", origin);
-      response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+      response.headers.set(
+        "Access-Control-Allow-Methods",
+        "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+      );
       response.headers.set("Access-Control-Allow-Credentials", "true");
-      response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+      response.headers.set(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization, X-Requested-With"
+      );
     }
     return response;
   }
 
   // Auth checking logic
-  let authResponse: NextResponse | null = null;
-  let requestHeaders = new Headers(request.headers);
+  const requestHeaders = new Headers(request.headers);
 
   if (
     pathname.startsWith("/api") &&
@@ -49,12 +54,18 @@ export async function proxy(request: NextRequest) {
     }
 
     if (!token) {
-      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
     }
 
     const payload = await verifyJWT(token);
     if (!payload) {
-      return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Invalid or expired token" },
+        { status: 401 }
+      );
     }
 
     requestHeaders.set("x-user-id", payload.userId as string);
@@ -70,9 +81,15 @@ export async function proxy(request: NextRequest) {
   // Add CORS headers to the response
   if (origin && allowedOrigins.includes(origin)) {
     response.headers.set("Access-Control-Allow-Origin", origin);
-    response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+    response.headers.set(
+      "Access-Control-Allow-Methods",
+      "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    );
     response.headers.set("Access-Control-Allow-Credentials", "true");
-    response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+    response.headers.set(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization, X-Requested-With"
+    );
   }
 
   return response;

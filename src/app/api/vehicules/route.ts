@@ -114,7 +114,9 @@ export async function GET(request: Request) {
 
     // Permissions check: If no filter by ID, must be admin. If filter by ID, must be that user or admin.
     if (!proprietaireId && authPayload.role !== "administrateur") {
-      return ApiErrors.forbidden("Seul un administrateur peut lister tous les véhicules");
+      return ApiErrors.forbidden(
+        "Seul un administrateur peut lister tous les véhicules"
+      );
     }
 
     if (
@@ -128,10 +130,16 @@ export async function GET(request: Request) {
     }
 
     const conditions = [];
-    if (proprietaireId) conditions.push(eq(vehicules.proprietaireId, proprietaireId));
+    if (proprietaireId)
+      conditions.push(eq(vehicules.proprietaireId, proprietaireId));
     if (statut) conditions.push(eq(vehicules.statut, statut));
-    
-    const whereClause = conditions.length > 0 ? (conditions.length > 1 ? and(...conditions) : conditions[0]) : undefined;
+
+    const whereClause =
+      conditions.length > 0
+        ? conditions.length > 1
+          ? and(...conditions)
+          : conditions[0]
+        : undefined;
 
     const results = await db
       .select()
@@ -168,7 +176,9 @@ export async function POST(request: Request) {
       validatedData.proprietaireId !== authPayload.userId &&
       authPayload.role !== "administrateur"
     ) {
-      return ApiErrors.forbidden("Vous ne pouvez pas ajouter un véhicule pour un autre utilisateur");
+      return ApiErrors.forbidden(
+        "Vous ne pouvez pas ajouter un véhicule pour un autre utilisateur"
+      );
     }
 
     const [newVehicule] = await db

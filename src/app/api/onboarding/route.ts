@@ -65,11 +65,14 @@ export async function POST(request: Request) {
     }
 
     // 4. Créer la demande
-    const newRequest = await db.insert(onboardingRequests).values({
-      userId: authPayload.userId,
-      ...validatedData,
-      statut: "en_attente",
-    }).returning();
+    const newRequest = await db
+      .insert(onboardingRequests)
+      .values({
+        userId: authPayload.userId,
+        ...validatedData,
+        statut: "en_attente",
+      })
+      .returning();
 
     return successResponse(
       {
@@ -81,7 +84,11 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return ApiErrors.validationError("Données invalides", undefined, error.issues);
+      return ApiErrors.validationError(
+        "Données invalides",
+        undefined,
+        error.issues
+      );
     }
     console.error("Onboarding submission error:", error);
     return ApiErrors.serverError();

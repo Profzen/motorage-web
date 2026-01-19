@@ -122,7 +122,11 @@ export async function PATCH(
         reservation.trajet.conducteurId !== authPayload.userId &&
         authPayload.role !== "administrateur"
       ) {
-        return { error: ApiErrors.forbidden("Seul le conducteur peut modifier le statut") };
+        return {
+          error: ApiErrors.forbidden(
+            "Seul le conducteur peut modifier le statut"
+          ),
+        };
       }
 
       // Logic for confirming: decrement placesDisponibles
@@ -164,7 +168,7 @@ export async function PATCH(
     });
 
     if (result.error) {
-      return result.error as any;
+      return result.error as Response;
     }
 
     return successResponse(result.data);
@@ -211,7 +215,11 @@ export async function DELETE(
         reservation.trajet.conducteurId !== authPayload.userId &&
         authPayload.role !== "administrateur"
       ) {
-        return { error: ApiErrors.forbidden("Vous n'êtes pas autorisé à annuler cette réservation") };
+        return {
+          error: ApiErrors.forbidden(
+            "Vous n'êtes pas autorisé à annuler cette réservation"
+          ),
+        };
       }
 
       if (reservation.statut === "confirmé") {
@@ -226,7 +234,7 @@ export async function DELETE(
       return { success: true };
     });
 
-    if (result.error) return result.error as any;
+    if (result.error) return result.error as Response;
 
     return successResponse({ message: "Réservation annulée" });
   } catch (error) {

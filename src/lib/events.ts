@@ -7,7 +7,8 @@ declare global {
   var notificationEvents: EventEmitter | undefined;
 }
 
-export const notificationEvents = global.notificationEvents || new EventEmitter();
+export const notificationEvents =
+  global.notificationEvents || new EventEmitter();
 
 if (process.env.NODE_ENV !== "production") {
   global.notificationEvents = notificationEvents;
@@ -15,6 +16,6 @@ if (process.env.NODE_ENV !== "production") {
 
 export const NOTIFICATION_EVENT = "new_notification";
 
-export function emitNotification(userId: string, data: any) {
+export function emitNotification(userId: string, data: unknown) {
   notificationEvents.emit(NOTIFICATION_EVENT, { userId, data });
 }

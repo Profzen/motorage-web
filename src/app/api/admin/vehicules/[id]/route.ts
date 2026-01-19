@@ -79,13 +79,15 @@ export async function PATCH(
       // Notify the owner
       const statusLabel =
         validatedData.statut === "approuvé" ? "validé" : "refusé";
-      
+
       await createNotification({
         userId: existing.proprietaireId,
         type: "system",
         title: `Véhicule ${statusLabel}`,
         message: `Votre véhicule ${existing.marque} ${existing.modele} (${existing.immatriculation}) a été ${statusLabel} par l'administration.${
-          validatedData.commentaireAdmin ? ` Motif : ${validatedData.commentaireAdmin}` : ""
+          validatedData.commentaireAdmin
+            ? ` Motif : ${validatedData.commentaireAdmin}`
+            : ""
         }`,
         data: { vehiculeId: id, statut: validatedData.statut },
       });
@@ -98,7 +100,11 @@ export async function PATCH(
     return successResponse(result.data);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return ApiErrors.validationError("Validation échouée", undefined, error.issues);
+      return ApiErrors.validationError(
+        "Validation échouée",
+        undefined,
+        error.issues
+      );
     }
     console.error("Admin vehicle validation error:", error);
     return ApiErrors.serverError();

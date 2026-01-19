@@ -18,16 +18,17 @@ La plupart des routes nécessitent un token JWT.
 
 1. **Inscription** : `POST /api/auth/register`
    - Payload : `{ "nom": "...", "prenom": "...", "email": "...", "password": "...", "homeZoneId": "..." }`
-   - *Note sur le homeZoneId* : Pour remplir ce champ, vous devez d'abord faire un `GET /api/zones` (public) pour récupérer un UUID valide. Si vous ne le spécifiez pas, il sera mis à `null`.
-   - *Sécurité* : Les champs `role` et `statut` sont ignorés. Tout nouvel utilisateur est créé avec le rôle `passager` par défaut.
+   - _Note sur le homeZoneId_ : Pour remplir ce champ, vous devez d'abord faire un `GET /api/zones` (public) pour récupérer un UUID valide. Si vous ne le spécifiez pas, il sera mis à `null`.
+   - _Sécurité_ : Les champs `role` et `statut` sont ignorés. Tout nouvel utilisateur est créé avec le rôle `passager` par défaut.
 2. **Login** : `POST /api/auth/login`
    - Payload : `{ "email": "admin@example.com", "password": "..." }`
 3. **Token** : Le serveur renvoie un `accessToken` et définit un cookie `refreshToken`.
-3. **Usage** : Pour les tests via Postman ou curl, ajoutez le header `Authorization: Bearer <token>`.
+4. **Usage** : Pour les tests via Postman ou curl, ajoutez le header `Authorization: Bearer <token>`.
 
 ## 3. Postman / Bruno
 
 Pour des tests plus poussés :
+
 - Importez le fichier JSON de définition OpenAPI disponible à l'adresse `/api/swagger`.
 - Configurez une variable d'environnement `baseUrl` à `http://localhost:3000`.
 - Utilisez les scripts de "Tests" dans Postman pour extraire automatiquement le token après le login.
@@ -35,14 +36,19 @@ Pour des tests plus poussés :
 ## 4. Données et Base de données
 
 ### Drizzle Studio
+
 Pour visualiser les changements en temps réel dans la base de données :
+
 ```bash
 pnpm db:studio
 ```
+
 Elle s'ouvrira sur `https://local.drizzle.studio`.
 
 ### Atlas (Migrations)
+
 Si vous modifiez le schéma (`src/lib/db/schema.ts`) :
+
 1. Poussez les changements : `pnpm migrate:push`
 2. Vérifiez sur Turso : `npx dotenv-cli -- atlas schema inspect --env turso`
 
@@ -60,7 +66,7 @@ Si vous modifiez le schéma (`src/lib/db/schema.ts`) :
 
 Le passage du rôle `passager` à `conducteur` suit un workflow strict :
 
-1.  **Soumission (Passager)** : 
+1.  **Soumission (Passager)** :
     - L'utilisateur envoie ses documents via `POST /api/onboarding`.
     - **Exemple de Payload** :
       ```json
@@ -73,7 +79,7 @@ Le passage du rôle `passager` à `conducteur` suit un workflow strict :
       }
       ```
     - Sa demande est enregistrée avec le statut `en_attente`.
-2.  **Vérification (Admin)** : 
+2.  **Vérification (Admin)** :
     - L'administrateur consulte les demandes via `GET /api/admin/driver-applications?statut=en_attente`.
     - L'administrateur approuve via `PATCH /api/admin/driver-applications/[id]` avec `{"statut": "approuve"}`.
 3.  **Promotion automatique** :
@@ -90,7 +96,8 @@ Le passage du rôle `passager` à `conducteur` suit un workflow strict :
 ## 7. Parcours de Test (User Journeys)
 
 ### A. Parcours Passager (Étudiant)
-*Ce parcours simule un étudiant cherchant un trajet sur le campus.*
+
+_Ce parcours simule un étudiant cherchant un trajet sur le campus._
 
 1.  **Profil** : `GET /api/me` pour vérifier les informations et la zone de résidence.
 2.  **Recherche** : `GET /api/trajets?departZoneId=UUID&arriveeZoneId=UUID`
@@ -113,7 +120,8 @@ Le passage du rôle `passager` à `conducteur` suit un workflow strict :
     ```
 
 ### B. Parcours Conducteur (Motard)
-*Ce parcours simule un motard proposant ses services.*
+
+_Ce parcours simule un motard proposant ses services._
 
 1.  **Onboarding** : `POST /api/onboarding`
     ```json
@@ -150,7 +158,8 @@ Le passage du rôle `passager` à `conducteur` suit un workflow strict :
     ```
 
 ### C. Parcours Administrateur
-*Ce parcours simule la gestion globale de la plateforme.*
+
+_Ce parcours simule la gestion globale de la plateforme._
 
 1.  **Audit** : `GET /api/admin/stats` pour KPIs.
 2.  **Modération Onboarding** :
@@ -185,4 +194,5 @@ Le passage du rôle `passager` à `conducteur` suit un workflow strict :
     ```
 
 ---
-*Dernière mise à jour : 19 Janvier 2026*
+
+_Dernière mise à jour : 19 Janvier 2026_

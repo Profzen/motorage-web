@@ -117,15 +117,24 @@ export async function GET(request: Request) {
       return ApiErrors.notFound("Utilisateur");
     }
 
-    const { ...userProfile } = user;
-
     // Get user stats depending on role
-    const stats: any = {};
+    const stats: Record<string, { total: number; completed: number }> = {};
 
     // 1. Reservations stats (for everyone, as a driver can also be a passenger)
     const [resTotal, resCompleted] = await Promise.all([
-      db.select({ value: count() }).from(reservations).where(eq(reservations.etudiantId, user.id)),
-      db.select({ value: count() }).from(reservations).where(and(eq(reservations.etudiantId, user.id), eq(reservations.statut, "terminé"))),
+      db
+        .select({ value: count() })
+        .from(reservations)
+        .where(eq(reservations.etudiantId, user.id)),
+      db
+        .select({ value: count() })
+        .from(reservations)
+        .where(
+          and(
+            eq(reservations.etudiantId, user.id),
+            eq(reservations.statut, "terminé")
+          )
+        ),
     ]);
 
     stats.reservations = {
@@ -136,8 +145,19 @@ export async function GET(request: Request) {
     // 2. Trajets stats (only for conducteurs)
     if (user.role === "conducteur") {
       const [traTotal, traCompleted] = await Promise.all([
-        db.select({ value: count() }).from(trajets).where(eq(trajets.conducteurId, user.id)),
-        db.select({ value: count() }).from(trajets).where(and(eq(trajets.conducteurId, user.id), eq(trajets.statut, "terminé")))
+        db
+          .select({ value: count() })
+          .from(trajets)
+          .where(eq(trajets.conducteurId, user.id)),
+        db
+          .select({ value: count() })
+          .from(trajets)
+          .where(
+            and(
+              eq(trajets.conducteurId, user.id),
+              eq(trajets.statut, "terminé")
+            )
+          ),
       ]);
 
       stats.trajets = {

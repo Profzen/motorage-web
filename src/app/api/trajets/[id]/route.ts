@@ -141,7 +141,7 @@ export async function GET(
     const cookieToken = cookieStore.get("token")?.value;
     const authPayload = await authenticateRequest(request, cookieToken);
 
-    // Fetch basic trip info
+    // Fetch trip with all needed relations in one go
     const trajet = await db.query.trajets.findFirst({
       where: eq(trajets.id, id),
       with: {
@@ -151,6 +151,11 @@ export async function GET(
         vehicule: true,
         departZone: true,
         arriveeZone: true,
+        reservations: {
+          with: {
+            etudiant: { columns: { password: false, refreshToken: false } },
+          },
+        },
       },
     });
 
@@ -162,26 +167,16 @@ export async function GET(
       (authPayload.userId === trajet.conducteurId ||
         authPayload.role === "administrateur");
 
-    if (isDriverOrAdmin) {
-      const fullTrajet = await db.query.trajets.findFirst({
-        where: eq(trajets.id, id),
-        with: {
-          conducteur: { columns: { password: false, refreshToken: false } },
-          vehicule: true,
-          departZone: true,
-          arriveeZone: true,
-          reservations: {
-            with: {
-              etudiant: { columns: { password: false, refreshToken: false } },
-            },
-          },
-        },
-      });
-      return successResponse(fullTrajet);
+    if (!isDriverOrAdmin) {
+      // Omit reservations and internal data for non-owner/non-admin
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { reservations, ...basicTrajet } = trajet;
+      return successResponse(basicTrajet);
     }
 
     return successResponse(trajet);
-  } catch {
+  } catch (error) {
+    console.error("Error fetching trajet:", error);
     return ApiErrors.serverError();
   }
 }
@@ -199,7 +194,11 @@ export async function PUT(
     if (!authPayload) return ApiErrors.unauthorized();
 
     const body = await request.json();
-    const validatedData = trajetSchema.partial().parse(body);
+    const validatedData = trajetSchema.partial().parse(body) as Record<string, unknown>;
+
+    // Security: never allow changing the driver or the ID via PUT
+    delete validatedData.conducteurId;
+    delete validatedData.id;
 
     const existing = await db.query.trajets.findFirst({
       where: eq(trajets.id, id),
@@ -214,13 +213,18 @@ export async function PUT(
       return ApiErrors.forbidden("Seul le conducteur peut modifier ce trajet");
     }
 
-    const updated = await db
+    const [updated] = await db
       .update(trajets)
-      .set(validatedData)
+      .set({
+        ...validatedData,
+        // Ensure values are not undefined for Drizzle if they were deleted above
+      })
       .where(eq(trajets.id, id))
       .returning();
 
-    return successResponse(updated[0]);
+    if (!updated) return ApiErrors.serverError("Échec de la mise à jour");
+
+    return successResponse(updated);
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return ApiErrors.validationError(

@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
-import { trajets, reservations } from "@/lib/db/schema";
-import { sql, eq } from "drizzle-orm";
+import { trajets } from "@/lib/db/schema";
+import { sql } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
 import { authenticateRequest } from "@/lib/auth";
 import { cookies } from "next/headers";
@@ -40,7 +40,9 @@ export async function GET(
 
     // Check ownership or admin
     if (authPayload.userId !== id && authPayload.role !== "administrateur") {
-      return ApiErrors.forbidden("Vous n'êtes pas autorisé à voir ces demandes");
+      return ApiErrors.forbidden(
+        "Vous n'êtes pas autorisé à voir ces demandes"
+      );
     }
 
     const receivedRequests = await db.query.reservations.findMany({

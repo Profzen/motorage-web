@@ -283,7 +283,8 @@ const options = {
                     trajets: {
                       type: "object",
                       nullable: true,
-                      description: "Uniquement présent si l'utilisateur est un conducteur",
+                      description:
+                        "Uniquement présent si l'utilisateur est un conducteur",
                       properties: {
                         total: { type: "integer" },
                         completed: { type: "integer" },

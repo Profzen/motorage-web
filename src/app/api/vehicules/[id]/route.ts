@@ -193,14 +193,14 @@ export async function PUT(
     const validatedData = vehiculeSchema.partial().parse(body);
 
     // If sensitive fields are changed, we reset the validation status
-    const isSensitiveChange = 
-      validatedData.immatriculation || 
-      validatedData.marque || 
-      validatedData.modele || 
+    const isSensitiveChange =
+      validatedData.immatriculation ||
+      validatedData.marque ||
+      validatedData.modele ||
       validatedData.type;
 
     if (isSensitiveChange && authPayload.role !== "administrateur") {
-      (validatedData as any).statut = "en_attente";
+      validatedData.statut = "en_attente";
     }
 
     const result = await db.transaction(async (tx) => {

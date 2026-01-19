@@ -117,9 +117,7 @@ export const updatePasswordSchema = z
 
 export const onboardingRequestSchema = z.object({
   permisNumero: z.string().min(5, "Le numéro de permis est requis"),
-  permisImage: z
-    .url("L'URL de l'image du permis est invalide")
-    .optional(),
+  permisImage: z.url("L'URL de l'image du permis est invalide").optional(),
   vehiculeType: z.enum(["moto", "auto"]).default("moto"),
   vehiculeMarque: z.string().min(1, "La marque du véhicule est requise"),
   vehiculeModele: z.string().min(1, "Le modèle du véhicule est requis"),

@@ -15,7 +15,12 @@ export async function POST(request: Request) {
 
     const subscription = await request.json();
 
-    if (!subscription.endpoint || !subscription.keys || !subscription.keys.p256dh || !subscription.keys.auth) {
+    if (
+      !subscription.endpoint ||
+      !subscription.keys ||
+      !subscription.keys.p256dh ||
+      !subscription.keys.auth
+    ) {
       return ApiErrors.badRequest("Invalid subscription object");
     }
 
@@ -25,20 +30,25 @@ export async function POST(request: Request) {
     });
 
     if (existing) {
-        // Update user association if necessary
-        await db.update(pushSubscriptions)
-            .set({ userId: authPayload.userId })
-            .where(eq(pushSubscriptions.id, existing.id));
+      // Update user association if necessary
+      await db
+        .update(pushSubscriptions)
+        .set({ userId: authPayload.userId })
+        .where(eq(pushSubscriptions.id, existing.id));
     } else {
-        await db.insert(pushSubscriptions).values({
-            userId: authPayload.userId,
-            endpoint: subscription.endpoint,
-            p256dh: subscription.keys.p256dh,
-            auth: subscription.keys.auth
-        });
+      await db.insert(pushSubscriptions).values({
+        userId: authPayload.userId,
+        endpoint: subscription.endpoint,
+        p256dh: subscription.keys.p256dh,
+        auth: subscription.keys.auth,
+      });
     }
 
-    return successResponse({ message: "Subscribed successfully" }, undefined, 201);
+    return successResponse(
+      { message: "Subscribed successfully" },
+      undefined,
+      201
+    );
   } catch (error) {
     console.error("Subscription error:", error);
     return ApiErrors.serverError();

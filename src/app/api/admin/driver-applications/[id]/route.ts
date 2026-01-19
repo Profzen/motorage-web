@@ -115,15 +115,18 @@ export async function PATCH(
         // 3. Create or Update Vehicule entry
         // We check if a vehicle for this app already exists (it shouldn't but safe check)
         const existingVehicle = await tx.query.vehicules.findFirst({
-          where: eq(vehicules.immatriculation, application.vehiculeImmatriculation),
+          where: eq(
+            vehicules.immatriculation,
+            application.vehiculeImmatriculation
+          ),
         });
 
         if (existingVehicle) {
           await tx
             .update(vehicules)
-            .set({ 
-              statut: "approuvé", 
-              proprietaireId: application.userId 
+            .set({
+              statut: "approuvé",
+              proprietaireId: application.userId,
             })
             .where(eq(vehicules.id, existingVehicle.id));
         } else {
@@ -143,18 +146,24 @@ export async function PATCH(
           userId: application.userId,
           type: "onboarding",
           title: "Demande approuvée !",
-          message: "Félicitations, vous êtes désormais conducteur sur Miyi Ðekae.",
+          message:
+            "Félicitations, vous êtes désormais conducteur sur Miyi Ðekae.",
           data: { onboardingId: id },
         });
 
-        return { success: true, message: "Utilisateur promu conducteur et véhicule validé" };
+        return {
+          success: true,
+          message: "Utilisateur promu conducteur et véhicule validé",
+        };
       } else {
         // Send Rejection Notification
         await createNotification({
           userId: application.userId,
           type: "onboarding",
           title: "Demande refusée",
-          message: commentaireAdmin || "Votre demande pour devenir conducteur a été rejetée.",
+          message:
+            commentaireAdmin ||
+            "Votre demande pour devenir conducteur a été rejetée.",
           data: { onboardingId: id },
         });
         return { success: true, message: "Demande rejetée" };
@@ -165,20 +174,18 @@ export async function PATCH(
     if (application.permisImage) {
       try {
         await deletePublicFile(application.permisImage);
+        await db
+          .update(onboardingRequests)
+          .set({ permisImage: null })
+          .where(eq(onboardingRequests.id, id));
       } catch (e) {
         console.warn("Could not delete file:", e);
       }
     }
 
-    return successResponse(result);
-      await db
-        .update(onboardingRequests)
-        .set({ permisImage: null })
-        .where(eq(onboardingRequests.id, id));
-    }
-
     return successResponse({
       message: `Demande ${statut} avec succès.`,
+      data: result,
     });
   } catch (error) {
     console.error("Validate driver application error:", error);

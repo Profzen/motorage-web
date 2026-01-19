@@ -71,12 +71,8 @@
           "name": "audit_logs_user_id_users_id_fk",
           "tableFrom": "audit_logs",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -153,12 +149,8 @@
           "name": "notifications_user_id_users_id_fk",
           "tableFrom": "notifications",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -265,12 +257,8 @@
           "name": "onboarding_requests_user_id_users_id_fk",
           "tableFrom": "onboarding_requests",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -369,12 +357,8 @@
           "name": "reports_reporter_id_users_id_fk",
           "tableFrom": "reports",
           "tableTo": "users",
-          "columnsFrom": [
-            "reporter_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["reporter_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -382,12 +366,8 @@
           "name": "reports_reported_id_users_id_fk",
           "tableFrom": "reports",
           "tableTo": "users",
-          "columnsFrom": [
-            "reported_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["reported_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -395,12 +375,8 @@
           "name": "reports_trajet_id_trajets_id_fk",
           "tableFrom": "reports",
           "tableTo": "trajets",
-          "columnsFrom": [
-            "trajet_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["trajet_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -456,12 +432,8 @@
           "name": "reservations_trajet_id_trajets_id_fk",
           "tableFrom": "reservations",
           "tableTo": "trajets",
-          "columnsFrom": [
-            "trajet_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["trajet_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -469,12 +441,8 @@
           "name": "reservations_etudiant_id_users_id_fk",
           "tableFrom": "reservations",
           "tableTo": "users",
-          "columnsFrom": [
-            "etudiant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["etudiant_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -601,12 +569,8 @@
           "name": "trajets_vehicule_id_vehicules_id_fk",
           "tableFrom": "trajets",
           "tableTo": "vehicules",
-          "columnsFrom": [
-            "vehicule_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["vehicule_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -614,12 +578,8 @@
           "name": "trajets_depart_zone_id_zones_id_fk",
           "tableFrom": "trajets",
           "tableTo": "zones",
-          "columnsFrom": [
-            "depart_zone_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["depart_zone_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -627,12 +587,8 @@
           "name": "trajets_arrivee_zone_id_zones_id_fk",
           "tableFrom": "trajets",
           "tableTo": "zones",
-          "columnsFrom": [
-            "arrivee_zone_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["arrivee_zone_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -640,12 +596,8 @@
           "name": "trajets_conducteur_id_users_id_fk",
           "tableFrom": "trajets",
           "tableTo": "users",
-          "columnsFrom": [
-            "conducteur_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["conducteur_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -748,9 +700,7 @@
       "indexes": {
         "users_email_unique": {
           "name": "users_email_unique",
-          "columns": [
-            "email"
-          ],
+          "columns": ["email"],
           "isUnique": true
         }
       },
@@ -759,12 +709,8 @@
           "name": "users_home_zone_id_zones_id_fk",
           "tableFrom": "users",
           "tableTo": "zones",
-          "columnsFrom": [
-            "home_zone_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["home_zone_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -838,9 +784,7 @@
       "indexes": {
         "vehicules_immatriculation_unique": {
           "name": "vehicules_immatriculation_unique",
-          "columns": [
-            "immatriculation"
-          ],
+          "columns": ["immatriculation"],
           "isUnique": true
         }
       },
@@ -849,12 +793,8 @@
           "name": "vehicules_proprietaire_id_users_id_fk",
           "tableFrom": "vehicules",
           "tableTo": "users",
-          "columnsFrom": [
-            "proprietaire_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["proprietaire_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -899,9 +839,7 @@
       "indexes": {
         "zones_nom_unique": {
           "name": "zones_nom_unique",
-          "columns": [
-            "nom"
-          ],
+          "columns": ["nom"],
           "isUnique": true
         }
       },

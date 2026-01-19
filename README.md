@@ -51,7 +51,7 @@ Le projet Miyi Ðekae est scindé en deux écosystèmes :
    pnpm migrate:push
    ```
 
-   *Note: Les commandes Drizzle standard (`db:push`, `db:generate`) restent disponibles mais l'utilisation d'Atlas est recommandée pour les changements de structure complexes.*
+   _Note: Les commandes Drizzle standard (`db:push`, `db:generate`) restent disponibles mais l'utilisation d'Atlas est recommandée pour les changements de structure complexes._
 
 3. **Créer le premier administrateur**
    Puisque l''inscription publique est désactivée, utilisez le script de création :

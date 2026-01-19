@@ -42,7 +42,9 @@ export async function GET(
 
     // Check ownership or admin
     if (authPayload.userId !== id && authPayload.role !== "administrateur") {
-      return ApiErrors.forbidden("Vous n'êtes pas autorisé à voir cet historique");
+      return ApiErrors.forbidden(
+        "Vous n'êtes pas autorisé à voir cet historique"
+      );
     }
 
     const history = await db.query.reservations.findMany({
