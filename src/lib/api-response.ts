@@ -128,7 +128,8 @@ export const ApiErrors = {
     errorResponse("BAD_REQUEST", message, 400),
   unauthorized: (message = "Non autorisé") =>
     errorResponse("UNAUTHORIZED", message, 401),
-  forbidden: (message = "Accès refusé") => errorResponse("FORBIDDEN", message, 403),
+  forbidden: (message = "Accès refusé") =>
+    errorResponse("FORBIDDEN", message, 403),
   notFound: (resource = "Ressource") =>
     errorResponse("NOT_FOUND", `${resource} non trouvé(e)`, 404),
   validationError: (message: string, field?: string, details?: unknown) =>

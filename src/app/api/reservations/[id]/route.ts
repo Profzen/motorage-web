@@ -1,8 +1,10 @@
 import { db } from "@/lib/db";
 import { reservations, trajets } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { authenticateRequest } from "@/lib/auth";
 import { reservationSchema } from "@/lib/validation";
 import { successResponse, ApiErrors } from "@/lib/api-response";
+import { cookies } from "next/headers";
 import { z } from "zod";
 import { NextRequest } from "next/server";
 

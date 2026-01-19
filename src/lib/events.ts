@@ -8,10 +8,10 @@ declare global {
 }
 
 export const notificationEvents =
-  global.notificationEvents || new EventEmitter();
+  globalThis.notificationEvents || new EventEmitter();
 
 if (process.env.NODE_ENV !== "production") {
-  global.notificationEvents = notificationEvents;
+  globalThis.notificationEvents = notificationEvents;
 }
 
 export const NOTIFICATION_EVENT = "new_notification";

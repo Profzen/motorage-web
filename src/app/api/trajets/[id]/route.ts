@@ -194,7 +194,10 @@ export async function PUT(
     if (!authPayload) return ApiErrors.unauthorized();
 
     const body = await request.json();
-    const validatedData = trajetSchema.partial().parse(body) as Record<string, unknown>;
+    const validatedData = trajetSchema.partial().parse(body) as Record<
+      string,
+      unknown
+    >;
 
     // Security: never allow changing the driver or the ID via PUT
     delete validatedData.conducteurId;

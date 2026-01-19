@@ -113,7 +113,9 @@ async function triggerPushNotification(
           .catch(async (err) => {
             if (err.statusCode === 410 || err.statusCode === 404) {
               // Expired subscription - cleanup
-              console.log(`Cleaning up expired subscription for user ${userId}`);
+              console.log(
+                `Cleaning up expired subscription for user ${userId}`
+              );
               await db
                 .delete(pushSubscriptions)
                 .where(eq(pushSubscriptions.endpoint, sub.endpoint))
