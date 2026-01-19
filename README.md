@@ -1,6 +1,6 @@
 # MIYI ÐEKAE - Console d'Administration Web
 
-MIYI ÐEKAE (anciennement MOTORAGE) est une plateforme de gestion centralisée pour la flotte motocycliste de l''Université de Lomé (UL). Cette interface Web est **exclusivement dédiée à l''administration** et à la supervision du service.
+MIYI ÐEKAE (anciennement MOTORAGE) est une plateforme de gestion centralisée pour la flotte de véhicules de l''Université de Lomé (UL). Cette interface Web est **exclusivement dédiée à l''administration** et à la supervision du service.
 
 ![MIYI ÐEKAE Dashboard](/public/screenshots/screenshot-landing.png)
 
@@ -32,8 +32,7 @@ Le projet Miyi Ðekae est scindé en deux écosystèmes :
 - **Styling** : [Tailwind CSS 4](https://tailwindcss.com/)
 - **Composants** : [Radix UI](https://www.radix-ui.com/) & [Lucide Icons](https://lucide.dev/)
 - **Animations** : [Framer Motion](https://www.framer.com/motion/)
-- **Gestion d''état** : [Zustand](https://github.com/pmndrs/zustand)
-- **Base de données** : [Turso (SQLite)](https://turso.tech/) avec [Drizzle ORM](https://orm.drizzle.team/)
+- **Gestion d''état** : [Zustand](https://github.com/pmndrs/zustand)- **Gestion des fichiers** : [Uploadthing](https://uploadthing.com/)- **Base de données** : [Turso (SQLite)](https://turso.tech/) avec [Drizzle ORM](https://orm.drizzle.team/)
 
 ## 🚀 Installation & Administration
 
@@ -45,9 +44,14 @@ Le projet Miyi Ðekae est scindé en deux écosystèmes :
 
 2. **Synchroniser la base de données**
 
+   Nous utilisons **Atlas** pour gérer les migrations de manière déclarative (plus robuste que `drizzle-kit push` pour les renommages de tables sur Turso).
+
    ```bash
-   pnpm db:push
+   # Synchroniser le schéma local avec Turso
+   pnpm migrate:push
    ```
+
+   *Note: Les commandes Drizzle standard (`db:push`, `db:generate`) restent disponibles mais l'utilisation d'Atlas est recommandée pour les changements de structure complexes.*
 
 3. **Créer le premier administrateur**
    Puisque l''inscription publique est désactivée, utilisez le script de création :

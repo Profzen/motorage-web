@@ -53,8 +53,18 @@ export async function GET(request: Request) {
     const data = await db.query.reports.findMany({
       where: whereClause,
       with: {
-        reporter: true,
-        reported: true,
+        reporter: {
+          columns: {
+            password: false,
+            refreshToken: false,
+          },
+        },
+        reported: {
+          columns: {
+            password: false,
+            refreshToken: false,
+          },
+        },
         trajet: true,
       },
       limit,

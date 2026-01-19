@@ -11,12 +11,18 @@ export const userSchema = z.object({
     .enum(["conducteur", "passager", "administrateur"])
     .default("passager"),
   phone: z.string().optional(),
+  homeZoneId: z.string().optional().nullable(),
   statut: z.string().optional(),
 });
 
 export const loginSchema = z.object({
   email: z.email("Adresse email invalide"),
   password: z.string().min(1, "Le mot de passe est requis"),
+});
+
+export const registerApiSchema = userSchema.omit({
+  role: true,
+  statut: true,
 });
 
 export const registerFormSchema = userSchema
@@ -29,14 +35,23 @@ export const registerFormSchema = userSchema
     path: ["confirmPassword"],
   });
 
-export const motoSchema = z.object({
+export const vehiculeSchema = z.object({
+  type: z.enum(["moto", "voiture", "autre"]).default("moto"),
   marque: z.string().min(1, "La marque est requise"),
   modele: z.string().min(1, "Le modèle est requis"),
   immatriculation: z
     .string()
     .min(4, "L'immatriculation doit contenir au moins 4 caractères"),
+  image: z.string().optional().nullable(),
   disponibilite: z.boolean().default(true),
+  statut: z.enum(["en_attente", "approuvé", "rejeté"]).default("en_attente"),
+  commentaireAdmin: z.string().optional().nullable(),
   proprietaireId: z.string().min(1, "L'ID du propriétaire est requis"),
+});
+
+export const vehiculeAdminUpdateSchema = z.object({
+  statut: z.enum(["en_attente", "approuvé", "rejeté"]),
+  commentaireAdmin: z.string().optional().nullable(),
 });
 
 export const zoneSchema = z.object({
@@ -45,6 +60,7 @@ export const zoneSchema = z.object({
 });
 
 export const trajetSchema = z.object({
+  vehiculeId: z.string().optional().nullable(),
   pointDepart: z.string().min(2, "Le point de départ est requis"),
   destination: z.string().min(2, "La destination est requise"),
   departZoneId: z.string().optional().nullable(),
@@ -82,6 +98,8 @@ export const updateProfileSchema = z.object({
     .optional(),
   email: z.email("Adresse email invalide").optional(),
   phone: z.string().optional(),
+  avatar: z.url("URL de l'avatar invalide").optional().nullable(),
+  homeZoneId: z.string().optional().nullable(),
 });
 
 export const updatePasswordSchema = z
@@ -100,10 +118,10 @@ export const updatePasswordSchema = z
 export const onboardingRequestSchema = z.object({
   permisNumero: z.string().min(5, "Le numéro de permis est requis"),
   permisImage: z
-    .string()
     .url("L'URL de l'image du permis est invalide")
     .optional(),
-  motoMarque: z.string().min(1, "La marque de la moto est requise"),
-  motoModele: z.string().min(1, "Le modèle de la moto est requis"),
-  motoImmatriculation: z.string().min(4, "L'immatriculation est requise"),
+  vehiculeType: z.enum(["moto", "auto"]).default("moto"),
+  vehiculeMarque: z.string().min(1, "La marque du véhicule est requise"),
+  vehiculeModele: z.string().min(1, "Le modèle du véhicule est requis"),
+  vehiculeImmatriculation: z.string().min(4, "L'immatriculation est requise"),
 });

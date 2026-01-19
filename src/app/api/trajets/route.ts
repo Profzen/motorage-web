@@ -1,7 +1,8 @@
 import { db } from "@/lib/db";
-import { trajets } from "@/lib/db/schema";
-import { sql, and, eq, like } from "drizzle-orm";
+import { trajets, vehicules, users } from "@/lib/db/schema";
+import { sql, and, or, eq, like } from "drizzle-orm";
 import { trajetSchema } from "@/lib/validation";
+import { autoClosePastTrips } from "@/lib/trips";
 import {
   successResponse,
   paginatedResponse,
@@ -63,6 +64,12 @@ import { z } from "zod";
  *           type: string
  *           enum: [ouvert, plein, terminé, annulé]
  *         description: Filtrer par statut
+ *       - in: query
+ *         name: recommendedForUserId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Personnaliser les résultats selon la zone de résidence de l'utilisateur
  *     responses:
  *       200:
  *         description: Liste des trajets paginée
@@ -81,6 +88,9 @@ import { z } from "zod";
  */
 export async function GET(request: Request) {
   try {
+    // Nettoyage passif des trajets passés
+    await autoClosePastTrips();
+
     const { searchParams } = new URL(request.url);
     const { page, limit } = parsePaginationParams(searchParams);
     const offset = (page - 1) * limit;
@@ -91,10 +101,28 @@ export async function GET(request: Request) {
     const arriveeZoneId = searchParams.get("arriveeZoneId");
     const conducteurId = searchParams.get("conducteurId");
     const statut = searchParams.get("statut");
+    const recommendedForUserId = searchParams.get("recommendedForUserId");
 
     const conditions = [];
     if (from) conditions.push(like(trajets.pointDepart, `%${from}%`));
     if (to) conditions.push(like(trajets.destination, `%${to}%`));
+
+    // Logic for personalization: if no specific zone filters are provided but recommendedForUserId is,
+    // we search for trips starting OR ending in the user's home zone.
+    if (recommendedForUserId && !departZoneId && !arriveeZoneId) {
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, recommendedForUserId),
+      });
+      if (user?.homeZoneId) {
+        conditions.push(
+          or(
+            eq(trajets.departZoneId, user.homeZoneId),
+            eq(trajets.arriveeZoneId, user.homeZoneId)
+          )
+        );
+      }
+    }
+
     if (departZoneId) conditions.push(eq(trajets.departZoneId, departZoneId));
     if (arriveeZoneId)
       conditions.push(eq(trajets.arriveeZoneId, arriveeZoneId));
@@ -119,6 +147,7 @@ export async function GET(request: Request) {
             refreshToken: false,
           },
         },
+        vehicule: true,
         departZone: true,
         arriveeZone: true,
       },
@@ -155,6 +184,10 @@ export async function GET(request: Request) {
  *               - placesDisponibles
  *               - conducteurId
  *             properties:
+ *               vehiculeId:
+ *                 type: string
+ *                 format: uuid
+ *                 nullable: true
  *               pointDepart:
  *                 type: string
  *               destination:
@@ -216,10 +249,34 @@ export async function POST(request: Request) {
     const body = await request.json();
     const validatedData = trajetSchema.parse(body);
 
+    // Check vehicle availability if provided
+    if (validatedData.vehiculeId) {
+      const vehicule = await db.query.vehicules.findFirst({
+        where: eq(vehicules.id, validatedData.vehiculeId),
+      });
+
+      if (!vehicule) {
+        return ApiErrors.notFound("Véhicule");
+      }
+
+      if (vehicule.statut !== "approuvé") {
+        return ApiErrors.badRequest(
+          "Vous ne pouvez pas utiliser un véhicule qui n'a pas encore été approuvé par un administrateur."
+        );
+      }
+
+      if (!vehicule.disponibilite) {
+        return ApiErrors.badRequest(
+          "Ce véhicule est actuellement indisponible"
+        );
+      }
+    }
+
     const newTrajet = await db
       .insert(trajets)
       .values({
         conducteurId: validatedData.conducteurId,
+        vehiculeId: validatedData.vehiculeId,
         pointDepart: validatedData.pointDepart,
         destination: validatedData.destination,
         departZoneId: validatedData.departZoneId,

@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
-import { sql } from "drizzle-orm";
+import { sql, eq, and } from "drizzle-orm";
 import {
   paginatedResponse,
   ApiErrors,
@@ -62,15 +62,25 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const { page, limit } = parsePaginationParams(searchParams);
     const offset = (page - 1) * limit;
+    const role = searchParams.get("role");
+    const statut = searchParams.get("statut");
+
+    // Build conditions
+    const conditions = [];
+    if (role) conditions.push(eq(users.role, role));
+    if (statut) conditions.push(eq(users.statut, statut));
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
     // Get total count
     const countResult = await db
       .select({ count: sql<number>`count(*)` })
-      .from(users);
+      .from(users)
+      .where(whereClause);
     const total = Number(countResult[0]?.count || 0);
 
     // Get paginated data
     const allUsers = await db.query.users.findMany({
+      where: whereClause,
       columns: {
         password: false,
         refreshToken: false,

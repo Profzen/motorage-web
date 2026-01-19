@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Bike, LayoutDashboard, LogOut, Menu, X } from "lucide-react";
+import { Car, LayoutDashboard, LogOut, Menu, X } from "lucide-react";
 import { useAuthStore } from "@/lib/store";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { motion, AnimatePresence } from "framer-motion";
@@ -33,7 +33,7 @@ export function Header() {
             href="/"
             className="flex items-center gap-2 transition-opacity hover:opacity-80"
           >
-            <Bike className="text-primary h-6 w-6" />
+            <Car className="text-primary h-6 w-6" />
             <span className="text-xl font-bold tracking-tight">Miyi Ðekae</span>
           </Link>
         </div>

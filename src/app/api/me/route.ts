@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { users, reservations, trajets } from "@/lib/db/schema";
+import { eq, and, count } from "drizzle-orm";
 import { authenticateRequest } from "@/lib/auth";
 import { successResponse, ApiErrors } from "@/lib/api-response";
 import { updateProfileSchema } from "@/lib/validation";
@@ -104,34 +104,50 @@ export async function GET(request: Request) {
       return ApiErrors.unauthorized();
     }
 
-    // Fetch full user data from database
+    // Fetch full user data from database without sensitive fields
     const user = await db.query.users.findFirst({
       where: eq(users.id, authPayload.userId),
+      columns: {
+        password: false,
+        refreshToken: false,
+      },
     });
 
     if (!user) {
       return ApiErrors.notFound("Utilisateur");
     }
 
-    // Remove sensitive data
-    /* eslint-disable @typescript-eslint/no-unused-vars */
-    const {
-      password: _password,
-      refreshToken: _refreshTokenInDb,
-      ...userWithoutSensitiveData
-    } = user;
-    /* eslint-enable @typescript-eslint/no-unused-vars */
+    const { ...userProfile } = user;
 
-    // Get user stats (could be expanded later)
-    // For now, return basic stats based on role
-    const stats = {
-      role: user.role,
-      statut: user.statut,
-      // Additional stats can be added here by querying related tables
+    // Get user stats depending on role
+    const stats: any = {};
+
+    // 1. Reservations stats (for everyone, as a driver can also be a passenger)
+    const [resTotal, resCompleted] = await Promise.all([
+      db.select({ value: count() }).from(reservations).where(eq(reservations.etudiantId, user.id)),
+      db.select({ value: count() }).from(reservations).where(and(eq(reservations.etudiantId, user.id), eq(reservations.statut, "terminé"))),
+    ]);
+
+    stats.reservations = {
+      total: resTotal[0]?.value || 0,
+      completed: resCompleted[0]?.value || 0,
     };
 
+    // 2. Trajets stats (only for conducteurs)
+    if (user.role === "conducteur") {
+      const [traTotal, traCompleted] = await Promise.all([
+        db.select({ value: count() }).from(trajets).where(eq(trajets.conducteurId, user.id)),
+        db.select({ value: count() }).from(trajets).where(and(eq(trajets.conducteurId, user.id), eq(trajets.statut, "terminé")))
+      ]);
+
+      stats.trajets = {
+        total: traTotal[0]?.value || 0,
+        completed: traCompleted[0]?.value || 0,
+      };
+    }
+
     return successResponse({
-      user: userWithoutSensitiveData,
+      user,
       stats,
     });
   } catch (error) {

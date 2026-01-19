@@ -17,6 +17,7 @@ import {
   User,
   FileText,
   Loader2,
+  Car,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
@@ -37,9 +38,9 @@ interface OnboardingRequest {
   userId: string;
   permisNumero: string;
   permisImage: string | null;
-  motoMarque: string;
-  motoModele: string;
-  motoImmatriculation: string;
+  vehiculeMarque: string;
+  vehiculeModele: string;
+  vehiculeImmatriculation: string;
   statut: "en_attente" | "approuvé" | "rejeté";
   commentaireAdmin: string | null;
   createdAt: string;
@@ -148,7 +149,7 @@ export default function DriversValidationPage() {
         <div>
           <h1 className="flex items-center gap-3 text-3xl font-black tracking-tight">
             <ClipboardCheck className="text-primary h-8 w-8" />
-            Validation Motards
+            Validation Conducteurs
           </h1>
           <p className="text-muted-foreground mt-1">
             Gérez les demandes d&apos;onboarding et vérifiez les documents.
@@ -158,7 +159,7 @@ export default function DriversValidationPage() {
           <div className="relative">
             <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
             <Input
-              placeholder="Rechercher un motard..."
+              placeholder="Rechercher un conducteur..."
               className="bg-card/50 w-64 pl-10"
             />
           </div>
@@ -228,10 +229,10 @@ export default function DriversValidationPage() {
                         </td>
                         <td className="px-4 py-4">
                           <p className="text-sm font-medium">
-                            {req.motoMarque} {req.motoModele}
+                            {req.vehiculeMarque} {req.vehiculeModele}
                           </p>
                           <p className="text-muted-foreground text-xs uppercase">
-                            {req.motoImmatriculation}
+                            {req.vehiculeImmatriculation}
                           </p>
                         </td>
                         <td className="text-muted-foreground px-4 py-4 text-sm">
@@ -314,17 +315,18 @@ export default function DriversValidationPage() {
 
               <section className="space-y-3">
                 <h4 className="text-muted-foreground flex items-center gap-2 text-xs font-black tracking-widest uppercase">
-                  <Loader2 className="h-4 w-4" /> Moto
+                  <Car className="h-4 w-4" /> Véhicule
                 </h4>
                 <div className="bg-muted/50 border-border rounded-xl border p-4">
                   <p className="text-muted-foreground text-xs font-bold uppercase">
                     Modèle & Plaque
                   </p>
                   <p className="mt-1 text-lg font-bold">
-                    {selectedRequest?.motoMarque} {selectedRequest?.motoModele}
+                    {selectedRequest?.vehiculeMarque}{" "}
+                    {selectedRequest?.vehiculeModele}
                   </p>
                   <Badge variant="secondary" className="mt-1 font-black">
-                    {selectedRequest?.motoImmatriculation}
+                    {selectedRequest?.vehiculeImmatriculation}
                   </Badge>
                 </div>
               </section>

@@ -3,6 +3,8 @@ import { trajets } from "@/lib/db/schema";
 import { trajetSchema } from "@/lib/validation";
 import { eq } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
+import { authenticateRequest } from "@/lib/auth";
+import { cookies } from "next/headers";
 import { z } from "zod";
 import { NextRequest } from "next/server";
 
@@ -130,35 +132,52 @@ import { NextRequest } from "next/server";
  */
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get("token")?.value;
+    const authPayload = await authenticateRequest(request, cookieToken);
+
+    // Fetch basic trip info
     const trajet = await db.query.trajets.findFirst({
       where: eq(trajets.id, id),
       with: {
         conducteur: {
-          columns: {
-            password: false,
-          },
+          columns: { password: false, refreshToken: false },
         },
+        vehicule: true,
         departZone: true,
         arriveeZone: true,
-        reservations: {
-          with: {
-            etudiant: {
-              columns: {
-                password: false,
-              },
-            },
-          },
-        },
       },
     });
 
-    if (!trajet) {
-      return ApiErrors.notFound("Trajet");
+    if (!trajet) return ApiErrors.notFound("Trajet");
+
+    // Check if requester is the driver or admin to show reservations
+    const isDriverOrAdmin =
+      authPayload &&
+      (authPayload.userId === trajet.conducteurId ||
+        authPayload.role === "administrateur");
+
+    if (isDriverOrAdmin) {
+      const fullTrajet = await db.query.trajets.findFirst({
+        where: eq(trajets.id, id),
+        with: {
+          conducteur: { columns: { password: false, refreshToken: false } },
+          vehicule: true,
+          departZone: true,
+          arriveeZone: true,
+          reservations: {
+            with: {
+              etudiant: { columns: { password: false, refreshToken: false } },
+            },
+          },
+        },
+      });
+      return successResponse(fullTrajet);
     }
 
     return successResponse(trajet);
@@ -173,18 +192,33 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get("token")?.value;
+    const authPayload = await authenticateRequest(request, cookieToken);
+
+    if (!authPayload) return ApiErrors.unauthorized();
+
     const body = await request.json();
     const validatedData = trajetSchema.partial().parse(body);
+
+    const existing = await db.query.trajets.findFirst({
+      where: eq(trajets.id, id),
+    });
+
+    if (!existing) return ApiErrors.notFound("Trajet");
+
+    if (
+      existing.conducteurId !== authPayload.userId &&
+      authPayload.role !== "administrateur"
+    ) {
+      return ApiErrors.forbidden("Seul le conducteur peut modifier ce trajet");
+    }
 
     const updated = await db
       .update(trajets)
       .set(validatedData)
       .where(eq(trajets.id, id))
       .returning();
-
-    if (updated.length === 0) {
-      return ApiErrors.notFound("Trajet");
-    }
 
     return successResponse(updated[0]);
   } catch (error: unknown) {
@@ -200,19 +234,31 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const deleted = await db
-      .delete(trajets)
-      .where(eq(trajets.id, id))
-      .returning();
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get("token")?.value;
+    const authPayload = await authenticateRequest(request, cookieToken);
 
-    if (deleted.length === 0) {
-      return ApiErrors.notFound("Trajet");
+    if (!authPayload) return ApiErrors.unauthorized();
+
+    const existing = await db.query.trajets.findFirst({
+      where: eq(trajets.id, id),
+    });
+
+    if (!existing) return ApiErrors.notFound("Trajet");
+
+    if (
+      existing.conducteurId !== authPayload.userId &&
+      authPayload.role !== "administrateur"
+    ) {
+      return ApiErrors.forbidden("Seul le conducteur peut supprimer ce trajet");
     }
+
+    await db.delete(trajets).where(eq(trajets.id, id));
 
     return successResponse({ message: "Trajet supprimé avec succès" });
   } catch {

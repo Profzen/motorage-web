@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Bike, MapPin, Wrench } from "lucide-react";
+import { Car, MapPin, Wrench } from "lucide-react";
 import { motion } from "framer-motion";
 
 export function Hero() {
@@ -39,8 +39,8 @@ export function Hero() {
             variants={itemVariants}
             className="bg-primary/10 text-primary border-primary/20 mb-8 inline-flex items-center rounded-full border px-4 py-2 text-sm font-medium"
           >
-            <Bike className="mr-2 h-4 w-4" />
-            La communauté moto de l&apos;UL
+            <Car className="mr-2 h-4 w-4" />
+            La communauté véhicule de l&apos;UL
           </motion.div>
 
           <motion.h1
@@ -55,7 +55,8 @@ export function Hero() {
             className="text-muted-foreground mb-10 text-lg leading-relaxed font-medium md:text-xl"
           >
             Pas de panne, pas de stress. La première plateforme d&apos;entraide
-            moto pensée par et pour les étudiants de l&apos;Université de Lomé.
+            véhicule pensée par et pour les étudiants de l&apos;Université de
+            Lomé.
           </motion.p>
 
           <motion.div
@@ -92,7 +93,7 @@ export function Hero() {
             </div>
             <div className="bg-muted/50 hover:bg-muted flex items-center justify-center gap-3 rounded-xl p-4 transition-colors">
               <div className="bg-accent/10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
-                <Bike className="text-accent h-5 w-5" />
+                <Car className="text-accent h-5 w-5" />
               </div>
               <span className="text-sm font-semibold">Gratuit & sécurisé</span>
             </div>

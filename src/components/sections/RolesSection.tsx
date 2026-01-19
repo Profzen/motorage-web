@@ -1,12 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bike, Users, Navigation2 } from "lucide-react";
+import { Car, Users, Navigation2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const roles = [
   {
     title: "Je suis Conducteur",
     description: "Je propose mes places et j'aide la communauté",
-    icon: Bike,
+    icon: Car,
     features: [
       "Publiez vos trajets habituels",
       "Proposez des places disponibles",

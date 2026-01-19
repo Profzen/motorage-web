@@ -4,7 +4,7 @@ import { Users, Target, Heart, Zap } from "lucide-react";
 export const metadata = {
   title: "À propos | Miyi Ðekae",
   description:
-    "En savoir plus sur Miyi Ðekae, la plateforme d'entraide moto pour les étudiants",
+    "En savoir plus sur Miyi Ðekae, la plateforme d'entraide de véhicules pour les étudiants",
 };
 
 export default function AboutPage() {
@@ -34,10 +34,10 @@ export default function AboutPage() {
               <div className="text-muted-foreground space-y-4 leading-relaxed">
                 <p>
                   Miyi Ðekae est né d&apos;un constat simple : beaucoup
-                  d&apos;étudiants à l&apos;Université de Lomé utilisent la moto
-                  comme moyen de transport quotidien. Malheureusement, une panne
-                  ou un souci mécanique peut rapidement devenir un problème
-                  majeur.
+                  d&apos;étudiants à l&apos;Université de Lomé utilisent un
+                  véhicule comme moyen de transport quotidien. Malheureusement,
+                  une panne ou un souci mécanique peut rapidement devenir un
+                  problème majeur.
                 </p>
                 <p>
                   En 2025, nous avons décidé de créer une solution adaptée au
@@ -64,8 +64,8 @@ export default function AboutPage() {
                 </CardHeader>
                 <CardContent className="text-muted-foreground">
                   Réduire les difficultés de mobilité des étudiants en
-                  favorisant le covoiturage moto sécurisé, local et gratuit au
-                  sein du campus et des zones avoisinantes.
+                  favorisant le covoiturage sécurisé, local et gratuit au sein
+                  du campus et des zones avoisinantes.
                 </CardContent>
               </Card>
 

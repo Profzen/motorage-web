@@ -4,7 +4,7 @@ const steps = [
   {
     title: "Créez votre profil",
     description:
-      "Inscrivez-vous avec votre mail étudiant et renseignez les détails de votre moto.",
+      "Inscrivez-vous avec votre mail étudiant et renseignez les détails de votre véhicule.",
     icon: UserPlus,
   },
   {
@@ -31,7 +31,7 @@ export function HowItWorks() {
           </h2>
           <p className="text-muted-foreground mx-auto max-w-2xl">
             Trois étapes simples pour ne plus jamais rester bloqué sur le campus
-            avec votre moto.
+            avec votre véhicule.
           </p>
         </div>
 

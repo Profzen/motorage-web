@@ -2,6 +2,8 @@ import { db } from "@/lib/db";
 import { reservations } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
+import { authenticateRequest } from "@/lib/auth";
+import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
 
 /**
@@ -20,26 +22,29 @@ import { NextRequest } from "next/server";
  *     responses:
  *       200:
  *         description: Historique des réservations
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ReservationListResponse'
- *       500:
- *         description: Erreur serveur
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse500'
+ *       403:
+ *         description: Interdit
  *     security:
  *       - BearerAuth: []
  */
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get("token")?.value;
+    const authPayload = await authenticateRequest(request, cookieToken);
+
+    if (!authPayload) return ApiErrors.unauthorized();
+
+    // Check ownership or admin
+    if (authPayload.userId !== id && authPayload.role !== "administrateur") {
+      return ApiErrors.forbidden("Vous n'êtes pas autorisé à voir cet historique");
+    }
+
     const history = await db.query.reservations.findMany({
       where: eq(reservations.etudiantId, id),
       with: {

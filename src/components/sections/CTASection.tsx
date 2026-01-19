@@ -7,7 +7,7 @@ export function CTASection() {
       <div className="container mx-auto px-4">
         <div className="bg-primary text-primary-foreground rounded-3xl px-6 py-16 text-center shadow-xl md:px-12 md:py-20">
           <h2 className="mx-auto mb-6 max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl">
-            Prêt à ne plus jamais pousser votre moto sur le campus ?
+            Prêt à ne plus jamais pousser votre véhicule sur le campus ?
           </h2>
           <p className="mx-auto mb-10 max-w-xl text-lg opacity-90">
             Inscrivez-vous dès aujourd&apos;hui et faites partie de la plus

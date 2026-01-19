@@ -11,7 +11,15 @@ const options = {
     servers: [
       {
         url: "/api",
-        description: "Miyi Ðekae API",
+        description: "Auto-détecté",
+      },
+      {
+        url: "https://projet-motorage-web.vercel.app/api",
+        description: "Serveur de Production",
+      },
+      {
+        url: "http://localhost:3000/api",
+        description: "Serveur Local",
       },
     ],
     components: {
@@ -34,6 +42,7 @@ const options = {
         User: {
           type: "object",
           properties: {
+            id: { type: "string", format: "uuid" },
             nom: { type: "string" },
             prenom: { type: "string" },
             email: { type: "string", format: "email" },
@@ -44,6 +53,7 @@ const options = {
             statut: { type: "string" },
             avatar: { type: "string", nullable: true },
             phone: { type: "string", nullable: true },
+            homeZoneId: { type: "string", format: "uuid", nullable: true },
           },
           example: {
             nom: "Kouassi",
@@ -52,6 +62,27 @@ const options = {
             role: "passager",
             statut: "actif",
             phone: "+228 90 12 34 56",
+            homeZoneId: "z1-zone-id-uuid",
+          },
+        },
+        RegisterInput: {
+          type: "object",
+          required: ["nom", "prenom", "email", "password"],
+          properties: {
+            nom: { type: "string" },
+            prenom: { type: "string" },
+            email: { type: "string", format: "email" },
+            password: { type: "string", minLength: 8 },
+            phone: { type: "string", nullable: true },
+            homeZoneId: { type: "string", format: "uuid", nullable: true },
+          },
+          example: {
+            nom: "Kouassi",
+            prenom: "Jean",
+            email: "jean.kouassi@univ-lome.tg",
+            password: "monSuperMotDePasse123",
+            phone: "+228 90 12 34 56",
+            homeZoneId: "z1-zone-id-uuid",
           },
         },
         Trajet: {
@@ -64,6 +95,8 @@ const options = {
             "placesDisponibles",
           ],
           properties: {
+            id: { type: "string", format: "uuid" },
+            vehiculeId: { type: "string", format: "uuid", nullable: true },
             conducteurId: { type: "string", format: "uuid" },
             pointDepart: { type: "string" },
             destination: { type: "string" },
@@ -98,17 +131,21 @@ const options = {
         Reservation: {
           type: "object",
           properties: {
+            id: { type: "string", format: "uuid" },
             trajetId: { type: "string", format: "uuid" },
             etudiantId: { type: "string", format: "uuid" },
             statut: {
               type: "string",
               enum: ["en_attente", "confirmé", "refusé", "terminé", "annulé"],
             },
+            createdAt: { type: "string", format: "date-time" },
           },
           example: {
+            id: "r1-res-id-uuid",
             trajetId: "t1-trajet-id-uuid",
             etudiantId: "u1-user-id-uuid",
             statut: "en_attente",
+            createdAt: "2026-01-19T10:00:00Z",
           },
         },
         Zone: {
@@ -122,9 +159,11 @@ const options = {
             description: "Zone regroupant les facultés de droit et de lettres.",
           },
         },
-        Moto: {
+        Vehicule: {
           type: "object",
           properties: {
+            id: { type: "string" },
+            type: { type: "string", enum: ["moto", "voiture", "autre"] },
             marque: { type: "string" },
             modele: { type: "string" },
             immatriculation: { type: "string" },
@@ -132,6 +171,8 @@ const options = {
             proprietaireId: { type: "string", format: "uuid" },
           },
           example: {
+            id: "v1-uuid",
+            type: "moto",
             marque: "Haojue",
             modele: "110",
             immatriculation: "TG-1234-AZ",
@@ -232,8 +273,22 @@ const options = {
                 stats: {
                   type: "object",
                   properties: {
-                    role: { type: "string" },
-                    statut: { type: "string" },
+                    reservations: {
+                      type: "object",
+                      properties: {
+                        total: { type: "integer" },
+                        completed: { type: "integer" },
+                      },
+                    },
+                    trajets: {
+                      type: "object",
+                      nullable: true,
+                      description: "Uniquement présent si l'utilisateur est un conducteur",
+                      properties: {
+                        total: { type: "integer" },
+                        completed: { type: "integer" },
+                      },
+                    },
                   },
                 },
               },
@@ -467,22 +522,22 @@ const options = {
             meta: { type: "object", nullable: true, example: null },
           },
         },
-        MotoResponse: {
+        VehiculeResponse: {
           type: "object",
           properties: {
             success: { type: "boolean", example: true },
-            data: { $ref: "#/components/schemas/Moto" },
+            data: { $ref: "#/components/schemas/Vehicule" },
             error: { type: "object", nullable: true, example: null },
             meta: { type: "object", nullable: true, example: null },
           },
         },
-        MotoListResponse: {
+        VehiculeListResponse: {
           type: "object",
           properties: {
             success: { type: "boolean", example: true },
             data: {
               type: "array",
-              items: { $ref: "#/components/schemas/Moto" },
+              items: { $ref: "#/components/schemas/Vehicule" },
             },
             error: { type: "object", nullable: true, example: null },
             meta: { type: "object", nullable: true, example: null },
@@ -606,16 +661,26 @@ const options = {
           type: "object",
           required: [
             "permisNumero",
-            "motoMarque",
-            "motoModele",
-            "motoImmatriculation",
+            "vehiculeType",
+            "vehiculeMarque",
+            "vehiculeModele",
+            "vehiculeImmatriculation",
           ],
           properties: {
             permisNumero: { type: "string" },
             permisImage: { type: "string", format: "uri" },
-            motoMarque: { type: "string" },
-            motoModele: { type: "string" },
-            motoImmatriculation: { type: "string" },
+            vehiculeType: { type: "string", enum: ["moto", "auto"] },
+            vehiculeMarque: { type: "string" },
+            vehiculeModele: { type: "string" },
+            vehiculeImmatriculation: { type: "string" },
+          },
+          example: {
+            permisNumero: "PERM-TG-2026-X88",
+            permisImage: "https://utfs.io/f/sample-permis.jpg",
+            vehiculeType: "moto",
+            vehiculeMarque: "Haojue",
+            vehiculeModele: "115-S",
+            vehiculeImmatriculation: "TG-1234-BF",
           },
         },
         OnboardingRequestRecord: {
@@ -625,9 +690,10 @@ const options = {
             userId: { type: "string", format: "uuid" },
             permisNumero: { type: "string" },
             permisImage: { type: "string", format: "uri", nullable: true },
-            motoMarque: { type: "string" },
-            motoModele: { type: "string" },
-            motoImmatriculation: { type: "string" },
+            vehiculeType: { type: "string" },
+            vehiculeMarque: { type: "string" },
+            vehiculeModele: { type: "string" },
+            vehiculeImmatriculation: { type: "string" },
             statut: {
               type: "string",
               enum: ["en_attente", "approuvé", "rejeté"],

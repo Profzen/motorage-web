@@ -92,6 +92,12 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get("token")?.value;
+    const authPayload = await authenticateRequest(request, cookieToken);
+
+    if (!authPayload) return ApiErrors.unauthorized();
+
     const body = await request.json();
     const { statut } = reservationSchema.partial().parse(body);
 
@@ -109,6 +115,14 @@ export async function PATCH(
 
       if (!reservation) {
         return { error: ApiErrors.notFound("Réservation") };
+      }
+
+      // Permissions check
+      if (
+        reservation.trajet.conducteurId !== authPayload.userId &&
+        authPayload.role !== "administrateur"
+      ) {
+        return { error: ApiErrors.forbidden("Seul le conducteur peut modifier le statut") };
       }
 
       // Logic for confirming: decrement placesDisponibles
@@ -150,7 +164,7 @@ export async function PATCH(
     });
 
     if (result.error) {
-      return result.error;
+      return result.error as any;
     }
 
     return successResponse(result.data);
@@ -173,26 +187,46 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await db.transaction(async (tx) => {
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get("token")?.value;
+    const authPayload = await authenticateRequest(request, cookieToken);
+
+    if (!authPayload) return ApiErrors.unauthorized();
+
+    const result = await db.transaction(async (tx) => {
       const reservation = await tx.query.reservations.findFirst({
         where: eq(reservations.id, id),
+        with: {
+          trajet: true,
+        },
       });
 
-      if (reservation?.statut === "confirmé") {
+      if (!reservation) {
+        return { error: ApiErrors.notFound("Réservation") };
+      }
+
+      // Permissions check: student, driver, or admin
+      if (
+        reservation.etudiantId !== authPayload.userId &&
+        reservation.trajet.conducteurId !== authPayload.userId &&
+        authPayload.role !== "administrateur"
+      ) {
+        return { error: ApiErrors.forbidden("Vous n'êtes pas autorisé à annuler cette réservation") };
+      }
+
+      if (reservation.statut === "confirmé") {
         // Re-increment places if it was confirmed
-        const trajet = await tx.query.trajets.findFirst({
-          where: eq(trajets.id, reservation.trajetId),
-        });
-        if (trajet) {
-          await tx
-            .update(trajets)
-            .set({ placesDisponibles: trajet.placesDisponibles + 1 })
-            .where(eq(trajets.id, trajet.id));
-        }
+        await tx
+          .update(trajets)
+          .set({ placesDisponibles: reservation.trajet.placesDisponibles + 1 })
+          .where(eq(trajets.id, reservation.trajetId));
       }
 
       await tx.delete(reservations).where(eq(reservations.id, id));
+      return { success: true };
     });
+
+    if (result.error) return result.error as any;
 
     return successResponse({ message: "Réservation annulée" });
   } catch (error) {

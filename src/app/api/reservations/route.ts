@@ -15,7 +15,7 @@ import { z } from "zod";
  *     tags:
  *       - Réservations
  *     summary: Réserver une place sur un trajet
- *     description: Permet à un étudiant de demander une place sur un trajet moto.
+ *     description: Permet à un étudiant de demander une place sur un trajet véhicule.
  *     requestBody:
  *       required: true
  *       content:

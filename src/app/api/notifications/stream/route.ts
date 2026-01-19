@@ -2,6 +2,8 @@ import { NextRequest } from "next/server";
 import { authenticateRequest } from "@/lib/auth";
 import { notificationEmitter } from "@/lib/notifications";
 
+export const runtime = "edge";
+
 /**
  * SSE Route for Real-time Notifications
  */

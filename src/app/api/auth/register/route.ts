@@ -1,4 +1,4 @@
-import { userSchema } from "@/lib/validation";
+import { registerApiSchema } from "@/lib/validation";
 import { hashPassword, signJWT, signRefreshToken } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
@@ -22,7 +22,7 @@ import { z } from "zod";
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/User'
+ *             $ref: '#/components/schemas/RegisterInput'
  *     responses:
  *       201:
  *         description: Utilisateur créé et connecté avec succès
@@ -46,7 +46,7 @@ import { z } from "zod";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const validatedData = userSchema.parse(body);
+    const validatedData = registerApiSchema.parse(body);
 
     const hashedPassword = await hashPassword(validatedData.password);
 
@@ -57,9 +57,10 @@ export async function POST(request: Request) {
         prenom: validatedData.prenom,
         email: validatedData.email,
         password: hashedPassword,
-        role: (validatedData as { role?: string }).role || "passager",
-        statut: (validatedData as { statut?: string }).statut || "actif",
-        phone: (validatedData as { phone?: string }).phone || null,
+        role: "passager",
+        statut: "actif",
+        phone: validatedData.phone || null,
+        homeZoneId: validatedData.homeZoneId || null,
       })
       .returning();
 

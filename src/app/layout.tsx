@@ -15,11 +15,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Miyi Ðekae - Plateforme d'Entraide Moto | Université de Lomé",
+  title: "Miyi Ðekae - Plateforme d'Entraide Véhicule | Université de Lomé",
   description:
-    "La première plateforme d'entraide moto entre étudiants de l'Université de Lomé. Trouvez des trajets, demandez de l'aide, et rejoignez une communauté de motards passionnés et bienveillants.",
+    "La première plateforme d'entraide véhicule entre étudiants de l'Université de Lomé. Trouvez des trajets, demandez de l'aide, et rejoignez une communauté de conducteurs passionnés et bienveillants.",
   keywords: [
-    "moto",
+    "véhicule",
     "entraide",
     "covoiturage",
     "étudiants",
@@ -39,15 +39,15 @@ export const metadata: Metadata = {
     locale: "fr_FR",
     url: "https://miyi-dekae.tg",
     siteName: "Miyi Ðekae",
-    title: "Miyi Ðekae - Plateforme d'Entraide Moto",
+    title: "Miyi Ðekae - Plateforme d'Entraide Véhicule",
     description:
-      "Connectez-vous, partagez et roulez en confiance avec la communauté moto de l'UL",
+      "Connectez-vous, partagez et roulez en confiance avec la communauté véhicule de l'UL",
     images: [
       {
         url: "https://miyi-dekae.tg/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Miyi Ðekae - Plateforme d'Entraide Moto",
+        alt: "Miyi Ðekae - Plateforme d'Entraide Véhiculecule",
         type: "image/png",
       },
     ],

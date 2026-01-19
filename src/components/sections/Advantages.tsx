@@ -26,7 +26,7 @@ const advantages = [
   {
     title: "Communauté",
     description:
-      "Rejoignez un réseau de passionnés de moto et partagez vos expériences.",
+      "Rejoignez un réseau de passionnés de véhicule et partagez vos expériences.",
     icon: Users,
   },
 ];
