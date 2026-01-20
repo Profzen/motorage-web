@@ -79,7 +79,7 @@ export function AdminDashboard() {
           fetch("/api/admin/stats"),
           fetch("/api/admin/activity"),
         ]);
-        
+
         const stats = await statsRes.json();
         const activity = await activityRes.json();
 
@@ -98,7 +98,7 @@ export function AdminDashboard() {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="text-primary h-8 w-8 animate-spin" />
       </div>
     );
   }
@@ -110,7 +110,9 @@ export function AdminDashboard() {
       icon: Users,
       color: "text-blue-600",
       bg: "bg-blue-100",
-      trend: data?.users?.byRole?.conducteur ? `${data.users.byRole.conducteur} conducteurs` : "Nouveau",
+      trend: data?.users?.byRole?.conducteur
+        ? `${data.users.byRole.conducteur} conducteurs`
+        : "Nouveau",
     },
     {
       title: "Trajets Aujourd'hui",
@@ -283,14 +285,18 @@ export function AdminDashboard() {
                           {activity.details || activity.action}
                         </p>
                         <span className="text-muted-foreground text-xs">
-                          {new Date(activity.createdAt).toLocaleTimeString("fr-FR", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                          {new Date(activity.createdAt).toLocaleTimeString(
+                            "fr-FR",
+                            {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }
+                          )}
                         </span>
                       </div>
                       <p className="text-muted-foreground mt-1 text-xs">
-                        Par {activity.user?.nom || "Système"} ({activity.user?.role || "Inconnu"})
+                        Par {activity.user?.nom || "Système"} (
+                        {activity.user?.role || "Inconnu"})
                       </p>
                     </div>
                   </div>

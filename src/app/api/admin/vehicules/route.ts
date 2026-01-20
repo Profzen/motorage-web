@@ -1,6 +1,10 @@
 import { db } from "@/lib/db";
 import { vehicules } from "@/lib/db/schema";
-import { ApiErrors, parsePaginationParams, paginatedResponse } from "@/lib/api-response";
+import {
+  ApiErrors,
+  parsePaginationParams,
+  paginatedResponse,
+} from "@/lib/api-response";
 import { authenticateAdmin } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
@@ -59,9 +63,9 @@ export async function GET(request: NextRequest) {
               nom: true,
               prenom: true,
               email: true,
-              avatar: true
-            }
-          }
+              avatar: true,
+            },
+          },
         },
         orderBy: [desc(vehicules.createdAt)],
         limit,
@@ -70,7 +74,7 @@ export async function GET(request: NextRequest) {
       db
         .select({ count: sql<number>`count(*)` })
         .from(vehicules)
-        .where(whereClause)
+        .where(whereClause),
     ]);
 
     const total = Number(countResult[0]?.count || 0);

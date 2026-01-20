@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     const conditions = [];
     if (statut) conditions.push(eq(reports.statut, statut));
     if (type) conditions.push(eq(reports.type, type));
-    
+
     if (search) {
       const searchTerm = `%${search}%`;
       conditions.push(

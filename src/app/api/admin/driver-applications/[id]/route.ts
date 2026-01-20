@@ -1,5 +1,10 @@
 import { db } from "@/lib/db";
-import { onboardingRequests, users, vehicules, auditLogs } from "@/lib/db/schema";
+import {
+  onboardingRequests,
+  users,
+  vehicules,
+  auditLogs,
+} from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
 import { authenticateAdmin } from "@/lib/auth";

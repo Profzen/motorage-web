@@ -45,10 +45,13 @@ export async function GET(request: Request) {
 
     const userStats = {
       total: userStatsRaw.reduce((acc, curr) => acc + curr.count, 0),
-      byRole: userStatsRaw.reduce((acc, curr) => {
-        acc[curr.role] = curr.count;
-        return acc;
-      }, {} as Record<string, number>),
+      byRole: userStatsRaw.reduce(
+        (acc, curr) => {
+          acc[curr.role] = curr.count;
+          return acc;
+        },
+        {} as Record<string, number>
+      ),
     };
 
     // 2. Demandes de conducteurs en attente
@@ -61,7 +64,7 @@ export async function GET(request: Request) {
 
     // 3. Statistiques des trajets
     const today = new Date().toISOString().split("T")[0];
-    
+
     // Trajets aujourd'hui
     const trajetsTodayRaw = await db
       .select({
@@ -81,10 +84,13 @@ export async function GET(request: Request) {
 
     const trajetsStats = {
       today: trajetsTodayRaw.reduce((acc, curr) => acc + curr.count, 0),
-      todayByStatus: trajetsTodayRaw.reduce((acc, curr) => {
-        acc[curr.statut] = curr.count;
-        return acc;
-      }, {} as Record<string, number>),
+      todayByStatus: trajetsTodayRaw.reduce(
+        (acc, curr) => {
+          acc[curr.statut] = curr.count;
+          return acc;
+        },
+        {} as Record<string, number>
+      ),
       total: totalTrajetsCount[0]?.count || 0,
     };
 
@@ -105,7 +111,7 @@ export async function GET(request: Request) {
         count: count(reservations.id),
       })
       .from(reservations);
-    
+
     const pendingReservations = await db
       .select({
         count: count(reservations.id),

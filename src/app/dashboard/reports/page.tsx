@@ -68,7 +68,7 @@ export default function ReportsPage() {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [adminNote, setAdminNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Filters
   const [search, setSearch] = useState("");
   const [statutFilter, setStatutFilter] = useState("all");
@@ -206,9 +206,9 @@ export default function ReportsPage() {
             <div className="flex flex-1 items-center gap-2">
               <div className="relative w-full max-w-sm">
                 <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4" />
-                <Input 
-                  placeholder="Rechercher par titre ou description..." 
-                  className="pl-9" 
+                <Input
+                  placeholder="Rechercher par titre ou description..."
+                  className="pl-9"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />

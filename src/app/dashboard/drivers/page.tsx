@@ -74,7 +74,10 @@ export default function DriversValidationPage() {
   const fetchRequests = useCallback(async () => {
     try {
       setLoading(true);
-      const url = new URL("/api/admin/driver-applications", window.location.origin);
+      const url = new URL(
+        "/api/admin/driver-applications",
+        window.location.origin
+      );
       if (filterStatus && filterStatus !== "all") {
         url.searchParams.append("statut", filterStatus);
       }
@@ -94,10 +97,11 @@ export default function DriversValidationPage() {
     fetchRequests();
   }, [fetchRequests]);
 
-  const filteredRequests = requests.filter(req => 
-    req.user?.nom.toLowerCase().includes(search.toLowerCase()) ||
-    req.user?.prenom.toLowerCase().includes(search.toLowerCase()) ||
-    req.vehiculeImmatriculation.toLowerCase().includes(search.toLowerCase())
+  const filteredRequests = requests.filter(
+    (req) =>
+      req.user?.nom.toLowerCase().includes(search.toLowerCase()) ||
+      req.user?.prenom.toLowerCase().includes(search.toLowerCase()) ||
+      req.vehiculeImmatriculation.toLowerCase().includes(search.toLowerCase())
   );
 
   const handleAction = async (id: string, statut: "approuvé" | "rejeté") => {
@@ -348,7 +352,7 @@ export default function DriversValidationPage() {
                   <p className="mt-1 text-lg font-bold tabular-nums">
                     {selectedRequest?.permisNumero}
                   </p>
-                  
+
                   {selectedRequest?.permisImage ? (
                     <div className="relative mt-4 aspect-video w-full overflow-hidden rounded-lg shadow-inner">
                       <Image
@@ -405,7 +409,8 @@ export default function DriversValidationPage() {
               onClick={() => {
                 if (!comment.trim()) {
                   toast.error("Motif requis", {
-                    description: "Veuillez indiquer la raison du rejet pour informer le conducteur.",
+                    description:
+                      "Veuillez indiquer la raison du rejet pour informer le conducteur.",
                   });
                   return;
                 }

@@ -30,12 +30,12 @@ export async function GET(request: NextRequest) {
           columns: {
             nom: true,
             prenom: true,
-            email: true
-          }
-        }
+            email: true,
+          },
+        },
       },
       orderBy: [desc(auditLogs.createdAt)],
-      limit: 1000 // Limit for safety
+      limit: 1000, // Limit for safety
     });
 
     // CSV Header
@@ -43,7 +43,9 @@ export async function GET(request: NextRequest) {
 
     // Data rows
     logs.forEach((log) => {
-      const userName = log.user ? `${log.user.prenom} ${log.user.nom}` : "Système";
+      const userName = log.user
+        ? `${log.user.prenom} ${log.user.nom}`
+        : "Système";
       const row = [
         log.id,
         log.createdAt,
@@ -51,7 +53,7 @@ export async function GET(request: NextRequest) {
         log.action,
         log.targetId || "",
         `"${(log.details || "").replace(/"/g, '""')}"`,
-        log.ip || ""
+        log.ip || "",
       ].join(",");
       csv += row + "\n";
     });
@@ -60,10 +62,9 @@ export async function GET(request: NextRequest) {
     return new NextResponse(csv, {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename=audit-logs-${new Date().toISOString().split("T")[0]}.csv`
-      }
+        "Content-Disposition": `attachment; filename=audit-logs-${new Date().toISOString().split("T")[0]}.csv`,
+      },
     });
-
   } catch (error) {
     console.error("CSV Export error:", error);
     return new NextResponse("Internal Server Error", { status: 500 });

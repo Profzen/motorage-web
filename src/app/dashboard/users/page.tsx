@@ -133,7 +133,7 @@ export default function UsersPage() {
         );
       case "conducteur":
         return (
-          <Badge className="bg-blue-600 hover:bg-blue-700 text-white gap-1 border-0">
+          <Badge className="gap-1 border-0 bg-blue-600 text-white hover:bg-blue-700">
             <Car className="h-3 w-3" /> Conducteur
           </Badge>
         );
@@ -154,7 +154,7 @@ export default function UsersPage() {
         return (
           <Badge
             variant="outline"
-            className="border-green-200 bg-green-50 text-green-700 font-medium"
+            className="border-green-200 bg-green-50 font-medium text-green-700"
           >
             Actif
           </Badge>
@@ -163,14 +163,14 @@ export default function UsersPage() {
         return (
           <Badge
             variant="outline"
-            className="border-red-200 bg-red-50 text-red-700 font-medium"
+            className="border-red-200 bg-red-50 font-medium text-red-700"
           >
             Suspendu
           </Badge>
         );
       default:
         return (
-          <Badge variant="outline" className="text-slate-400 font-normal">
+          <Badge variant="outline" className="font-normal text-slate-400">
             {status}
           </Badge>
         );
@@ -319,18 +319,33 @@ export default function UsersPage() {
             </TableHeader>
             <TableBody>
               {loading ? (
-                Array(5).fill(0).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell><div className="h-10 w-full bg-slate-100 animate-pulse rounded" /></TableCell>
-                    <TableCell><div className="h-6 w-16 bg-slate-100 animate-pulse rounded" /></TableCell>
-                    <TableCell><div className="h-6 w-16 bg-slate-100 animate-pulse rounded" /></TableCell>
-                    <TableCell><div className="h-6 w-24 bg-slate-100 animate-pulse rounded" /></TableCell>
-                    <TableCell><div className="h-8 w-8 ml-auto bg-slate-100 animate-pulse rounded" /></TableCell>
-                  </TableRow>
-                ))
+                Array(5)
+                  .fill(0)
+                  .map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell>
+                        <div className="h-10 w-full animate-pulse rounded bg-slate-100" />
+                      </TableCell>
+                      <TableCell>
+                        <div className="h-6 w-16 animate-pulse rounded bg-slate-100" />
+                      </TableCell>
+                      <TableCell>
+                        <div className="h-6 w-16 animate-pulse rounded bg-slate-100" />
+                      </TableCell>
+                      <TableCell>
+                        <div className="h-6 w-24 animate-pulse rounded bg-slate-100" />
+                      </TableCell>
+                      <TableCell>
+                        <div className="ml-auto h-8 w-8 animate-pulse rounded bg-slate-100" />
+                      </TableCell>
+                    </TableRow>
+                  ))
               ) : users.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                  <TableCell
+                    colSpan={5}
+                    className="text-muted-foreground h-24 text-center"
+                  >
                     Aucun utilisateur trouvé.
                   </TableCell>
                 </TableRow>
@@ -341,17 +356,20 @@ export default function UsersPage() {
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10 border transition-transform group-hover:scale-105">
                           <AvatarImage
-                            src={user.avatar || `https://avatar.vercel.sh/${user.email}`}
+                            src={
+                              user.avatar ||
+                              `https://avatar.vercel.sh/${user.email}`
+                            }
                           />
                           <AvatarFallback className="bg-slate-100 text-slate-600">
                             {(user.prenom || "?").charAt(0)}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col">
-                          <span className="font-semibold text-slate-900 border-b border-transparent group-hover:border-slate-300 w-fit transition-colors text-sm">
+                          <span className="w-fit border-b border-transparent text-sm font-semibold text-slate-900 transition-colors group-hover:border-slate-300">
                             {user.prenom} {user.nom}
                           </span>
-                          <span className="text-muted-foreground text-xs font-mono">
+                          <span className="text-muted-foreground font-mono text-xs">
                             {user.email}
                           </span>
                         </div>
@@ -369,38 +387,50 @@ export default function UsersPage() {
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="hover:bg-slate-100 h-8 w-8">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-slate-100"
+                          >
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-56 p-1">
-                          <DropdownMenuLabel className="text-[10px] uppercase font-bold text-slate-400 px-2 py-1.5 tracking-widest">
+                          <DropdownMenuLabel className="px-2 py-1.5 text-[10px] font-bold tracking-widest text-slate-400 uppercase">
                             Administration
                           </DropdownMenuLabel>
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             onClick={() => setHistoryUserId(user.id)}
                             className="cursor-pointer"
                           >
-                            <History className="mr-2 h-4 w-4 text-slate-400" /> Profil & Historique
+                            <History className="mr-2 h-4 w-4 text-slate-400" />{" "}
+                            Profil & Historique
                           </DropdownMenuItem>
                           <DropdownMenuSeparator className="my-1" />
                           {user.statut === "actif" ? (
-                            <DropdownMenuItem 
-                              className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
-                              onClick={() => handleStatusUpdate(user.id, "suspendu")}
+                            <DropdownMenuItem
+                              className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-600"
+                              onClick={() =>
+                                handleStatusUpdate(user.id, "suspendu")
+                              }
                             >
-                              <Ban className="mr-2 h-4 w-4" /> Suspendre l&apos;accès
+                              <Ban className="mr-2 h-4 w-4" /> Suspendre
+                              l&apos;accès
                             </DropdownMenuItem>
                           ) : (
-                            <DropdownMenuItem 
-                              className="text-green-600 focus:text-green-600 focus:bg-green-50 cursor-pointer"
-                              onClick={() => handleStatusUpdate(user.id, "actif")}
+                            <DropdownMenuItem
+                              className="cursor-pointer text-green-600 focus:bg-green-50 focus:text-green-600"
+                              onClick={() =>
+                                handleStatusUpdate(user.id, "actif")
+                              }
                             >
-                              <CheckCircle2 className="mr-2 h-4 w-4" /> Rétablir l&apos;accès
+                              <CheckCircle2 className="mr-2 h-4 w-4" /> Rétablir
+                              l&apos;accès
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuItem className="text-slate-500 cursor-not-allowed opacity-50">
-                            <Shield className="mr-2 h-4 w-4" /> Supprimer définitivement
+                          <DropdownMenuItem className="cursor-not-allowed text-slate-500 opacity-50">
+                            <Shield className="mr-2 h-4 w-4" /> Supprimer
+                            définitivement
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -413,15 +443,21 @@ export default function UsersPage() {
         </CardContent>
       </Card>
 
-      <UserHistoryDialog 
-        userId={historyUserId} 
-        onClose={() => setHistoryUserId(null)} 
+      <UserHistoryDialog
+        userId={historyUserId}
+        onClose={() => setHistoryUserId(null)}
       />
     </div>
   );
 }
 
-function UserHistoryDialog({ userId, onClose }: { userId: string | null, onClose: () => void }) {
+function UserHistoryDialog({
+  userId,
+  onClose,
+}: {
+  userId: string | null;
+  onClose: () => void;
+}) {
   const [logs, setLogs] = useState<UserActivity[]>([]);
   const [loading, setLoading] = useState(false);
   const [prevUserId, setPrevUserId] = useState<string | null>(null);
@@ -437,8 +473,8 @@ function UserHistoryDialog({ userId, onClose }: { userId: string | null, onClose
   useEffect(() => {
     if (userId) {
       fetch(`/api/admin/activity?userId=${userId}`)
-        .then(res => res.json())
-        .then(data => {
+        .then((res) => res.json())
+        .then((data) => {
           if (data.success) {
             setLogs(data.data); // data.data is the array of activities
           }
@@ -452,39 +488,48 @@ function UserHistoryDialog({ userId, onClose }: { userId: string | null, onClose
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <History className="h-5 w-5 text-primary" />
+            <History className="text-primary h-5 w-5" />
             Historique d&apos;audit de l&apos;utilisateur
           </DialogTitle>
           <DialogDescription>
             Toutes les actions administratives et critiques liées à ce compte.
           </DialogDescription>
         </DialogHeader>
-        
-        <div className="mt-4 max-h-[400px] overflow-y-auto space-y-3 pr-2">
+
+        <div className="mt-4 max-h-[400px] space-y-3 overflow-y-auto pr-2">
           {loading ? (
             <div className="space-y-3">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="h-16 w-full animate-pulse bg-slate-100 rounded-lg" />
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="h-16 w-full animate-pulse rounded-lg bg-slate-100"
+                />
               ))}
             </div>
           ) : logs.length === 0 ? (
-            <div className="py-10 text-center text-muted-foreground italic">
+            <div className="text-muted-foreground py-10 text-center italic">
               Aucune activité enregistrée pour cet utilisateur.
             </div>
           ) : (
             logs.map((log) => (
-              <div key={log.id} className="border rounded-lg p-3 hover:bg-slate-50 transition-colors">
-                <div className="flex justify-between items-start mb-1">
-                  <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider">
+              <div
+                key={log.id}
+                className="rounded-lg border p-3 transition-colors hover:bg-slate-50"
+              >
+                <div className="mb-1 flex items-start justify-between">
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] font-bold tracking-wider uppercase"
+                  >
                     {log.action}
                   </Badge>
-                  <span className="text-[10px] text-muted-foreground font-mono">
+                  <span className="text-muted-foreground font-mono text-[10px]">
                     {new Date(log.createdAt).toLocaleString("fr-FR")}
                   </span>
                 </div>
                 <p className="text-sm text-slate-700">{log.details}</p>
                 {log.adminName && (
-                  <p className="text-[10px] text-blue-600 mt-2 flex items-center gap-1">
+                  <p className="mt-2 flex items-center gap-1 text-[10px] text-blue-600">
                     <Shield className="h-3 w-3" /> Par {log.adminName}
                   </p>
                 )}

@@ -147,7 +147,7 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    
+
     // Log before delete
     await db.insert(auditLogs).values({
       userId: authPayload.userId,

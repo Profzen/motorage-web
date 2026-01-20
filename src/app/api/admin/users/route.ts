@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
     const conditions = [];
     if (role) conditions.push(eq(users.role, role));
     if (statut) conditions.push(eq(users.statut, statut));
-    
+
     if (search) {
       const searchTerm = `%${search}%`;
       conditions.push(
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
         )
       );
     }
-    
+
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
     // Get total count

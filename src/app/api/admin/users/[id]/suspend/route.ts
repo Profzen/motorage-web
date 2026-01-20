@@ -50,10 +50,7 @@ export async function POST(
     }
 
     // Update user status
-    await db
-      .update(users)
-      .set({ statut: "suspendu" })
-      .where(eq(users.id, id));
+    await db.update(users).set({ statut: "suspendu" }).where(eq(users.id, id));
 
     // Log the action
     await db.insert(auditLogs).values({
@@ -66,7 +63,11 @@ export async function POST(
     return successResponse({ message: "Utilisateur suspendu avec succès" });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return ApiErrors.validationError("Validation failed", undefined, error.issues);
+      return ApiErrors.validationError(
+        "Validation failed",
+        undefined,
+        error.issues
+      );
     }
     console.error("Suspend user error:", error);
     return ApiErrors.serverError();

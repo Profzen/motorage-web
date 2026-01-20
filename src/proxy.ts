@@ -72,9 +72,15 @@ export async function proxy(request: NextRequest) {
     requestHeaders.set("x-user-role", payload.role as string);
 
     // Admin role protection
-    if (pathname.startsWith("/api/admin") && payload.role !== "administrateur") {
+    if (
+      pathname.startsWith("/api/admin") &&
+      payload.role !== "administrateur"
+    ) {
       return NextResponse.json(
-        { success: false, error: { message: "Accès réservé aux administrateurs" } },
+        {
+          success: false,
+          error: { message: "Accès réservé aux administrateurs" },
+        },
         { status: 403 }
       );
     }
