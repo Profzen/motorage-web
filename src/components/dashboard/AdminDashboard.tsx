@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -15,44 +15,126 @@ import {
   ShieldAlert,
   Activity,
   UserCheck,
+  Loader2,
+  TrendingUp,
+  History,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+
+interface DashboardStats {
+  users: {
+    total: number;
+    byRole: {
+      conducteur: number;
+      passager: number;
+    };
+  };
+  trajets: {
+    total: number;
+    today: number;
+    chartData: Array<{ date: string; count: number }>;
+  };
+  onboarding: {
+    pending: number;
+  };
+  reports: {
+    pending: number;
+  };
+}
+
+interface Activity {
+  id: string;
+  type: string;
+  action: string;
+  details?: string;
+  description: string;
+  createdAt: string;
+  user: {
+    nom: string;
+    prenom: string;
+    role: string;
+  };
+}
 
 export function AdminDashboard() {
+  const [data, setData] = useState<DashboardStats | null>(null);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [statsRes, activityRes] = await Promise.all([
+          fetch("/api/admin/stats"),
+          fetch("/api/admin/activity"),
+        ]);
+        
+        const stats = await statsRes.json();
+        const activity = await activityRes.json();
+
+        if (stats.success) setData(stats.data);
+        if (activity.success) setActivities(activity.data);
+      } catch (error) {
+        console.error("Dashboard fetch error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   const stats = [
     {
       title: "Total Utilisateurs",
-      value: "1,284",
+      value: data?.users?.total?.toLocaleString() || "0",
       icon: Users,
       color: "text-blue-600",
       bg: "bg-blue-100",
-      trend: "+12%",
+      trend: data?.users?.byRole?.conducteur ? `${data.users.byRole.conducteur} conducteurs` : "Nouveau",
     },
     {
       title: "Trajets Aujourd'hui",
-      value: "156",
+      value: data?.trajets?.today?.toString() || "0",
       icon: ArrowRightLeft,
       color: "text-green-600",
       bg: "bg-green-100",
-      trend: "+5%",
+      trend: data?.trajets?.total ? `Total: ${data.trajets.total}` : "Actif",
     },
     {
       title: "Validations en attente",
-      value: "12",
+      value: data?.onboarding?.pending?.toString() || "0",
       icon: ClipboardCheck,
       color: "text-amber-600",
       bg: "bg-amber-100",
-      trend: "Prioritaire",
+      trend: (data?.onboarding?.pending ?? 0) > 0 ? "Prioritaire" : "A jour",
     },
     {
       title: "Signalements actifs",
-      value: "2",
+      value: data?.reports?.pending?.toString() || "0",
       icon: ShieldAlert,
       color: "text-red-600",
       bg: "bg-red-100",
-      trend: "-50%",
+      trend: (data?.reports?.pending ?? 0) > 0 ? "A traiter" : "R.A.S",
     },
   ];
 
@@ -89,6 +171,82 @@ export function AdminDashboard() {
         ))}
       </div>
 
+      {/* Evolution Chart */}
+      <Card className="bg-card/50 border-0 shadow-sm backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-xl font-bold">
+            <TrendingUp className="text-primary h-5 w-5" />
+            Évolution de l&apos;activité
+          </CardTitle>
+          <CardDescription>
+            Nombre de trajets réservés sur les 7 derniers jours
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={data?.trajets?.chartData || []}
+                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                    <stop
+                      offset="5%"
+                      stopColor="hsl(var(--primary))"
+                      stopOpacity={0.3}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor="hsl(var(--primary))"
+                      stopOpacity={0}
+                    />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="hsl(var(--muted-foreground))"
+                  opacity={0.1}
+                />
+                <XAxis
+                  dataKey="date"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                  tickFormatter={(str) =>
+                    new Date(str).toLocaleDateString("fr-FR", {
+                      weekday: "short",
+                    })
+                  }
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--background))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "8px",
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="count"
+                  stroke="hsl(var(--primary))"
+                  fillOpacity={1}
+                  fill="url(#colorCount)"
+                  name="Trajets"
+                  strokeWidth={2}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {/* Real-time Activity */}
         <Card className="bg-card/50 border-0 shadow-sm backdrop-blur-sm lg:col-span-2">
@@ -103,30 +261,46 @@ export function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              {[1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  className="hover:bg-muted/50 hover:border-border flex items-start gap-4 rounded-xl border border-transparent p-3 transition-colors"
-                >
-                  <div className="bg-primary/10 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
-                    <UserCheck className="h-5 w-5" />
-                  </div>
-                  <div className="grow">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-bold">
-                        Nouvelle réservation confirmée
-                      </p>
-                      <span className="text-muted-foreground text-xs">
-                        Il y a 5 min
-                      </span>
+              {activities.length > 0 ? (
+                activities.map((activity) => (
+                  <div
+                    key={activity.id}
+                    className="hover:bg-muted/50 hover:border-border flex items-start gap-4 rounded-xl border border-transparent p-3 transition-colors"
+                  >
+                    <div className="bg-primary/10 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
+                      {activity.action.includes("TRAJET") ? (
+                        <ArrowRightLeft className="h-5 w-5" />
+                      ) : activity.action.includes("USER") ||
+                        activity.action.includes("LOGIN") ? (
+                        <UserCheck className="h-5 w-5" />
+                      ) : (
+                        <Activity className="h-5 w-5" />
+                      )}
                     </div>
-                    <p className="text-muted-foreground mt-1 text-xs">
-                      Jean D. (Conducteur) a accepté la demande de Marie K. pour
-                      le trajet &quot;Entrée Nord → Amphi 1000&quot;.
-                    </p>
+                    <div className="grow">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-bold">
+                          {activity.details || activity.action}
+                        </p>
+                        <span className="text-muted-foreground text-xs">
+                          {new Date(activity.createdAt).toLocaleTimeString("fr-FR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                      <p className="text-muted-foreground mt-1 text-xs">
+                        Par {activity.user?.nom || "Système"} ({activity.user?.role || "Inconnu"})
+                      </p>
+                    </div>
                   </div>
+                ))
+              ) : (
+                <div className="text-muted-foreground flex h-32 flex-col items-center justify-center gap-2 text-sm italic">
+                  <History className="h-8 w-8 opacity-20" />
+                  Aucune activité récente
                 </div>
-              ))}
+              )}
             </div>
             <Button
               variant="ghost"

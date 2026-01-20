@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   ShieldAlert,
   Search,
@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -30,7 +31,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 
 interface Report {
@@ -61,11 +68,21 @@ export default function ReportsPage() {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [adminNote, setAdminNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Filters
+  const [search, setSearch] = useState("");
+  const [statutFilter, setStatutFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
 
-  const fetchReports = async () => {
+  const fetchReports = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/admin/reports");
+      const params = new URLSearchParams();
+      if (search) params.append("search", search);
+      if (statutFilter !== "all") params.append("statut", statutFilter);
+      if (typeFilter !== "all") params.append("type", typeFilter);
+
+      const res = await fetch(`/api/admin/reports?${params.toString()}`);
       const data = await res.json();
       if (data.success) {
         setReports(data.data);
@@ -75,11 +92,14 @@ export default function ReportsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [search, statutFilter, typeFilter]);
 
   useEffect(() => {
-    fetchReports();
-  }, []);
+    const timer = setTimeout(() => {
+      fetchReports();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [fetchReports]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -182,14 +202,47 @@ export default function ReportsPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="relative w-72">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-1 items-center gap-2">
+              <div className="relative w-full max-w-sm">
                 <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4" />
-                <Input placeholder="Rechercher..." className="pl-9" />
+                <Input 
+                  placeholder="Rechercher par titre ou description..." 
+                  className="pl-9" 
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
               </div>
-              <Button variant="outline" size="sm" className="gap-2">
-                <Filter className="h-4 w-4" /> Filtres
+            </div>
+            <div className="flex items-center gap-2">
+              <Select value={statutFilter} onValueChange={setStatutFilter}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
+                  <SelectItem value="en_attente">En attente</SelectItem>
+                  <SelectItem value="en_cours">En cours</SelectItem>
+                  <SelectItem value="resolu">Résolu</SelectItem>
+                  <SelectItem value="rejete">Classé</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les types</SelectItem>
+                  <SelectItem value="comportement">Comportement</SelectItem>
+                  <SelectItem value="securite">Sécurité</SelectItem>
+                  <SelectItem value="retard">Retard</SelectItem>
+                  <SelectItem value="autre">Autre</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Button variant="outline" size="icon" onClick={fetchReports}>
+                <Filter className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -357,19 +410,28 @@ export default function ReportsPage() {
               Fermer
             </Button>
             <div className="flex gap-2">
+              {selectedReport?.statut === "en_attente" && (
+                <Button
+                  variant="outline"
+                  onClick={() => handleAction("en_cours")}
+                  disabled={isSubmitting}
+                >
+                  Prendre en charge
+                </Button>
+              )}
               <Button
                 variant="secondary"
                 onClick={() => handleAction("rejete")}
                 disabled={isSubmitting}
               >
-                Rejeter
+                Classer / Rejeter
               </Button>
               <Button
                 className="bg-green-600 hover:bg-green-700"
                 onClick={() => handleAction("resolu")}
                 disabled={isSubmitting}
               >
-                Résoudre
+                Marquer comme résolu
               </Button>
             </div>
           </DialogFooter>

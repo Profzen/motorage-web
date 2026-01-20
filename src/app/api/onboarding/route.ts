@@ -3,6 +3,7 @@ import { onboardingRequests, users } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
 import { authenticateRequest } from "@/lib/auth";
+import { createNotification } from "@/lib/notifications";
 import { onboardingRequestSchema } from "@/lib/validation";
 import { cookies } from "next/headers";
 import { z } from "zod";
@@ -65,7 +66,7 @@ export async function POST(request: Request) {
     }
 
     // 4. Créer la demande
-    const newRequest = await db
+    const [newRequestRecord] = await db
       .insert(onboardingRequests)
       .values({
         userId: authPayload.userId,
@@ -74,10 +75,34 @@ export async function POST(request: Request) {
       })
       .returning();
 
+    // Notifier les administrateurs
+    try {
+      const admins = await db.query.users.findMany({
+        where: eq(users.role, "administrateur"),
+      });
+
+      await Promise.all(
+        admins.map((admin) =>
+          createNotification({
+            userId: admin.id,
+            type: "system",
+            title: "Nouvelle demande conducteur",
+            message: `${user?.prenom} ${user?.nom} a soumis une demande pour devenir conducteur.`,
+            data: { requestId: newRequestRecord.id },
+          })
+        )
+      );
+    } catch (notifError) {
+      console.error(
+        "Failed to notify admins about new driver application:",
+        notifError
+      );
+    }
+
     return successResponse(
       {
         message: "Votre demande a été soumise avec succès.",
-        application: newRequest[0],
+        application: newRequestRecord,
       },
       undefined,
       201

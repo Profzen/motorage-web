@@ -1,9 +1,9 @@
 import { db } from "@/lib/db";
-import { vehicules } from "@/lib/db/schema";
+import { vehicules, auditLogs } from "@/lib/db/schema";
 import { vehiculeAdminUpdateSchema } from "@/lib/validation";
 import { eq } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
-import { authenticateRequest } from "@/lib/auth";
+import { authenticateAdmin } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { createNotification } from "@/lib/notifications";
 import { NextRequest } from "next/server";
@@ -48,9 +48,9 @@ export async function PATCH(
   try {
     const cookieStore = await cookies();
     const cookieToken = cookieStore.get("token")?.value;
-    const authPayload = await authenticateRequest(request, cookieToken);
+    const authPayload = await authenticateAdmin(request, cookieToken);
 
-    if (!authPayload || authPayload.role !== "administrateur") {
+    if (!authPayload) {
       return ApiErrors.forbidden("Accès réservé aux administrateurs");
     }
 
@@ -96,6 +96,14 @@ export async function PATCH(
     });
 
     if (result.error) return result.error as Response;
+
+    // Log the action
+    await db.insert(auditLogs).values({
+      userId: authPayload.userId,
+      action: "UPDATE_VEHICLE_STATUS",
+      targetId: id,
+      details: `Changement statut véhicule: ${validatedData.statut} (Commentaire: ${validatedData.commentaireAdmin || "Aucun"})`,
+    });
 
     return successResponse(result.data);
   } catch (error) {

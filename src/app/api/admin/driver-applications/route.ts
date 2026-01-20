@@ -6,7 +6,7 @@ import {
   ApiErrors,
   parsePaginationParams,
 } from "@/lib/api-response";
-import { authenticateRequest } from "@/lib/auth";
+import { authenticateAdmin } from "@/lib/auth";
 import { cookies } from "next/headers";
 
 /**
@@ -59,9 +59,9 @@ export async function GET(request: Request) {
   try {
     const cookieStore = await cookies();
     const cookieToken = cookieStore.get("token")?.value;
-    const authPayload = await authenticateRequest(request, cookieToken);
+    const authPayload = await authenticateAdmin(request, cookieToken);
 
-    if (!authPayload || authPayload.role !== "administrateur") {
+    if (!authPayload) {
       return ApiErrors.unauthorized("Accès réservé aux administrateurs");
     }
 

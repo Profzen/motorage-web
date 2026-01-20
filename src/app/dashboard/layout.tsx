@@ -3,6 +3,7 @@
 import { DashboardSidebar } from "@/components/layout/DashboardSidebar";
 import { useSidebarStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { Menu, Car } from "lucide-react";
@@ -44,14 +45,17 @@ export default function DashboardLayout({
             </div>
             <span className="text-lg font-bold tracking-tight">Miyi Ðekae</span>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsOpen(!isOpen)}
-            className="hover:bg-primary/10 hover:text-primary rounded-xl transition-all"
-          >
-            <Menu className="h-6 w-6" />
-          </Button>
+          <div className="flex items-center gap-2">
+            {mounted && <NotificationBell />}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsOpen(!isOpen)}
+              className="hover:bg-primary/10 hover:text-primary rounded-xl transition-all"
+            >
+              <Menu className="h-6 w-6" />
+            </Button>
+          </div>
         </header>
 
         <div className="flex-1 overflow-auto p-4 md:p-8">{children}</div>

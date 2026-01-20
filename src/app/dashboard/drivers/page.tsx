@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -18,11 +18,20 @@ import {
   FileText,
   Loader2,
   Car,
+  Filter,
+  Image as ImageIcon,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -32,6 +41,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import Image from "next/image";
 
 interface OnboardingRequest {
   id: string;
@@ -54,15 +64,21 @@ interface OnboardingRequest {
 export default function DriversValidationPage() {
   const [requests, setRequests] = useState<OnboardingRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterStatus, setFilterStatus] = useState<string>("en_attente");
+  const [search, setSearch] = useState("");
   const [selectedRequest, setSelectedRequest] =
     useState<OnboardingRequest | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [comment, setComment] = useState("");
 
-  const fetchRequests = async () => {
+  const fetchRequests = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/admin/driver-applications");
+      const url = new URL("/api/admin/driver-applications", window.location.origin);
+      if (filterStatus && filterStatus !== "all") {
+        url.searchParams.append("statut", filterStatus);
+      }
+      const res = await fetch(url.toString());
       const result = await res.json();
       if (result.success) {
         setRequests(result.data);
@@ -72,11 +88,17 @@ export default function DriversValidationPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterStatus]);
 
   useEffect(() => {
     fetchRequests();
-  }, []);
+  }, [fetchRequests]);
+
+  const filteredRequests = requests.filter(req => 
+    req.user?.nom.toLowerCase().includes(search.toLowerCase()) ||
+    req.user?.prenom.toLowerCase().includes(search.toLowerCase()) ||
+    req.vehiculeImmatriculation.toLowerCase().includes(search.toLowerCase())
+  );
 
   const handleAction = async (id: string, statut: "approuvé" | "rejeté") => {
     try {
@@ -159,10 +181,26 @@ export default function DriversValidationPage() {
           <div className="relative">
             <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
             <Input
-              placeholder="Rechercher un conducteur..."
-              className="bg-card/50 w-64 pl-10"
+              placeholder="Rechercher..."
+              className="bg-card/50 w-48 pl-10"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
           </div>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="bg-card/50 w-40">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4" />
+                <SelectValue placeholder="Statut" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous</SelectItem>
+              <SelectItem value="en_attente">En attente</SelectItem>
+              <SelectItem value="approuvé">Approuvé</SelectItem>
+              <SelectItem value="rejeté">Rejeté</SelectItem>
+            </SelectContent>
+          </Select>
           <Button onClick={fetchRequests} variant="outline" size="icon">
             <Loader2 className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
@@ -184,10 +222,10 @@ export default function DriversValidationPage() {
               <Loader2 className="text-primary h-10 w-10 animate-spin" />
               <p className="font-medium">Chargement des dossiers...</p>
             </div>
-          ) : requests.length === 0 ? (
+          ) : filteredRequests.length === 0 ? (
             <div className="text-muted-foreground flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed py-20">
               <CheckCircle className="h-12 w-12 opacity-20" />
-              <p className="text-lg font-medium">Aucun dossier en attente</p>
+              <p className="text-lg font-medium">Aucun dossier trouvé</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -203,7 +241,7 @@ export default function DriversValidationPage() {
                 </thead>
                 <tbody className="divide-border/50 divide-y">
                   <AnimatePresence>
-                    {requests.map((req, idx) => (
+                    {filteredRequests.map((req, idx) => (
                       <motion.tr
                         key={req.id}
                         initial={{ opacity: 0, x: -20 }}
@@ -310,6 +348,21 @@ export default function DriversValidationPage() {
                   <p className="mt-1 text-lg font-bold tabular-nums">
                     {selectedRequest?.permisNumero}
                   </p>
+                  
+                  {selectedRequest?.permisImage ? (
+                    <div className="relative mt-4 aspect-video w-full overflow-hidden rounded-lg shadow-inner">
+                      <Image
+                        src={selectedRequest.permisImage}
+                        alt="Permis de conduire"
+                        fill
+                        className="object-cover transition-transform hover:scale-110"
+                      />
+                    </div>
+                  ) : (
+                    <div className="bg-muted mt-4 flex aspect-video w-full items-center justify-center rounded-lg border-2 border-dashed">
+                      <ImageIcon className="text-muted-foreground h-8 w-8 opacity-20" />
+                    </div>
+                  )}
                 </div>
               </section>
 
@@ -349,7 +402,15 @@ export default function DriversValidationPage() {
             <Button
               variant="destructive"
               className="gap-2 px-6 font-bold"
-              onClick={() => handleAction(selectedRequest!.id, "rejeté")}
+              onClick={() => {
+                if (!comment.trim()) {
+                  toast.error("Motif requis", {
+                    description: "Veuillez indiquer la raison du rejet pour informer le conducteur.",
+                  });
+                  return;
+                }
+                handleAction(selectedRequest!.id, "rejeté");
+              }}
               disabled={isProcessing}
             >
               <XCircle className="h-4 w-4" />

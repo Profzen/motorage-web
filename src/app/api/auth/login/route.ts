@@ -2,7 +2,7 @@ import { loginSchema } from "@/lib/validation";
 import { comparePassword, signJWT, signRefreshToken } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
+import { users, auditLogs } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
 import { rateLimit } from "@/lib/rate-limit";
@@ -126,6 +126,13 @@ export async function POST(request: Request) {
       sameSite: "lax",
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: "/",
+    });
+
+    // Log activity
+    await db.insert(auditLogs).values({
+      userId: user.id,
+      action: "LOGIN",
+      details: `${user.nom} s'est connecté`,
     });
 
     // Return standardized response (for mobile and web)
