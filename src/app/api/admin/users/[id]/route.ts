@@ -1,8 +1,10 @@
 import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
+import { users, auditLogs } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
 import { userSchema } from "@/lib/validation";
+import { authenticateAdmin } from "@/lib/auth";
+import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
 
 /**
@@ -59,6 +61,14 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get("token")?.value;
+    const authPayload = await authenticateAdmin(request, cookieToken);
+
+    if (!authPayload) {
+      return ApiErrors.unauthorized("Accès réservé aux administrateurs");
+    }
+
     const { id } = await params;
     const body = await request.json();
     const validatedData = userSchema.partial().parse(body);
@@ -76,7 +86,18 @@ export async function PATCH(
       return ApiErrors.notFound("Utilisateur");
     }
 
-    const { ...userWithoutPassword } = updated[0];
+    // Log update action
+    await db.insert(auditLogs).values({
+      userId: authPayload.userId,
+      targetId: id,
+      action: "UPDATE_USER_ADMIN",
+      details: `Changement : ${Object.keys(updateFields).join(", ")}`,
+    });
+
+    const user = updated[0];
+    const { password: _p, refreshToken: _r, ...userWithoutPassword } = user;
+    void _p;
+    void _r;
     return successResponse(userWithoutPassword);
   } catch {
     return ApiErrors.serverError();
@@ -113,13 +134,30 @@ export async function PATCH(
  *       - BearerAuth: []
  */
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get("token")?.value;
+    const authPayload = await authenticateAdmin(request, cookieToken);
+
+    if (!authPayload) {
+      return ApiErrors.unauthorized("Accès réservé aux administrateurs");
+    }
+
     const { id } = await params;
+
+    // Log before delete
+    await db.insert(auditLogs).values({
+      userId: authPayload.userId,
+      targetId: id,
+      action: "DELETE_USER_ADMIN",
+      details: "Suppression définitive du compte par un administrateur",
+    });
+
     await db.delete(users).where(eq(users.id, id));
-    return successResponse({ message: "User deleted" });
+    return successResponse({ message: "Utilisateur supprimé avec succès" });
   } catch {
     return ApiErrors.serverError();
   }

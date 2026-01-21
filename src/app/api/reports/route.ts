@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { reports } from "@/lib/db/schema";
+import { reports, users } from "@/lib/db/schema";
 import {
   successResponse,
   paginatedResponse,
@@ -7,6 +7,7 @@ import {
   parsePaginationParams,
 } from "@/lib/api-response";
 import { authenticateRequest } from "@/lib/auth";
+import { createNotification } from "@/lib/notifications";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { eq, desc, sql } from "drizzle-orm";
@@ -88,6 +89,27 @@ export async function POST(request: Request) {
         statut: "en_attente",
       })
       .returning();
+
+    // Notifier les administrateurs
+    try {
+      const admins = await db.query.users.findMany({
+        where: eq(users.role, "administrateur"),
+      });
+
+      await Promise.all(
+        admins.map((admin) =>
+          createNotification({
+            userId: admin.id,
+            type: "system",
+            title: "Nouveau signalement",
+            message: `Un nouveau signalement de type "${validatedData.type}" a été soumis : ${validatedData.titre}`,
+            data: { reportId: newReport.id },
+          })
+        )
+      );
+    } catch (notifError) {
+      console.error("Failed to notify admins about new report:", notifError);
+    }
 
     return successResponse(newReport, undefined, 201);
   } catch (error) {

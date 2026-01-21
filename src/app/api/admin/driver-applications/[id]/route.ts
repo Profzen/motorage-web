@@ -1,10 +1,14 @@
 import { db } from "@/lib/db";
-import { onboardingRequests, users, vehicules } from "@/lib/db/schema";
+import {
+  onboardingRequests,
+  users,
+  vehicules,
+  auditLogs,
+} from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
-import { authenticateRequest } from "@/lib/auth";
+import { authenticateAdmin } from "@/lib/auth";
 import { createNotification } from "@/lib/notifications";
-import { deletePublicFile } from "@/lib/file-storage";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { NextRequest } from "next/server";
@@ -75,9 +79,9 @@ export async function PATCH(
   try {
     const cookieStore = await cookies();
     const cookieToken = cookieStore.get("token")?.value;
-    const authPayload = await authenticateRequest(request, cookieToken);
+    const authPayload = await authenticateAdmin(request, cookieToken);
 
-    if (!authPayload || authPayload.role !== "administrateur") {
+    if (!authPayload) {
       return ApiErrors.unauthorized("Accès réservé aux administrateurs");
     }
 
@@ -170,18 +174,13 @@ export async function PATCH(
       }
     });
 
-    // Purge documents after validation to save space (local storage)
-    if (application.permisImage) {
-      try {
-        await deletePublicFile(application.permisImage);
-        await db
-          .update(onboardingRequests)
-          .set({ permisImage: null })
-          .where(eq(onboardingRequests.id, id));
-      } catch (e) {
-        console.warn("Could not delete file:", e);
-      }
-    }
+    // Log the admin action in audit logs
+    await db.insert(auditLogs).values({
+      userId: authPayload.userId,
+      action: statut === "approuvé" ? "APPROVE_DRIVER" : "REJECT_DRIVER",
+      targetId: application.userId,
+      details: `Validation dossier ${id}: ${statut}. Commentaire: ${commentaireAdmin || "Aucun"}`,
+    });
 
     return successResponse({
       message: `Demande ${statut} avec succès.`,

@@ -140,3 +140,19 @@ export async function authenticateRequest(
     role: payload.role as string,
   };
 }
+
+/**
+ * Authenticate a request and ensure the user is an administrator
+ */
+export async function authenticateAdmin(
+  request: Request,
+  cookieToken?: string
+): Promise<{ userId: string; email: string; role: string } | null> {
+  const payload = await authenticateRequest(request, cookieToken);
+
+  if (!payload || payload.role !== "administrateur") {
+    return null;
+  }
+
+  return payload;
+}

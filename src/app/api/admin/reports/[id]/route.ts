@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import { reports } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
-import { authenticateRequest } from "@/lib/auth";
+import { authenticateAdmin } from "@/lib/auth";
 import { createNotification } from "@/lib/notifications";
 import { cookies } from "next/headers";
 import { z } from "zod";
@@ -48,9 +48,9 @@ export async function PATCH(
   try {
     const cookieStore = await cookies();
     const cookieToken = cookieStore.get("token")?.value;
-    const authPayload = await authenticateRequest(request, cookieToken);
+    const authPayload = await authenticateAdmin(request, cookieToken);
 
-    if (!authPayload || authPayload.role !== "administrateur") {
+    if (!authPayload) {
       return ApiErrors.unauthorized("Accès réservé aux administrateurs");
     }
 

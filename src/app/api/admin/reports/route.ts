@@ -1,13 +1,14 @@
 import { db } from "@/lib/db";
 import { reports } from "@/lib/db/schema";
-import { desc, eq, sql } from "drizzle-orm";
+import { desc, eq, sql, and, or, like } from "drizzle-orm";
 import {
   paginatedResponse,
   ApiErrors,
   parsePaginationParams,
 } from "@/lib/api-response";
-import { authenticateRequest } from "@/lib/auth";
+import { authenticateAdmin } from "@/lib/auth";
 import { cookies } from "next/headers";
+import { NextRequest } from "next/server";
 
 /**
  * @openapi
@@ -16,7 +17,7 @@ import { cookies } from "next/headers";
  *     tags:
  *       - Admin
  *     summary: Lister les signalements et litiges (Admin)
- *     description: Permet d'obtenir tous les signalements avec pagination.
+ *     description: Permet d'obtenir tous les signalements avec pagination, filtres et recherche.
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -29,40 +30,68 @@ import { cookies } from "next/headers";
  *       - in: query
  *         name: statut
  *         schema: { type: string, enum: [en_attente, en_cours, resolu, rejete] }
+ *       - in: query
+ *         name: type
+ *         schema: { type: string }
+ *       - in: query
+ *         name: search
+ *         schema: { type: string }
  *     responses:
  *       200:
  *         description: Liste des signalements
  */
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const cookieToken = cookieStore.get("token")?.value;
-    const authPayload = await authenticateRequest(request, cookieToken);
+    const authPayload = await authenticateAdmin(request, cookieToken);
 
-    if (!authPayload || authPayload.role !== "administrateur") {
+    if (!authPayload) {
       return ApiErrors.unauthorized("Accès réservé aux administrateurs");
     }
 
     const { searchParams } = new URL(request.url);
     const { page, limit } = parsePaginationParams(searchParams);
     const statut = searchParams.get("statut");
+    const type = searchParams.get("type");
+    const search = searchParams.get("search");
     const offset = (page - 1) * limit;
 
-    const whereClause = statut ? eq(reports.statut, statut) : undefined;
+    const conditions = [];
+    if (statut) conditions.push(eq(reports.statut, statut));
+    if (type) conditions.push(eq(reports.type, type));
+
+    if (search) {
+      const searchTerm = `%${search}%`;
+      conditions.push(
+        or(
+          like(reports.titre, searchTerm),
+          like(reports.description, searchTerm)
+        )
+      );
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
     const data = await db.query.reports.findMany({
       where: whereClause,
       with: {
         reporter: {
           columns: {
-            password: false,
-            refreshToken: false,
+            id: true,
+            nom: true,
+            prenom: true,
+            email: true,
+            role: true,
           },
         },
         reported: {
           columns: {
-            password: false,
-            refreshToken: false,
+            id: true,
+            nom: true,
+            prenom: true,
+            email: true,
+            role: true,
           },
         },
         trajet: true,
@@ -77,7 +106,7 @@ export async function GET(request: Request) {
       .from(reports)
       .where(whereClause);
 
-    const total = totalResult[0].count;
+    const total = Number(totalResult[0]?.count || 0);
 
     return paginatedResponse(data, page, limit, total);
   } catch (error) {

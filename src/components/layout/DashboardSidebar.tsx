@@ -32,6 +32,7 @@ import { useAuthStore, useSidebarStore } from "@/lib/store";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import {
   Tooltip,
   TooltipContent,
@@ -206,18 +207,21 @@ export function DashboardSidebar() {
               </motion.span>
             )}
           </Link>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setCollapsed(!isCollapsed)}
-            className="hover:bg-primary/10 hover:text-primary hidden h-8 w-8 rounded-lg transition-all md:flex"
-          >
-            {isCollapsed ? (
-              <ChevronRight className="h-4 w-4" />
-            ) : (
-              <ChevronLeft className="h-4 w-4" />
-            )}
-          </Button>
+          <div className="flex items-center gap-1">
+            {mounted && <NotificationBell />}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setCollapsed(!isCollapsed)}
+              className="hover:bg-primary/10 hover:text-primary hidden h-8 w-8 rounded-lg transition-all md:flex"
+            >
+              {isCollapsed ? (
+                <ChevronRight className="h-4 w-4" />
+              ) : (
+                <ChevronLeft className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
         </div>
 
         {/* Search */}
