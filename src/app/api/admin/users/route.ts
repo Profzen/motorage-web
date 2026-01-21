@@ -188,7 +188,11 @@ export async function POST(request: Request) {
       details: `Création du compte ${validatedData.role} pour ${validatedData.email}`,
     });
 
-    const { password: _p, refreshToken: _r, ...userWithoutPassword } = newUser[0];
+    const {
+      password: _p,
+      refreshToken: _r,
+      ...userWithoutPassword
+    } = newUser[0];
     void _p;
     void _r;
 

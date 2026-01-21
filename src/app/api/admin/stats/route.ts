@@ -73,7 +73,9 @@ export async function GET(request: Request) {
         count: count(trajets.id),
       })
       .from(trajets)
-      .where(sql`date(${trajets.dateHeure}) >= ${sevenDaysAgo.toISOString().split("T")[0]}`)
+      .where(
+        sql`date(${trajets.dateHeure}) >= ${sevenDaysAgo.toISOString().split("T")[0]}`
+      )
       .groupBy(sql`date(${trajets.dateHeure})`)
       .orderBy(sql`date(${trajets.dateHeure})`);
 
@@ -86,8 +88,12 @@ export async function GET(request: Request) {
       .from(reservations)
       .groupBy(reservations.statut);
 
-    const totalReservations = reservationStats.reduce((acc, curr) => acc + curr.count, 0);
-    const pendingReservations = reservationStats.find(s => s.statut === "en_attente")?.count || 0;
+    const totalReservations = reservationStats.reduce(
+      (acc, curr) => acc + curr.count,
+      0
+    );
+    const pendingReservations =
+      reservationStats.find((s) => s.statut === "en_attente")?.count || 0;
 
     // 6. Litiges en attente
     const pendingReports = await db
@@ -112,8 +118,16 @@ export async function GET(request: Request) {
 
     // 9. Taux de croissance (utilisateurs ce mois vs mois dernier)
     const now = new Date();
-    const firstDayThisMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-    const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
+    const firstDayThisMonth = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      1
+    ).toISOString();
+    const firstDayLastMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() - 1,
+      1
+    ).toISOString();
 
     const usersThisMonth = await db
       .select({ count: count() })
@@ -123,17 +137,21 @@ export async function GET(request: Request) {
     const usersLastMonth = await db
       .select({ count: count() })
       .from(users)
-      .where(and(
-        gte(users.createdAt, firstDayLastMonth),
-        lt(users.createdAt, firstDayThisMonth)
-      ));
+      .where(
+        and(
+          gte(users.createdAt, firstDayLastMonth),
+          lt(users.createdAt, firstDayThisMonth)
+        )
+      );
 
     const countThisMonth = Number(usersThisMonth[0]?.count || 0);
     const countLastMonth = Number(usersLastMonth[0]?.count || 0);
-    
+
     let growthRate = 0;
     if (countLastMonth > 0) {
-      growthRate = Math.round(((countThisMonth - countLastMonth) / countLastMonth) * 100);
+      growthRate = Math.round(
+        ((countThisMonth - countLastMonth) / countLastMonth) * 100
+      );
     } else if (countThisMonth > 0) {
       growthRate = 100;
     }
@@ -145,11 +163,11 @@ export async function GET(request: Request) {
       return d.toISOString().split("T")[0];
     }).reverse();
 
-    const filledActivity = last7Days.map(date => {
-      const found = activityHistory.find(a => a.date === date);
+    const filledActivity = last7Days.map((date) => {
+      const found = activityHistory.find((a) => a.date === date);
       return {
         date,
-        count: found ? Number(found.count) : 0
+        count: found ? Number(found.count) : 0,
       };
     });
 
@@ -157,10 +175,11 @@ export async function GET(request: Request) {
       users: {
         total: userStatsRaw.reduce((acc, curr) => acc + curr.count, 0),
         byRole: {
-          conducteur: userStatsRaw.find(s => s.role === "conducteur")?.count || 0,
-          passager: userStatsRaw.find(s => s.role === "passager")?.count || 0,
+          conducteur:
+            userStatsRaw.find((s) => s.role === "conducteur")?.count || 0,
+          passager: userStatsRaw.find((s) => s.role === "passager")?.count || 0,
         },
-        distribution: userStatsRaw
+        distribution: userStatsRaw,
       },
       onboarding: {
         pending: pendingOnboardings[0]?.count || 0,
@@ -172,7 +191,7 @@ export async function GET(request: Request) {
       reservations: {
         total: totalReservations,
         pending: pendingReservations,
-        byStatut: reservationStats
+        byStatut: reservationStats,
       },
       reports: {
         pending: pendingReports[0]?.count || 0,
@@ -186,8 +205,8 @@ export async function GET(request: Request) {
       growth: {
         rate: growthRate,
         thisMonth: countThisMonth,
-        lastMonth: countLastMonth
-      }
+        lastMonth: countLastMonth,
+      },
     });
   } catch (error) {
     console.error("Stats Error:", error);

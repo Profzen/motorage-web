@@ -4,26 +4,17 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
 import {
-  ArrowRightLeft,
   Search,
-  Filter,
   Users,
   Clock,
-  MapPin,
   Car,
   BadgeCheck,
   MoreVertical,
   Loader2,
   RefreshCw,
   AlertCircle,
-  ShieldCheck,
-  ChevronRight,
-  User,
   Zap,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -91,31 +82,34 @@ export default function FluxTrajetsPage() {
     setMounted(true);
   }, []);
 
-  const fetchTrajets = useCallback(async (isSilent = false) => {
-    try {
-      if (!isSilent) setLoading(true);
-      else setRefreshing(true);
+  const fetchTrajets = useCallback(
+    async (isSilent = false) => {
+      try {
+        if (!isSilent) setLoading(true);
+        else setRefreshing(true);
 
-      const params = new URLSearchParams({
-        page: "1",
-        limit: "50",
-        status: statusFilter,
-        search: search,
-      });
+        const params = new URLSearchParams({
+          page: "1",
+          limit: "50",
+          status: statusFilter,
+          search: search,
+        });
 
-      const res = await fetch(`/api/admin/flux?${params.toString()}`);
-      const data = await res.json();
+        const res = await fetch(`/api/admin/flux?${params.toString()}`);
+        const data = await res.json();
 
-      if (data.success) {
-        setTrajets(data.data);
+        if (data.success) {
+          setTrajets(data.data);
+        }
+      } catch {
+        toast.error("Erreur lors de la récupération du flux");
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
       }
-    } catch (error) {
-      toast.error("Erreur lors de la récupération du flux");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [search, statusFilter]);
+    },
+    [search, statusFilter]
+  );
 
   useEffect(() => {
     fetchTrajets();
@@ -132,13 +126,29 @@ export default function FluxTrajetsPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "ouvert":
-        return <Badge className="bg-green-500/10 text-green-600 hover:bg-green-500/20 border-0">Ouvert</Badge>;
+        return (
+          <Badge className="border-0 bg-green-500/10 text-green-600 hover:bg-green-500/20">
+            Ouvert
+          </Badge>
+        );
       case "plein":
-        return <Badge className="bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border-0">Plein</Badge>;
+        return (
+          <Badge className="border-0 bg-blue-500/10 text-blue-600 hover:bg-blue-500/20">
+            Plein
+          </Badge>
+        );
       case "terminé":
-        return <Badge className="bg-gray-500/10 text-gray-600 hover:bg-gray-500/20 border-0">Terminé</Badge>;
+        return (
+          <Badge className="border-0 bg-gray-500/10 text-gray-600 hover:bg-gray-500/20">
+            Terminé
+          </Badge>
+        );
       case "annulé":
-        return <Badge className="bg-red-500/10 text-red-600 hover:bg-red-500/20 border-0">Annulé</Badge>;
+        return (
+          <Badge className="border-0 bg-red-500/10 text-red-600 hover:bg-red-500/20">
+            Annulé
+          </Badge>
+        );
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -172,13 +182,13 @@ export default function FluxTrajetsPage() {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="animate-in fade-in space-y-8 duration-700">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
         <div>
-          <h1 className="text-3xl font-black tracking-tight flex items-center gap-3">
-            <div className="bg-primary/10 p-2 rounded-xl">
-              <Zap className="h-6 w-6 text-primary animate-pulse" />
+          <h1 className="flex items-center gap-3 text-3xl font-black tracking-tight">
+            <div className="bg-primary/10 rounded-xl p-2">
+              <Zap className="text-primary h-6 w-6 animate-pulse" />
             </div>
             Flux Live des Trajets
           </h1>
@@ -189,24 +199,33 @@ export default function FluxTrajetsPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => fetchTrajets()}
-            className="font-bold border-2"
+            className="border-2 font-bold"
           >
-            <RefreshCw className={cn("mr-2 h-4 w-4", refreshing && "animate-spin")} />
+            <RefreshCw
+              className={cn("mr-2 h-4 w-4", refreshing && "animate-spin")}
+            />
             Actualiser
           </Button>
-          <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-full border border-dashed">
-            <div className={cn("h-2 w-2 rounded-full", autoRefresh ? "bg-green-500 animate-pulse" : "bg-muted-foreground")} />
-            <span className="text-[10px] font-black uppercase tracking-widest">
+          <div className="bg-muted/30 flex items-center gap-2 rounded-full border border-dashed px-3 py-1.5">
+            <div
+              className={cn(
+                "h-2 w-2 rounded-full",
+                autoRefresh
+                  ? "animate-pulse bg-green-500"
+                  : "bg-muted-foreground"
+              )}
+            />
+            <span className="text-[10px] font-black tracking-widest uppercase">
               Live {autoRefresh ? "On" : "Off"}
             </span>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-5 w-5 rounded-full" 
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-5 w-5 rounded-full"
               onClick={() => setAutoRefresh(!autoRefresh)}
             >
               <RefreshCw className="h-3 w-3" />
@@ -219,17 +238,17 @@ export default function FluxTrajetsPage() {
       <Card className="bg-card/50 border-0 shadow-sm backdrop-blur-sm">
         <CardContent className="p-4">
           <div className="flex flex-wrap items-center gap-4">
-            <div className="relative flex-1 min-w-[300px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <div className="relative min-w-[300px] flex-1">
+              <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
               <Input
                 placeholder="Rechercher un départ, une destination..."
-                className="pl-10 bg-background/50 border-0 focus-visible:ring-primary/20"
+                className="bg-background/50 focus-visible:ring-primary/20 border-0 pl-10"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px] bg-background/50 border-0">
+              <SelectTrigger className="bg-background/50 w-[180px] border-0">
                 <SelectValue placeholder="Tous les statuts" />
               </SelectTrigger>
               <SelectContent>
@@ -245,11 +264,13 @@ export default function FluxTrajetsPage() {
       </Card>
 
       {/* Flux Stream */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {loading ? (
-          <div className="col-span-full h-64 flex flex-col items-center justify-center gap-4">
-            <Loader2 className="h-10 w-10 text-primary animate-spin" />
-            <p className="font-bold text-muted-foreground animate-pulse">Chargement du flux opérationnel...</p>
+          <div className="col-span-full flex h-64 flex-col items-center justify-center gap-4">
+            <Loader2 className="text-primary h-10 w-10 animate-spin" />
+            <p className="text-muted-foreground animate-pulse font-bold">
+              Chargement du flux opérationnel...
+            </p>
           </div>
         ) : trajets.length > 0 ? (
           <AnimatePresence>
@@ -260,26 +281,31 @@ export default function FluxTrajetsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
               >
-                <Card className="group border-0 shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 overflow-hidden bg-card/60 backdrop-blur-md border-l-4 border-l-primary/20 hover:border-l-primary">
+                <Card className="group hover:shadow-primary/5 bg-card/60 border-l-primary/20 hover:border-l-primary overflow-hidden border-0 border-l-4 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-xl">
                   <CardContent className="p-0">
-                    <div className="p-5 space-y-4">
+                    <div className="space-y-4 p-5">
                       {/* Top Header */}
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10 border-2 border-background shadow-sm">
-                            <AvatarImage src={trajet.conducteur.avatar || undefined} />
+                          <Avatar className="border-background h-10 w-10 border-2 shadow-sm">
+                            <AvatarImage
+                              src={trajet.conducteur.avatar || undefined}
+                            />
                             <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                              {trajet.conducteur.prenom[0]}{trajet.conducteur.nom[0]}
+                              {trajet.conducteur.prenom[0]}
+                              {trajet.conducteur.nom[0]}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-bold text-sm leading-none flex items-center gap-1">
+                            <p className="flex items-center gap-1 text-sm leading-none font-bold">
                               {trajet.conducteur.prenom} {trajet.conducteur.nom}
                               <BadgeCheck className="h-3 w-3 text-blue-500" />
                             </p>
-                            <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
-                              <Car className="h-2 w-2" /> 
-                              {trajet.vehicule?.marque} {trajet.vehicule?.modele} • {trajet.vehicule?.immatriculation}
+                            <p className="text-muted-foreground mt-1 flex items-center gap-1 text-[10px]">
+                              <Car className="h-2 w-2" />
+                              {trajet.vehicule?.marque}{" "}
+                              {trajet.vehicule?.modele} •{" "}
+                              {trajet.vehicule?.immatriculation}
                             </p>
                           </div>
                         </div>
@@ -287,21 +313,35 @@ export default function FluxTrajetsPage() {
                           {getStatusBadge(trajet.statut)}
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-full"
+                              >
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem
-                                onClick={() => handleUpdateStatus(trajet.id, "terminé")}
-                                disabled={trajet.statut === "terminé" || trajet.statut === "annulé"}
+                                onClick={() =>
+                                  handleUpdateStatus(trajet.id, "terminé")
+                                }
+                                disabled={
+                                  trajet.statut === "terminé" ||
+                                  trajet.statut === "annulé"
+                                }
                               >
                                 Marquer comme terminé
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() => handleUpdateStatus(trajet.id, "annulé")}
+                                onClick={() =>
+                                  handleUpdateStatus(trajet.id, "annulé")
+                                }
                                 className="text-destructive focus:text-destructive"
-                                disabled={trajet.statut === "terminé" || trajet.statut === "annulé"}
+                                disabled={
+                                  trajet.statut === "terminé" ||
+                                  trajet.statut === "annulé"
+                                }
                               >
                                 Annuler le trajet
                               </DropdownMenuItem>
@@ -311,17 +351,22 @@ export default function FluxTrajetsPage() {
                       </div>
 
                       {/* Route Info */}
-                      <div className="relative pl-6 space-y-4 before:absolute before:left-[11px] before:top-[12px] before:bottom-[12px] before:w-[2px] before:bg-linear-to-b before:from-primary before:to-primary/10">
+                      <div className="before:from-primary before:to-primary/10 relative space-y-4 pl-6 before:absolute before:top-[12px] before:bottom-[12px] before:left-[11px] before:w-[2px] before:bg-linear-to-b">
                         <div className="relative">
-                          <div className="absolute -left-[19px] top-1/2 -translate-y-1/2 h-4 w-4 rounded-full bg-primary flex items-center justify-center">
+                          <div className="bg-primary absolute top-1/2 -left-[19px] flex h-4 w-4 -translate-y-1/2 items-center justify-center rounded-full">
                             <div className="h-1.5 w-1.5 rounded-full bg-white" />
                           </div>
                           <div>
-                            <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Point de Départ</p>
-                            <p className="text-sm font-bold flex items-center gap-2">
+                            <p className="text-muted-foreground text-[10px] font-black tracking-widest uppercase">
+                              Point de Départ
+                            </p>
+                            <p className="flex items-center gap-2 text-sm font-bold">
                               {trajet.pointDepart}
                               {trajet.departZone && (
-                                <Badge variant="outline" className="text-[8px] h-4 py-0 font-bold bg-primary/5">
+                                <Badge
+                                  variant="outline"
+                                  className="bg-primary/5 h-4 py-0 text-[8px] font-bold"
+                                >
                                   {trajet.departZone.nom}
                                 </Badge>
                               )}
@@ -329,15 +374,20 @@ export default function FluxTrajetsPage() {
                           </div>
                         </div>
                         <div className="relative">
-                          <div className="absolute -left-[19px] top-1/2 -translate-y-1/2 h-4 w-4 rounded-full bg-muted border-2 border-primary flex items-center justify-center">
-                            <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                          <div className="bg-muted border-primary absolute top-1/2 -left-[19px] flex h-4 w-4 -translate-y-1/2 items-center justify-center rounded-full border-2">
+                            <div className="bg-primary h-1.5 w-1.5 rounded-full" />
                           </div>
                           <div>
-                            <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Destination</p>
-                            <p className="text-sm font-bold flex items-center gap-2">
+                            <p className="text-muted-foreground text-[10px] font-black tracking-widest uppercase">
+                              Destination
+                            </p>
+                            <p className="flex items-center gap-2 text-sm font-bold">
                               {trajet.destination}
                               {trajet.arriveeZone && (
-                                <Badge variant="outline" className="text-[8px] h-4 py-0 font-bold bg-primary/5">
+                                <Badge
+                                  variant="outline"
+                                  className="bg-primary/5 h-4 py-0 text-[8px] font-bold"
+                                >
                                   {trajet.arriveeZone.nom}
                                 </Badge>
                               )}
@@ -347,34 +397,42 @@ export default function FluxTrajetsPage() {
                       </div>
 
                       {/* Footer Info */}
-                      <div className="pt-4 border-t border-dashed flex items-center justify-between">
+                      <div className="flex items-center justify-between border-t border-dashed pt-4">
                         <div className="flex items-center gap-4">
                           <div className="flex items-center gap-1.5">
-                            <Clock className="h-3 w-3 text-muted-foreground" />
+                            <Clock className="text-muted-foreground h-3 w-3" />
                             <span className="text-xs font-semibold">
-                              {format(new Date(trajet.dateHeure), "HH:mm", { locale: fr })}
+                              {format(new Date(trajet.dateHeure), "HH:mm", {
+                                locale: fr,
+                              })}
                             </span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <Users className="h-3 w-3 text-muted-foreground" />
+                            <Users className="text-muted-foreground h-3 w-3" />
                             <span className="text-xs font-semibold">
-                              {trajet.reservations.length} / {trajet.reservations.length + trajet.placesDisponibles} passagers
+                              {trajet.reservations.length} /{" "}
+                              {trajet.reservations.length +
+                                trajet.placesDisponibles}{" "}
+                              passagers
                             </span>
                           </div>
                         </div>
-                        
+
                         <div className="flex -space-x-2">
                           {trajet.reservations.slice(0, 3).map((res) => (
-                            <TooltipContainer key={res.id} text={`${res.etudiant.prenom} ${res.etudiant.nom}`}>
-                              <Avatar className="h-6 w-6 border-2 border-background ring-1 ring-primary/10">
-                                <AvatarFallback className="text-[8px] bg-muted font-black">
+                            <TooltipContainer
+                              key={res.id}
+                              text={`${res.etudiant.prenom} ${res.etudiant.nom}`}
+                            >
+                              <Avatar className="border-background ring-primary/10 h-6 w-6 border-2 ring-1">
+                                <AvatarFallback className="bg-muted text-[8px] font-black">
                                   {res.etudiant.prenom[0]}
                                 </AvatarFallback>
                               </Avatar>
                             </TooltipContainer>
                           ))}
                           {trajet.reservations.length > 3 && (
-                            <div className="h-6 w-6 rounded-full bg-muted border-2 border-background flex items-center justify-center text-[8px] font-black">
+                            <div className="bg-muted border-background flex h-6 w-6 items-center justify-center rounded-full border-2 text-[8px] font-black">
                               +{trajet.reservations.length - 3}
                             </div>
                           )}
@@ -387,11 +445,15 @@ export default function FluxTrajetsPage() {
             ))}
           </AnimatePresence>
         ) : (
-          <div className="col-span-full h-64 flex flex-col items-center justify-center gap-4 border-2 border-dashed rounded-3xl bg-muted/20">
-            <AlertCircle className="h-12 w-12 text-muted-foreground/30" />
+          <div className="bg-muted/20 col-span-full flex h-64 flex-col items-center justify-center gap-4 rounded-3xl border-2 border-dashed">
+            <AlertCircle className="text-muted-foreground/30 h-12 w-12" />
             <div className="text-center">
-              <p className="font-bold text-muted-foreground">Aucun trajet actif sur le flux</p>
-              <p className="text-xs text-muted-foreground/60">Ajustez vos filtres ou attendez une nouvelle publication.</p>
+              <p className="text-muted-foreground font-bold">
+                Aucun trajet actif sur le flux
+              </p>
+              <p className="text-muted-foreground/60 text-xs">
+                Ajustez vos filtres ou attendez une nouvelle publication.
+              </p>
             </div>
           </div>
         )}
@@ -401,13 +463,19 @@ export default function FluxTrajetsPage() {
 }
 
 // Composant Helper pour le Tooltip simplifié
-function TooltipContainer({ children, text }: { children: React.ReactNode, text: string }) {
+function TooltipContainer({
+  children,
+  text,
+}: {
+  children: React.ReactNode;
+  text: string;
+}) {
   return (
     <div className="group relative">
       {children}
-      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-foreground text-background text-[10px] px-2 py-1 rounded font-bold whitespace-nowrap z-50">
+      <div className="bg-foreground text-background absolute bottom-full left-1/2 z-50 mb-2 hidden -translate-x-1/2 rounded px-2 py-1 text-[10px] font-bold whitespace-nowrap group-hover:block">
         {text}
-        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-foreground" />
+        <div className="border-t-foreground absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent" />
       </div>
     </div>
   );

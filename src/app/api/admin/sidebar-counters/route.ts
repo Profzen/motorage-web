@@ -5,11 +5,10 @@ import {
   trajets,
   vehicules,
 } from "@/lib/db/schema";
-import { eq, count, and, ne } from "drizzle-orm";
+import { eq, count } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
 import { authenticateAdmin } from "@/lib/auth";
 import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
   try {

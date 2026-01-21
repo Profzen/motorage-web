@@ -246,10 +246,7 @@ export default function UsersPage() {
           <Button variant="outline" className="gap-2" onClick={fetchUsers}>
             Actualiser
           </Button>
-          <Button
-            className="gap-2"
-            onClick={() => setIsAddUserOpen(true)}
-          >
+          <Button className="gap-2" onClick={() => setIsAddUserOpen(true)}>
             <UserPlus className="h-4 w-4" /> Ajouter un utilisateur
           </Button>
         </div>
@@ -265,7 +262,9 @@ export default function UsersPage() {
               <p className="text-muted-foreground text-sm font-medium tracking-tight">
                 Total Utilisateurs
               </p>
-              <h3 className="text-2xl font-bold">{summary.total.toLocaleString()}</h3>
+              <h3 className="text-2xl font-bold">
+                {summary.total.toLocaleString()}
+              </h3>
             </div>
           </div>
         </Card>
@@ -278,7 +277,9 @@ export default function UsersPage() {
               <p className="text-muted-foreground text-sm font-medium tracking-tight">
                 Actifs
               </p>
-              <h3 className="text-2xl font-bold">{summary.active.toLocaleString()}</h3>
+              <h3 className="text-2xl font-bold">
+                {summary.active.toLocaleString()}
+              </h3>
             </div>
           </div>
         </Card>
@@ -291,7 +292,9 @@ export default function UsersPage() {
               <p className="text-muted-foreground text-sm font-medium tracking-tight">
                 Nouveaux (7j)
               </p>
-              <h3 className="text-2xl font-bold">{summary.newlyJoined.toLocaleString()}</h3>
+              <h3 className="text-2xl font-bold">
+                {summary.newlyJoined.toLocaleString()}
+              </h3>
             </div>
           </div>
         </Card>
@@ -304,7 +307,9 @@ export default function UsersPage() {
               <p className="text-muted-foreground text-sm font-medium tracking-tight">
                 Suspendus
               </p>
-              <h3 className="text-2xl font-bold">{summary.suspended.toLocaleString()}</h3>
+              <h3 className="text-2xl font-bold">
+                {summary.suspended.toLocaleString()}
+              </h3>
             </div>
           </div>
         </Card>
@@ -476,9 +481,14 @@ export default function UsersPage() {
                               l&apos;accès
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             className="cursor-pointer text-red-600 focus:bg-red-100 focus:text-red-700"
-                            onClick={() => handleDeleteUser(user.id, `${user.prenom} ${user.nom}`)}
+                            onClick={() =>
+                              handleDeleteUser(
+                                user.id,
+                                `${user.prenom} ${user.nom}`
+                              )
+                            }
                           >
                             <Shield className="mr-2 h-4 w-4" /> Supprimer
                             définitivement
@@ -568,7 +578,8 @@ function AddUserDialog({
         <DialogHeader>
           <DialogTitle>Ajouter un utilisateur</DialogTitle>
           <DialogDescription>
-            Créez un nouveau compte manuellement. L&apos;utilisateur pourra se connecter immédiatement.
+            Créez un nouveau compte manuellement. L&apos;utilisateur pourra se
+            connecter immédiatement.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
@@ -579,7 +590,9 @@ function AddUserDialog({
                 id="prenom"
                 required
                 value={formData.prenom}
-                onChange={(e) => setFormData({ ...formData, prenom: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, prenom: e.target.value })
+                }
               />
             </div>
             <div className="space-y-2">
@@ -588,7 +601,9 @@ function AddUserDialog({
                 id="nom"
                 required
                 value={formData.nom}
-                onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, nom: e.target.value })
+                }
               />
             </div>
           </div>
@@ -599,7 +614,9 @@ function AddUserDialog({
               type="email"
               required
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
             />
           </div>
           <div className="space-y-2">
@@ -609,7 +626,9 @@ function AddUserDialog({
               type="password"
               required
               value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
+              }
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -634,12 +653,18 @@ function AddUserDialog({
               <Input
                 id="phone"
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, phone: e.target.value })
+                }
               />
             </div>
           </div>
           <DialogFooter className="pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
               Annuler
             </Button>
             <Button type="submit" disabled={loading}>

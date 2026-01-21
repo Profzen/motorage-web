@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Menu, Car, Bell } from "lucide-react";
+import { Menu, Car } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 
 export default function DashboardLayout({
@@ -22,6 +22,7 @@ export default function DashboardLayout({
   const router = useRouter();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -68,12 +69,14 @@ export default function DashboardLayout({
               <div className="bg-primary shadow-primary/20 flex h-9 w-9 items-center justify-center rounded-xl shadow-lg">
                 <Car className="text-primary-foreground h-5.5 w-5.5" />
               </div>
-              <span className="text-lg font-bold tracking-tight">Miyi Ðekae</span>
+              <span className="text-lg font-bold tracking-tight">
+                Miyi Ðekae
+              </span>
             </div>
 
             {/* Titre Page Desktop */}
             <div className="hidden md:block">
-              <h2 className="text-sm font-black tracking-widest text-muted-foreground uppercase opacity-80">
+              <h2 className="text-muted-foreground text-sm font-black tracking-widest uppercase opacity-80">
                 Administration
               </h2>
               <p className="text-lg font-bold tracking-tight">

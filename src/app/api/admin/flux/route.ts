@@ -1,11 +1,10 @@
 import { db } from "@/lib/db";
-import { trajets, users, vehicules, zones, reservations } from "@/lib/db/schema";
+import { trajets } from "@/lib/db/schema";
 import { eq, sql, desc, and, like, or } from "drizzle-orm";
 import {
   paginatedResponse,
   ApiErrors,
   parsePaginationParams,
-  successResponse,
 } from "@/lib/api-response";
 import { authenticateAdmin } from "@/lib/auth";
 import { cookies } from "next/headers";
@@ -13,7 +12,8 @@ import { cookies } from "next/headers";
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const { page, limit, offset } = parsePaginationParams(searchParams);
+    const { page, limit } = parsePaginationParams(searchParams);
+    const offset = (page - 1) * limit;
     const status = searchParams.get("status");
     const search = searchParams.get("search");
 
@@ -65,9 +65,9 @@ export async function GET(request: Request) {
                 columns: {
                   nom: true,
                   prenom: true,
-                }
-              }
-            }
+                },
+              },
+            },
           },
         },
         orderBy: [desc(trajets.dateHeure)],

@@ -129,8 +129,6 @@ const ADMIN_NAV_GROUPS = [
   },
 ];
 
-const USER_NAV_GROUPS = [];
-
 // Fonction pour récupérer les items de navigation selon le rôle
 const getNavItems = (
   role: string | undefined,
@@ -155,7 +153,8 @@ const getNavItems = (
         if (item.title === "Véhicules") {
           return {
             ...item,
-            badge: counters.vehicules > 0 ? counters.vehicules.toString() : null,
+            badge:
+              counters.vehicules > 0 ? counters.vehicules.toString() : null,
           };
         }
         if (item.title === "Signalements") {
@@ -215,7 +214,7 @@ export function DashboardSidebar() {
   React.useEffect(() => {
     setMounted(true);
     fetchCounters();
-    
+
     // Refresh counters every 2 minutes
     const interval = setInterval(fetchCounters, 120000);
     return () => clearInterval(interval);
@@ -325,7 +324,7 @@ export function DashboardSidebar() {
             {getNavItems(user?.role, counters).map((group) => (
               <div key={group.label} className="space-y-1.5">
                 {!isCollapsed && (
-                  <h3 className="text-muted-foreground/50 px-3 pb-1 text-[10px] font-black uppercase tracking-widest">
+                  <h3 className="text-muted-foreground/50 px-3 pb-1 text-[10px] font-black tracking-widest uppercase">
                     {group.label}
                   </h3>
                 )}

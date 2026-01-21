@@ -5,23 +5,18 @@ import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
 import {
   Car,
   Search,
-  CheckCircle,
-  XCircle,
   Eye,
-  User,
   Loader2,
   Filter,
   Check,
   X,
   AlertCircle,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,7 +59,9 @@ export default function VehiculesValidationPage() {
   const [mounted, setMounted] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("en_attente");
   const [search, setSearch] = useState("");
-  const [selectedVehicule, setSelectedVehicule] = useState<Vehicule | null>(null);
+  const [selectedVehicule, setSelectedVehicule] = useState<Vehicule | null>(
+    null
+  );
   const [isProcessing, setIsProcessing] = useState(false);
   const [comment, setComment] = useState("");
 
@@ -104,14 +101,16 @@ export default function VehiculesValidationPage() {
 
       const result = await res.json();
       if (result.success) {
-        toast.success(`Véhicule ${statut === "approuvé" ? "approuvé" : "rejeté"} avec succès`);
+        toast.success(
+          `Véhicule ${statut === "approuvé" ? "approuvé" : "rejeté"} avec succès`
+        );
         setSelectedVehicule(null);
         setComment("");
         fetchVehicules();
       } else {
         toast.error(result.message || "Une erreur est survenue");
       }
-    } catch (error) {
+    } catch {
       toast.error("Erreur lors de la mise à jour");
     } finally {
       setIsProcessing(false);
@@ -135,7 +134,9 @@ export default function VehiculesValidationPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight">Gestion des Véhicules</h1>
+          <h1 className="text-3xl font-black tracking-tight">
+            Gestion des Véhicules
+          </h1>
           <p className="text-muted-foreground mt-1">
             Validez les nouveaux véhicules ajoutés par les conducteurs
           </p>
@@ -167,8 +168,14 @@ export default function VehiculesValidationPage() {
                   <SelectItem value="rejeté">Rejetés</SelectItem>
                 </SelectContent>
               </Select>
-              <Button variant="outline" size="icon" onClick={() => fetchVehicules()}>
-                <Loader2 className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => fetchVehicules()}
+              >
+                <Loader2
+                  className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
+                />
               </Button>
             </div>
           </div>
@@ -191,16 +198,21 @@ export default function VehiculesValidationPage() {
               animate={{ opacity: 1, scale: 1 }}
             >
               <Card className="group relative overflow-hidden border-0 shadow-sm transition-all hover:shadow-md">
-                <div className={`absolute top-0 left-0 h-full w-1 ${
-                  v.statut === "en_attente" ? "bg-amber-500" : 
-                  v.statut === "approuvé" ? "bg-green-500" : "bg-red-500"
-                }`} />
+                <div
+                  className={`absolute top-0 left-0 h-full w-1 ${
+                    v.statut === "en_attente"
+                      ? "bg-amber-500"
+                      : v.statut === "approuvé"
+                        ? "bg-green-500"
+                        : "bg-red-500"
+                  }`}
+                />
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <Car className="h-4 w-4 text-primary" />
-                        <h3 className="font-black uppercase tracking-tight">
+                        <Car className="text-primary h-4 w-4" />
+                        <h3 className="font-black tracking-tight uppercase">
                           {v.immatriculation}
                         </h3>
                       </div>
@@ -208,10 +220,16 @@ export default function VehiculesValidationPage() {
                         {v.marque} {v.modele} • {v.type}
                       </p>
                     </div>
-                    <Badge variant={
-                      v.statut === "en_attente" ? "outline" : 
-                      v.statut === "approuvé" ? "secondary" : "destructive"
-                    } className="text-[10px] font-bold uppercase">
+                    <Badge
+                      variant={
+                        v.statut === "en_attente"
+                          ? "outline"
+                          : v.statut === "approuvé"
+                            ? "secondary"
+                            : "destructive"
+                      }
+                      className="text-[10px] font-bold uppercase"
+                    >
                       {v.statut}
                     </Badge>
                   </div>
@@ -220,7 +238,8 @@ export default function VehiculesValidationPage() {
                   <div className="space-y-4">
                     <div className="bg-muted/30 flex items-center gap-3 rounded-xl p-3">
                       <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold">
-                        {v.proprietaire?.prenom?.[0]}{v.proprietaire?.nom?.[0]}
+                        {v.proprietaire?.prenom?.[0]}
+                        {v.proprietaire?.nom?.[0]}
                       </div>
                       <div className="min-w-0">
                         <p className="truncate text-xs font-bold">
@@ -245,7 +264,7 @@ export default function VehiculesValidationPage() {
                         <>
                           <Button
                             variant="default"
-                            className="bg-green-600 hover:bg-green-700 h-9 w-9 p-0"
+                            className="h-9 w-9 bg-green-600 p-0 hover:bg-green-700"
                             onClick={() => {
                               setSelectedVehicule(v);
                               setComment("");
@@ -284,7 +303,10 @@ export default function VehiculesValidationPage() {
         )}
       </div>
 
-      <Dialog open={!!selectedVehicule} onOpenChange={(open) => !open && setSelectedVehicule(null)}>
+      <Dialog
+        open={!!selectedVehicule}
+        onOpenChange={(open) => !open && setSelectedVehicule(null)}
+      >
         <DialogContent className="sm:max-w-[500px]">
           {selectedVehicule && (
             <>
@@ -299,21 +321,37 @@ export default function VehiculesValidationPage() {
 
               <div className="grid grid-cols-2 gap-4 py-4">
                 <div className="space-y-1">
-                  <p className="text-muted-foreground text-[10px] font-bold uppercase">Marque / Modèle</p>
-                  <p className="font-bold">{selectedVehicule.marque} {selectedVehicule.modele}</p>
+                  <p className="text-muted-foreground text-[10px] font-bold uppercase">
+                    Marque / Modèle
+                  </p>
+                  <p className="font-bold">
+                    {selectedVehicule.marque} {selectedVehicule.modele}
+                  </p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-muted-foreground text-[10px] font-bold uppercase">Type</p>
+                  <p className="text-muted-foreground text-[10px] font-bold uppercase">
+                    Type
+                  </p>
                   <Badge variant="outline">{selectedVehicule.type}</Badge>
                 </div>
                 <div className="col-span-2 space-y-1">
-                  <p className="text-muted-foreground text-[10px] font-bold uppercase">Propriétaire</p>
-                  <p className="font-bold">{selectedVehicule.proprietaire?.prenom} {selectedVehicule.proprietaire?.nom}</p>
-                  <p className="text-muted-foreground text-xs">{selectedVehicule.proprietaire?.email}</p>
+                  <p className="text-muted-foreground text-[10px] font-bold uppercase">
+                    Propriétaire
+                  </p>
+                  <p className="font-bold">
+                    {selectedVehicule.proprietaire?.prenom}{" "}
+                    {selectedVehicule.proprietaire?.nom}
+                  </p>
+                  <p className="text-muted-foreground text-xs">
+                    {selectedVehicule.proprietaire?.email}
+                  </p>
                 </div>
                 {selectedVehicule.statut === "en_attente" && (
-                  <div className="col-span-2 space-y-2 mt-4">
-                    <label className="text-xs font-bold">Commentaire (optionnel pour approuver, nécessaire pour rejeter)</label>
+                  <div className="col-span-2 mt-4 space-y-2">
+                    <label className="text-xs font-bold">
+                      Commentaire (optionnel pour approuver, nécessaire pour
+                      rejeter)
+                    </label>
                     <Input
                       placeholder="Indiquez le motif en cas de rejet..."
                       value={comment}
@@ -328,23 +366,39 @@ export default function VehiculesValidationPage() {
                   <>
                     <Button
                       variant="destructive"
-                      onClick={() => handleAction(selectedVehicule.id, "rejeté")}
+                      onClick={() =>
+                        handleAction(selectedVehicule.id, "rejeté")
+                      }
                       disabled={isProcessing || !comment}
                       className="flex-1"
                     >
-                      {isProcessing ? <Loader2 className="animate-spin" /> : "Rejeter"}
+                      {isProcessing ? (
+                        <Loader2 className="animate-spin" />
+                      ) : (
+                        "Rejeter"
+                      )}
                     </Button>
                     <Button
                       variant="default"
-                      onClick={() => handleAction(selectedVehicule.id, "approuvé")}
+                      onClick={() =>
+                        handleAction(selectedVehicule.id, "approuvé")
+                      }
                       disabled={isProcessing}
-                      className="bg-green-600 hover:bg-green-700 flex-1"
+                      className="flex-1 bg-green-600 hover:bg-green-700"
                     >
-                      {isProcessing ? <Loader2 className="animate-spin" /> : "Approuver"}
+                      {isProcessing ? (
+                        <Loader2 className="animate-spin" />
+                      ) : (
+                        "Approuver"
+                      )}
                     </Button>
                   </>
                 ) : (
-                  <Button variant="outline" onClick={() => setSelectedVehicule(null)} className="w-full">
+                  <Button
+                    variant="outline"
+                    onClick={() => setSelectedVehicule(null)}
+                    className="w-full"
+                  >
                     Fermer
                   </Button>
                 )}

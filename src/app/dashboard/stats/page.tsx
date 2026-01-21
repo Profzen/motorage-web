@@ -83,7 +83,7 @@ export default function StatisticsPage() {
   }, []);
 
   const userRolesData =
-    stats?.users.distribution.map((u: any) => ({
+    stats?.users.distribution.map((u: { role: string; count: number }) => ({
       name:
         u.role === "passager"
           ? "Passagers"
@@ -100,7 +100,9 @@ export default function StatisticsPage() {
   const kpis = [
     {
       title: "Taux de croissance",
-      value: `${stats?.growth.rate > 0 ? "+" : ""}${stats?.growth.rate}%`,
+      value: stats?.growth
+        ? `${stats.growth.rate > 0 ? "+" : ""}${stats.growth.rate}%`
+        : "0%",
       sub: "Inscriptions mensuelles",
       icon: TrendingUp,
       color: "text-green-500",
@@ -276,7 +278,10 @@ export default function StatisticsPage() {
                     tick={{ fontSize: 10, fontWeight: 600 }}
                     tickFormatter={(str) => {
                       const date = new Date(str);
-                      return date.toLocaleDateString("fr-FR", { weekday: 'short', day: 'numeric' });
+                      return date.toLocaleDateString("fr-FR", {
+                        weekday: "short",
+                        day: "numeric",
+                      });
                     }}
                   />
                   <YAxis
@@ -284,9 +289,13 @@ export default function StatisticsPage() {
                     tickLine={false}
                     tick={{ fontSize: 12 }}
                   />
-                  <Tooltip 
+                  <Tooltip
                     cursor={{ fill: "rgba(0,0,0,0.02)" }}
-                    labelFormatter={(label) => new Date(label).toLocaleDateString("fr-FR", { dateStyle: 'long' })}
+                    labelFormatter={(label) =>
+                      new Date(label).toLocaleDateString("fr-FR", {
+                        dateStyle: "long",
+                      })
+                    }
                   />
                   <Bar dataKey="count" fill="#3b82f6" radius={[6, 6, 0, 0]} />
                 </BarChart>

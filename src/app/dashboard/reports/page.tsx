@@ -229,7 +229,7 @@ export default function ReportsPage() {
               <AlertCircle className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-muted-foreground text-xs font-medium uppercase tracking-tight">
+              <p className="text-muted-foreground text-xs font-medium tracking-tight uppercase">
                 En attente
               </p>
               <h3 className="text-xl font-bold">
@@ -244,7 +244,7 @@ export default function ReportsPage() {
               <RefreshCcw className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-muted-foreground text-xs font-medium uppercase tracking-tight">
+              <p className="text-muted-foreground text-xs font-medium tracking-tight uppercase">
                 En cours
               </p>
               <h3 className="text-xl font-bold">
@@ -259,7 +259,7 @@ export default function ReportsPage() {
               <CheckCircle2 className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-muted-foreground text-xs font-medium uppercase tracking-tight">
+              <p className="text-muted-foreground text-xs font-medium tracking-tight uppercase">
                 Résolus
               </p>
               <h3 className="text-xl font-bold">
@@ -274,7 +274,7 @@ export default function ReportsPage() {
               <ShieldAlert className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-muted-foreground text-xs font-medium uppercase tracking-tight">
+              <p className="text-muted-foreground text-xs font-medium tracking-tight uppercase">
                 Total
               </p>
               <h3 className="text-xl font-bold">{reports.length}</h3>

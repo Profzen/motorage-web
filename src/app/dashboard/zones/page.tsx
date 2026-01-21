@@ -5,8 +5,6 @@ import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
 import {
   MapPin,
@@ -30,7 +28,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -94,7 +91,7 @@ export default function ZonesManagementPage() {
         month: "2-digit",
         year: "numeric",
       });
-    } catch (e) {
+    } catch {
       return "Format invalide";
     }
   };
@@ -178,9 +175,11 @@ export default function ZonesManagementPage() {
     }
   };
 
-  const filteredZones = zones.filter((zone) =>
-    zone.nom.toLowerCase().includes(search.toLowerCase()) ||
-    (zone.description && zone.description.toLowerCase().includes(search.toLowerCase()))
+  const filteredZones = zones.filter(
+    (zone) =>
+      zone.nom.toLowerCase().includes(search.toLowerCase()) ||
+      (zone.description &&
+        zone.description.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
@@ -192,12 +191,13 @@ export default function ZonesManagementPage() {
             Gestion des Zones
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Définissez les points de départ et d'arrivée desservis sur le campus.
+            Définissez les points de départ et d&apos;arrivée desservis sur le
+            campus.
           </p>
         </div>
         <Button
           onClick={() => handleOpenDialog()}
-          className="gap-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:scale-105"
+          className="shadow-primary/20 gap-2 rounded-xl font-bold shadow-lg transition-all hover:scale-105"
         >
           <Plus className="h-5 w-5" />
           Nouvelle Zone
@@ -211,7 +211,7 @@ export default function ZonesManagementPage() {
             <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
             <Input
               placeholder="Rechercher une zone (ex: Entrée Nord, Scénario...)"
-              className="pl-10 h-11 bg-background/50 border-primary/10 rounded-xl"
+              className="bg-background/50 border-primary/10 h-11 rounded-xl pl-10"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -223,7 +223,9 @@ export default function ZonesManagementPage() {
       {loading ? (
         <div className="flex h-64 flex-col items-center justify-center gap-4">
           <Loader2 className="text-primary h-10 w-10 animate-spin" />
-          <p className="text-muted-foreground font-medium">Chargement des zones...</p>
+          <p className="text-muted-foreground font-medium">
+            Chargement des zones...
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -244,12 +246,18 @@ export default function ZonesManagementPage() {
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-lg"
+                          >
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-40">
-                          <DropdownMenuItem onClick={() => handleOpenDialog(zone)}>
+                          <DropdownMenuItem
+                            onClick={() => handleOpenDialog(zone)}
+                          >
                             <Edit2 className="mr-2 h-4 w-4" /> Modifier
                           </DropdownMenuItem>
                           <DropdownMenuItem
@@ -264,20 +272,26 @@ export default function ZonesManagementPage() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <h3 className="text-lg font-black tracking-tight">{zone.nom}</h3>
+                    <h3 className="text-lg font-black tracking-tight">
+                      {zone.nom}
+                    </h3>
                     <p className="text-muted-foreground mt-2 line-clamp-2 text-sm">
-                      {zone.description || "Aucune description fournie pour cette zone."}
+                      {zone.description ||
+                        "Aucune description fournie pour cette zone."}
                     </p>
                     <div className="mt-4 flex items-center justify-between border-t pt-4">
                       <div className="flex flex-col">
-                        <span className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest">
+                        <span className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase">
                           Créée le
                         </span>
                         <span className="text-xs font-semibold">
                           {formatDate(zone.createdAt)}
                         </span>
                       </div>
-                      <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
+                      <Badge
+                        variant="outline"
+                        className="bg-primary/5 text-primary border-primary/20"
+                      >
                         Campus Lomé
                       </Badge>
                     </div>
@@ -294,7 +308,9 @@ export default function ZonesManagementPage() {
               </div>
               <h3 className="text-lg font-bold">Aucune zone trouvée</h3>
               <p className="text-muted-foreground">
-                {search ? "Ajustez votre recherche" : "Commencez par créer une zone."}
+                {search
+                  ? "Ajustez votre recherche"
+                  : "Commencez par créer une zone."}
               </p>
             </div>
           )}
@@ -317,22 +333,30 @@ export default function ZonesManagementPage() {
 
           <form onSubmit={handleSave} className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm font-bold tracking-tight">Nom de la Zone</label>
+              <label className="text-sm font-bold tracking-tight">
+                Nom de la Zone
+              </label>
               <Input
                 placeholder="Ex: Entrée Nord, Bloc P..."
                 className="h-11 rounded-xl"
                 value={formData.nom}
-                onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, nom: e.target.value })
+                }
                 required
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-bold tracking-tight">Description</label>
+              <label className="text-sm font-bold tracking-tight">
+                Description
+              </label>
               <Textarea
                 placeholder="Position exacte, points de repère..."
                 className="min-h-24 rounded-xl"
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
               />
             </div>
 
@@ -348,10 +372,12 @@ export default function ZonesManagementPage() {
               <Button
                 type="submit"
                 disabled={isSaving}
-                className="gap-2 rounded-xl font-bold px-8 shadow-lg shadow-primary/20"
+                className="shadow-primary/20 gap-2 rounded-xl px-8 font-bold shadow-lg"
               >
                 {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
-                {selectedZone ? "Sauvegarder les modifications" : "Créer la zone"}
+                {selectedZone
+                  ? "Sauvegarder les modifications"
+                  : "Créer la zone"}
               </Button>
             </DialogFooter>
           </form>

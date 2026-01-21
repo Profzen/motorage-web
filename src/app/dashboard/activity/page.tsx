@@ -4,9 +4,6 @@ import React, { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
 import {
   Activity,
@@ -17,13 +14,11 @@ import {
   Loader2,
   Calendar,
   Clock,
-  User,
   ShieldCheck,
   History,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -132,7 +127,9 @@ export default function ActivityPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight">Flux d&apos;activité</h1>
+          <h1 className="text-3xl font-black tracking-tight">
+            Flux d&apos;activité
+          </h1>
           <p className="text-muted-foreground mt-1">
             Historique complet des actions et événements de la plateforme
           </p>
@@ -178,7 +175,9 @@ export default function ActivityPage() {
         {loading ? (
           <div className="flex h-64 items-center justify-center">
             <Loader2 className="text-primary h-8 w-8 animate-spin" />
-            <span className="ml-3 text-sm font-medium">Chargement des logs...</span>
+            <span className="ml-3 text-sm font-medium">
+              Chargement des logs...
+            </span>
           </div>
         ) : filteredLogs.length > 0 ? (
           <div className="grid gap-4">
@@ -190,12 +189,14 @@ export default function ActivityPage() {
                   className="hover:bg-muted/30 border-0 shadow-none transition-colors"
                 >
                   <CardContent className="flex items-start gap-4 p-4">
-                    <div className={`rounded-full p-2.5 ${style.bg} ${style.color}`}>
+                    <div
+                      className={`rounded-full p-2.5 ${style.bg} ${style.color}`}
+                    >
                       <style.icon className="h-5 w-5" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-col justify-between gap-1 sm:flex-row sm:items-center">
-                        <p className="text-sm font-bold truncate">
+                        <p className="truncate text-sm font-bold">
                           {log.details || log.action}
                         </p>
                         <div className="text-muted-foreground flex items-center gap-3 text-xs">
@@ -211,19 +212,25 @@ export default function ActivityPage() {
                           </span>
                         </div>
                       </div>
-                      <div className="mt-2 flex flex-wrap items-center gap-y-2 gap-x-4">
+                      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
                         <div className="flex items-center gap-1.5">
-                          <div className="bg-primary/10 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-primary">
+                          <div className="bg-primary/10 text-primary flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold">
                             {log.user?.prenom?.[0] || "?"}
                           </div>
                           <p className="text-muted-foreground text-xs font-medium">
                             {log.user?.prenom} {log.user?.nom}
                           </p>
                         </div>
-                        <Badge variant="secondary" className="text-[10px] uppercase font-bold tracking-tight">
+                        <Badge
+                          variant="secondary"
+                          className="text-[10px] font-bold tracking-tight uppercase"
+                        >
                           {log.user?.role}
                         </Badge>
-                        <Badge variant="outline" className="text-[10px] font-mono">
+                        <Badge
+                          variant="outline"
+                          className="font-mono text-[10px]"
+                        >
                           {log.action}
                         </Badge>
                       </div>

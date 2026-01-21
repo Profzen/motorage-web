@@ -330,9 +330,7 @@ export function AdminDashboard() {
               asChild
               className="text-primary mt-6 w-full text-xs font-bold tracking-widest uppercase"
             >
-              <Link href="/dashboard/activity">
-                Voir tout le flux
-              </Link>
+              <Link href="/dashboard/activity">Voir tout le flux</Link>
             </Button>
           </CardContent>
         </Card>
@@ -353,7 +351,7 @@ export function AdminDashboard() {
                     key={app.id}
                     className="bg-muted/30 flex items-center gap-3 rounded-xl p-3"
                   >
-                    <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold uppercase transition-colors hover:bg-primary hover:text-white">
+                    <div className="bg-primary/10 text-primary hover:bg-primary flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold uppercase transition-colors hover:text-white">
                       {app.user.prenom[0]}
                       {app.user.nom[0]}
                     </div>
