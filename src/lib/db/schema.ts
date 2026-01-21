@@ -62,6 +62,7 @@ export const vehicules = sqliteTable("vehicules", {
   proprietaireId: text("proprietaire_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const vehiculesRelations = relations(vehicules, ({ one, many }) => ({

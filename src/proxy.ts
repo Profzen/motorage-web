@@ -68,6 +68,11 @@ export async function proxy(request: NextRequest) {
       );
     }
 
+    // Restrict admin routes to administrators only
+    if (pathname.startsWith("/api/admin") && payload.role !== "administrateur") {
+      return NextResponse.json({ error: "Admin only" }, { status: 403 });
+    }
+
     requestHeaders.set("x-user-id", payload.userId as string);
     requestHeaders.set("x-user-role", payload.role as string);
   }

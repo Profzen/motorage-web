@@ -19,6 +19,7 @@ import {
   ExternalLink,
   ShieldCheck,
   KeyRound,
+  Car,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -117,6 +118,13 @@ export default function DashboardPage() {
               className="h-11 rounded-xl border-0 bg-amber-500 px-6 font-bold text-white shadow-lg shadow-amber-500/20 hover:bg-amber-600"
             >
               <ClipboardCheck className="mr-2 h-4 w-4" /> 12 dossiers
+            </Button>
+            <Button
+              onClick={() => router.push("/dashboard/vehicules")}
+              variant="secondary"
+              className="h-11 rounded-xl px-6 font-bold"
+            >
+              <Car className="mr-2 h-4 w-4" /> Véhicules
             </Button>
             <Button
               variant="outline"

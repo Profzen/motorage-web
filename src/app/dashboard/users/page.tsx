@@ -1,20 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
-  Users,
-  Search,
-  Filter,
-  UserPlus,
-  Mail,
-  Shield,
-  Ban,
-  MoreVertical,
-  CheckCircle2,
-  Clock,
-  Car,
-} from "lucide-react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,285 +20,226 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { toast } from "sonner";
+import { Loader2, Shield, UserMinus, RefreshCw } from "lucide-react";
 
-interface User {
+interface AdminUser {
   id: string;
-  name: string;
+  nom: string;
+  prenom: string;
   email: string;
   role: "passager" | "conducteur" | "administrateur";
-  status: "active" | "suspended" | "pending";
-  createdAt: string;
+  statut: "actif" | "suspendu" | string;
+  createdAt?: string | null;
 }
 
+const roleOptions = [
+  { value: "", label: "Tous les rôles" },
+  { value: "passager", label: "Passager" },
+  { value: "conducteur", label: "Conducteur" },
+  { value: "administrateur", label: "Administrateur" },
+];
+
+const statutOptions = [
+  { value: "", label: "Tous statuts" },
+  { value: "actif", label: "Actif" },
+  { value: "suspendu", label: "Suspendu" },
+];
+
 export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [roleFilter, setRoleFilter] = useState("");
+  const [statutFilter, setStatutFilter] = useState("");
+  const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    // Simulated fetch
-    setTimeout(() => {
-      setUsers([
-        {
-          id: "USR-001",
-          name: "Alexandre K.",
-          email: "alex@univ.dz",
-          role: "administrateur",
-          status: "active",
-          createdAt: "2023-01-15T10:00:00Z",
-        },
-        {
-          id: "USR-002",
-          name: "Sonia Rahmani",
-          email: "sonia@univ.dz",
-          role: "conducteur",
-          status: "active",
-          createdAt: "2023-05-20T14:30:00Z",
-        },
-        {
-          id: "USR-003",
-          name: "Omar Ben",
-          email: "omar@univ.dz",
-          role: "passager",
-          status: "suspended",
-          createdAt: "2023-09-10T09:15:00Z",
-        },
-        {
-          id: "USR-004",
-          name: "Amira L.",
-          email: "amira@univ.dz",
-          role: "conducteur",
-          status: "pending",
-          createdAt: "2023-10-25T11:00:00Z",
-        },
-      ]);
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (roleFilter) params.set("role", roleFilter);
+      if (statutFilter) params.set("statut", statutFilter);
+      const res = await fetch(`/api/admin/users?${params.toString()}`, {
+        credentials: "include",
+      });
+      const json = await res.json();
+      if (json.success) {
+        setUsers(json.data);
+      } else {
+        toast.error(json.error?.message || "Impossible de charger les utilisateurs");
+      }
+    } catch {
+      toast.error("Erreur réseau lors du chargement");
+    } finally {
       setLoading(false);
-    }, 800);
-  }, []);
-
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case "administrateur":
-        return <Badge variant="destructive">Admin</Badge>;
-      case "conducteur":
-        return (
-          <Badge className="bg-primary text-primary-foreground hover:bg-primary/90">
-            <Car className="mr-1 h-3 w-3" /> Conducteur
-          </Badge>
-        );
-      case "passager":
-        return <Badge variant="secondary">Passager</Badge>;
-      default:
-        return <Badge variant="outline">{role}</Badge>;
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "active":
+  useEffect(() => {
+    fetchUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roleFilter, statutFilter]);
+
+  const filteredUsers = users.filter((u) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (
+      u.email.toLowerCase().includes(q) ||
+      u.prenom.toLowerCase().includes(q) ||
+      u.nom.toLowerCase().includes(q)
+    );
+  });
+
+  const handleSuspend = async (id: string, targetStatut: "suspendu" | "actif") => {
+    try {
+      setProcessingId(id);
+      const res = await fetch(`/api/admin/users/${id}/suspend`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ statut: targetStatut }),
+        credentials: "include",
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success(`Utilisateur ${targetStatut === "suspendu" ? "suspendu" : "réactivé"}`);
+        fetchUsers();
+      } else {
+        toast.error(json.error?.message || "Action impossible");
+      }
+    } catch {
+      toast.error("Erreur réseau");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const statutBadge = (statut: string) => {
+    switch (statut) {
+      case "actif":
         return (
-          <Badge
-            variant="outline"
-            className="border-green-200 bg-green-100 text-green-800"
-          >
+          <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
             Actif
           </Badge>
         );
-      case "suspended":
+      case "suspendu":
         return (
-          <Badge
-            variant="outline"
-            className="border-red-200 bg-red-100 text-red-800"
-          >
+          <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700">
             Suspendu
           </Badge>
         );
-      case "pending":
-        return (
-          <Badge
-            variant="outline"
-            className="border-yellow-200 bg-yellow-100 text-yellow-800"
-          >
-            En attente
-          </Badge>
-        );
       default:
-        return null;
+        return <Badge variant="secondary">{statut}</Badge>;
     }
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Gestion des Utilisateurs
-          </h1>
-          <p className="text-muted-foreground">
-            Pilotez les comptes et les permissions de la communauté.
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">Gestion des utilisateurs</h1>
+          <p className="text-muted-foreground">Filtrez, suspendez ou réactivez les comptes.</p>
         </div>
-        <Button className="gap-2">
-          <UserPlus className="h-4 w-4" /> Ajouter un utilisateur
-        </Button>
+        <div className="flex gap-3">
+          <Button variant="outline" size="sm" onClick={fetchUsers}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Rafraîchir
+          </Button>
+        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-primary/5 border-primary/20 p-4">
-          <div className="flex items-center gap-4">
-            <div className="bg-primary/10 rounded-lg p-2">
-              <Users className="text-primary h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-muted-foreground text-sm font-medium tracking-tight">
-                Total Utilisateurs
-              </p>
-              <h3 className="text-2xl font-bold">1,284</h3>
-            </div>
+      <Card className="bg-card/50 border-0 shadow-sm backdrop-blur-sm">
+        <CardHeader className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-4">
+            <Input
+              placeholder="Rechercher (nom, email)"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="md:col-span-2"
+            />
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="bg-background/80 h-10 rounded-md border px-3 text-sm"
+            >
+              {roleOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <select
+              value={statutFilter}
+              onChange={(e) => setStatutFilter(e.target.value)}
+              className="bg-background/80 h-10 rounded-md border px-3 text-sm"
+            >
+              {statutOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
           </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-4">
-            <div className="rounded-lg bg-green-100 p-2">
-              <CheckCircle2 className="h-5 w-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-muted-foreground text-sm font-medium tracking-tight">
-                Actifs
-              </p>
-              <h3 className="text-2xl font-bold">1,150</h3>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-4">
-            <div className="rounded-lg bg-yellow-100 p-2">
-              <Clock className="h-5 w-5 text-yellow-600" />
-            </div>
-            <div>
-              <p className="text-muted-foreground text-sm font-medium tracking-tight">
-                S&apos;inscrivent
-              </p>
-              <h3 className="text-2xl font-bold">84</h3>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-4">
-            <div className="rounded-lg bg-red-100 p-2">
-              <Ban className="h-5 w-5 text-red-600" />
-            </div>
-            <div>
-              <p className="text-muted-foreground text-sm font-medium tracking-tight">
-                Bannis
-              </p>
-              <h3 className="text-2xl font-bold">12</h3>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="relative w-80">
-                <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4" />
-                <Input
-                  placeholder="Rechercher par nom, email ou ID..."
-                  className="pl-9"
-                />
-              </div>
-              <Button variant="outline" className="gap-2">
-                <Filter className="h-4 w-4" /> Filtres
-              </Button>
-            </div>
-          </div>
+          <CardTitle className="text-lg font-bold">Utilisateurs</CardTitle>
+          <CardDescription>{filteredUsers.length} résultat(s)</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Utilisateur</TableHead>
-                <TableHead>Rôle</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Inscrit le</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading
-                ? Array(4)
-                    .fill(0)
-                    .map((_, i) => (
-                      <TableRow key={i} className="animate-pulse">
-                        <TableCell
-                          colSpan={5}
-                          className="bg-muted/20 h-16"
-                        ></TableCell>
-                      </TableRow>
-                    ))
-                : users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-9 w-9 border">
-                            <AvatarImage
-                              src={`https://avatar.vercel.sh/${user.email}`}
-                            />
-                            <AvatarFallback>
-                              {user.name.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{user.name}</span>
-                            <span className="text-muted-foreground text-xs">
-                              {user.email}
-                            </span>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{getRoleBadge(user.role)}</TableCell>
-                      <TableCell>{getStatusBadge(user.status)}</TableCell>
-                      <TableCell className="font-mono text-xs text-slate-500">
-                        {new Date(user.createdAt).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem>
-                              <Mail className="mr-2 h-4 w-4" /> Contacter
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Shield className="mr-2 h-4 w-4" /> Modifier
-                              permissions
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-red-600">
-                              <Ban className="mr-2 h-4 w-4" /> Suspendre le
-                              compte
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-            </TableBody>
-          </Table>
+          {loading ? (
+            <div className="flex items-center justify-center gap-2 py-12 text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" /> Chargement...
+            </div>
+          ) : filteredUsers.length === 0 ? (
+            <p className="text-muted-foreground text-sm">Aucun utilisateur trouvé.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Utilisateur</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Rôle</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredUsers.map((u) => (
+                  <TableRow key={u.id}>
+                    <TableCell className="font-semibold">
+                      {u.prenom} {u.nom}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{u.email}</TableCell>
+                    <TableCell className="capitalize">{u.role}</TableCell>
+                    <TableCell>{statutBadge(u.statut)}</TableCell>
+                    <TableCell className="text-right space-x-2">
+                      {u.statut === "suspendu" ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={processingId === u.id}
+                          onClick={() => handleSuspend(u.id, "actif")}
+                        >
+                          <Shield className="mr-1 h-4 w-4" /> Réactiver
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          disabled={processingId === u.id}
+                          onClick={() => handleSuspend(u.id, "suspendu")}
+                        >
+                          <UserMinus className="mr-1 h-4 w-4" /> Suspendre
+                        </Button>
+                      )}
+                      <Link href={`/dashboard/users/${u.id}/history`} className="inline-block">
+                        <Button size="sm" variant="secondary">
+                          Historique
+                        </Button>
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

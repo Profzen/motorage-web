@@ -6,6 +6,7 @@ import { successResponse, ApiErrors } from "@/lib/api-response";
 import { authenticateRequest } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { createNotification } from "@/lib/notifications";
+import { logAudit } from "@/lib/audit";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 
@@ -96,6 +97,15 @@ export async function PATCH(
     });
 
     if (result.error) return result.error as Response;
+
+    await logAudit({
+      action: "vehicule_update",
+      userId: authPayload.userId,
+      targetId: id,
+      details: { statut: validatedData.statut, commentaireAdmin: validatedData.commentaireAdmin },
+      ip: request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip"),
+      userAgent: request.headers.get("user-agent"),
+    });
 
     return successResponse(result.data);
   } catch (error) {

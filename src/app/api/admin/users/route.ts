@@ -6,6 +6,8 @@ import {
   ApiErrors,
   parsePaginationParams,
 } from "@/lib/api-response";
+import { authenticateRequest } from "@/lib/auth";
+import { cookies } from "next/headers";
 
 /**
  * @openapi
@@ -59,6 +61,13 @@ import {
  */
 export async function GET(request: Request) {
   try {
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get("token")?.value;
+    const authPayload = await authenticateRequest(request, cookieToken);
+    if (!authPayload || authPayload.role !== "administrateur") {
+      return ApiErrors.unauthorized("Accès réservé aux administrateurs");
+    }
+
     const { searchParams } = new URL(request.url);
     const { page, limit } = parsePaginationParams(searchParams);
     const offset = (page - 1) * limit;

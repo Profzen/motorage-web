@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Image from "next/image";
 import {
   Card,
   CardContent,
@@ -62,7 +63,9 @@ export default function DriversValidationPage() {
   const fetchRequests = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/admin/driver-applications");
+      const res = await fetch("/api/admin/driver-applications", {
+        credentials: "include",
+      });
       const result = await res.json();
       if (result.success) {
         setRequests(result.data);
@@ -85,6 +88,7 @@ export default function DriversValidationPage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ statut, commentaireAdmin: comment }),
+        credentials: "include",
       });
       const result = await res.json();
 
@@ -310,6 +314,23 @@ export default function DriversValidationPage() {
                   <p className="mt-1 text-lg font-bold tabular-nums">
                     {selectedRequest?.permisNumero}
                   </p>
+                  {selectedRequest?.permisImage && (
+                    <div className="mt-3">
+                      <p className="text-muted-foreground text-xs font-bold uppercase mb-1">
+                        Image du permis
+                      </p>
+                      <div className="relative overflow-hidden rounded-lg border bg-muted/30" style={{ minHeight: 200 }}>
+                        <Image
+                          src={selectedRequest.permisImage}
+                          alt="Permis de conduire"
+                          fill
+                          className="object-contain"
+                          sizes="(max-width: 640px) 100vw, 600px"
+                          priority={false}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </section>
 
@@ -352,16 +373,24 @@ export default function DriversValidationPage() {
               onClick={() => handleAction(selectedRequest!.id, "rejeté")}
               disabled={isProcessing}
             >
-              <XCircle className="h-4 w-4" />
-              Rejeter
+              {isProcessing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <XCircle className="h-4 w-4" />
+              )}
+              {isProcessing ? "Traitement..." : "Rejeter"}
             </Button>
             <Button
               className="gap-2 bg-green-600 px-6 font-bold hover:bg-green-700"
               onClick={() => handleAction(selectedRequest!.id, "approuvé")}
               disabled={isProcessing}
             >
-              <CheckCircle className="h-4 w-4" />
-              Approuver
+              {isProcessing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <CheckCircle className="h-4 w-4" />
+              )}
+              {isProcessing ? "Traitement..." : "Approuver"}
             </Button>
           </DialogFooter>
         </DialogContent>

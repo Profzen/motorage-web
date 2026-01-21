@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
 import { authenticateRequest } from "@/lib/auth";
 import { createNotification } from "@/lib/notifications";
+import { logAudit } from "@/lib/audit";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { NextRequest } from "next/server";
@@ -80,6 +81,15 @@ export async function PATCH(
       title: "Signalement mis à jour",
       message: `Votre signalement "${report.titre}" est désormais : ${statut}.`,
       data: { reportId: id },
+    });
+
+    await logAudit({
+      action: "report_update",
+      userId: authPayload.userId,
+      targetId: id,
+      details: { statut, commentaireAdmin },
+      ip: request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip"),
+      userAgent: request.headers.get("user-agent"),
     });
 
     return successResponse({ message: "Signalement traité avec succès" });

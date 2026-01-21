@@ -51,9 +51,9 @@ export async function GET(request: Request) {
       .from(onboardingRequests)
       .where(eq(onboardingRequests.statut, "en_attente"));
 
-    // 3. Statistiques des trajets (Aujourd'hui)
+    // 3. Statistiques des trajets (Aujourd'hui + total)
     const today = new Date().toISOString().split("T")[0];
-    const trajetStats = await db
+    const trajetStatsToday = await db
       .select({
         statut: trajets.statut,
         count: count(trajets.id),
@@ -62,12 +62,36 @@ export async function GET(request: Request) {
       .where(sql`date(${trajets.dateHeure}) = ${today}`)
       .groupBy(trajets.statut);
 
-    // 4. Réservations totales
+    const trajetStatsTotal = await db
+      .select({
+        statut: trajets.statut,
+        count: count(trajets.id),
+      })
+      .from(trajets)
+      .groupBy(trajets.statut);
+
+    // 3b. Trajets - évolution 7 derniers jours (par date)
+    const trajetsLast7Days = await db
+      .select({
+        date: sql<string>`date(${trajets.dateHeure})`,
+        count: count(trajets.id),
+      })
+      .from(trajets)
+      .where(sql`date(${trajets.dateHeure}) >= date('now','-6 day')`)
+      .groupBy(sql`date(${trajets.dateHeure})`)
+      .orderBy(sql`date(${trajets.dateHeure})`);
+
+    // 4. Réservations totales + en attente/confirmées
     const reservationCount = await db
       .select({
         count: count(reservations.id),
       })
       .from(reservations);
+
+    const reservationByStatus = await db
+      .select({ statut: reservations.statut, count: count(reservations.id) })
+      .from(reservations)
+      .groupBy(reservations.statut);
 
     // 5. Litiges en attente
     const pendingReports = await db
@@ -82,9 +106,12 @@ export async function GET(request: Request) {
       onboarding: {
         pending: pendingOnboardings[0]?.count || 0,
       },
-      trajetsToday: trajetStats,
+      trajetsToday: trajetStatsToday,
+      trajetsTotal: trajetStatsTotal,
+      trajetsLast7Days,
       reservations: {
         total: reservationCount[0]?.count || 0,
+        byStatus: reservationByStatus,
       },
       reports: {
         pending: pendingReports[0]?.count || 0,

@@ -3,6 +3,7 @@ import { onboardingRequests, users, vehicules } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
 import { authenticateRequest } from "@/lib/auth";
+import { logAudit } from "@/lib/audit";
 import { createNotification } from "@/lib/notifications";
 import { deletePublicFile } from "@/lib/file-storage";
 import { cookies } from "next/headers";
@@ -81,9 +82,9 @@ export async function PATCH(
       return ApiErrors.unauthorized("Accès réservé aux administrateurs");
     }
 
+    const { id } = await params;
     const body = await request.json();
     const { statut, commentaireAdmin } = validateSchema.parse(body);
-    const { id } = await params;
 
     // Get the application
     const application = await db.query.onboardingRequests.findFirst({
@@ -170,6 +171,16 @@ export async function PATCH(
       }
     });
 
+    // Audit trail
+    await logAudit({
+      action: `onboarding_${statut}`,
+      userId: authPayload.userId,
+      targetId: application.userId,
+      details: { onboardingId: id, commentaireAdmin },
+      ip: request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip"),
+      userAgent: request.headers.get("user-agent"),
+    });
+
     // Purge documents after validation to save space (local storage)
     if (application.permisImage) {
       try {
@@ -188,6 +199,13 @@ export async function PATCH(
       data: result,
     });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return ApiErrors.validationError(
+        "Données invalides",
+        undefined,
+        error.issues
+      );
+    }
     console.error("Validate driver application error:", error);
     return ApiErrors.serverError();
   }

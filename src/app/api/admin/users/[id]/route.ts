@@ -4,6 +4,9 @@ import { eq } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
 import { userSchema } from "@/lib/validation";
 import { NextRequest } from "next/server";
+import { authenticateRequest } from "@/lib/auth";
+import { cookies } from "next/headers";
+import { logAudit } from "@/lib/audit";
 
 /**
  * @openapi
@@ -59,6 +62,13 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get("token")?.value;
+    const authPayload = await authenticateRequest(request, cookieToken);
+    if (!authPayload || authPayload.role !== "administrateur") {
+      return ApiErrors.unauthorized("Accès réservé aux administrateurs");
+    }
+
     const { id } = await params;
     const body = await request.json();
     const validatedData = userSchema.partial().parse(body);
@@ -75,6 +85,15 @@ export async function PATCH(
     if (updated.length === 0) {
       return ApiErrors.notFound("Utilisateur");
     }
+
+    await logAudit({
+      action: "admin_user_update",
+      userId: authPayload.userId,
+      targetId: id,
+      details: validatedData,
+      ip: request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip"),
+      userAgent: request.headers.get("user-agent"),
+    });
 
     const { ...userWithoutPassword } = updated[0];
     return successResponse(userWithoutPassword);
@@ -117,8 +136,24 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get("token")?.value;
+    const authPayload = await authenticateRequest(_request, cookieToken);
+    if (!authPayload || authPayload.role !== "administrateur") {
+      return ApiErrors.unauthorized("Accès réservé aux administrateurs");
+    }
+
     const { id } = await params;
     await db.delete(users).where(eq(users.id, id));
+
+    await logAudit({
+      action: "admin_user_delete",
+      userId: authPayload.userId,
+      targetId: id,
+      ip: _request.headers.get("x-forwarded-for") || _request.headers.get("x-real-ip"),
+      userAgent: _request.headers.get("user-agent"),
+    });
+
     return successResponse({ message: "User deleted" });
   } catch {
     return ApiErrors.serverError();

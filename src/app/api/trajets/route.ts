@@ -3,6 +3,9 @@ import { trajets, vehicules, users } from "@/lib/db/schema";
 import { sql, and, or, eq, like } from "drizzle-orm";
 import { trajetSchema } from "@/lib/validation";
 import { autoClosePastTrips } from "@/lib/trips";
+import { authenticateRequest } from "@/lib/auth";
+import { cookies } from "next/headers";
+import { logAudit } from "@/lib/audit";
 import {
   successResponse,
   paginatedResponse,
@@ -246,6 +249,11 @@ export async function GET(request: Request) {
  */
 export async function POST(request: Request) {
   try {
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get("token")?.value;
+    const authPayload = await authenticateRequest(request, cookieToken);
+    if (!authPayload) return ApiErrors.unauthorized();
+
     const body = await request.json();
     const validatedData = trajetSchema.parse(body);
 
@@ -290,6 +298,19 @@ export async function POST(request: Request) {
         statut: validatedData.statut || "ouvert",
       })
       .returning();
+
+    await logAudit({
+      action: "trajet_create",
+      userId: authPayload.userId,
+      targetId: newTrajet[0]?.id,
+      details: {
+        pointDepart: validatedData.pointDepart,
+        destination: validatedData.destination,
+        dateHeure: validatedData.dateHeure,
+      },
+      ip: request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip"),
+      userAgent: request.headers.get("user-agent"),
+    });
 
     return successResponse(newTrajet[0], undefined, 201);
   } catch (error: unknown) {
