@@ -188,8 +188,18 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
       logout: () => {
-        fetch("/api/auth/logout", { method: "POST" }).catch(console.error);
+        // Mise à jour immédiate de l'état local
         set({ user: null, isLoggedIn: false });
+
+        // Appel API en arrière-plan pour nettoyer les cookies
+        fetch("/api/auth/logout", { method: "POST" })
+          .catch((err) => console.error("Logout API error:", err))
+          .finally(() => {
+            if (typeof window !== "undefined") {
+              // Redirection forcée vers l'accueil ou la connexion
+              window.location.href = "/login?logout=success";
+            }
+          });
       },
       updateUser: async (userData: Partial<User>) => {
         try {

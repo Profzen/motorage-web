@@ -90,3 +90,34 @@ export async function PATCH(
     return ApiErrors.serverError();
   }
 }
+
+/**
+ * @openapi
+ * /admin/reports/{id}:
+ *   delete:
+ *     tags:
+ *       - Admin
+ *     summary: Supprimer un signalement (Admin)
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get("token")?.value;
+    const authPayload = await authenticateAdmin(request, cookieToken);
+
+    if (!authPayload) {
+      return ApiErrors.unauthorized("Accès réservé aux administrateurs");
+    }
+
+    const { id } = await params;
+    await db.delete(reports).where(eq(reports.id, id));
+
+    return successResponse({ message: "Signalement supprimé avec succès" });
+  } catch (error) {
+    console.error("Delete report error:", error);
+    return ApiErrors.serverError();
+  }
+}

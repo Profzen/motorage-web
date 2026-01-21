@@ -19,10 +19,12 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -78,6 +80,25 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState("all");
   const [statutFilter, setStatutFilter] = useState("all");
   const [historyUserId, setHistoryUserId] = useState<string | null>(null);
+  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  const [summary, setSummary] = useState({
+    total: 0,
+    active: 0,
+    suspended: 0,
+    newlyJoined: 0,
+  });
+
+  const fetchSummary = async () => {
+    try {
+      const res = await fetch("/api/admin/users/summary");
+      const result = await res.json();
+      if (result.success) {
+        setSummary(result.data);
+      }
+    } catch (err) {
+      console.error("Failed to load summary", err);
+    }
+  };
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -102,6 +123,10 @@ export default function UsersPage() {
   }, [search, roleFilter, statutFilter]);
 
   useEffect(() => {
+    fetchSummary();
+  }, []);
+
+  useEffect(() => {
     const debounce = setTimeout(fetchUsers, 500);
     return () => clearTimeout(debounce);
   }, [fetchUsers]);
@@ -117,9 +142,29 @@ export default function UsersPage() {
       if (result.success) {
         toast.success("Statut mis à jour");
         fetchUsers();
+        fetchSummary();
       }
     } catch {
       toast.error("Erreur de mise à jour");
+    }
+  };
+
+  const handleDeleteUser = async (id: string, name: string) => {
+    if (!confirm(`Voulez-vous vraiment supprimer définitivement ${name} ?`))
+      return;
+
+    try {
+      const res = await fetch(`/api/admin/users/${id}`, {
+        method: "DELETE",
+      });
+      const result = await res.json();
+      if (result.success) {
+        toast.success("Utilisateur supprimé");
+        fetchUsers();
+        fetchSummary();
+      }
+    } catch {
+      toast.error("Erreur lors de la suppression");
     }
   };
 
@@ -193,7 +238,7 @@ export default function UsersPage() {
             variant="outline"
             className="gap-2"
             onClick={() => {
-              window.location.href = "/api/admin/activity/export";
+              window.location.href = "/api/admin/users/export";
             }}
           >
             <Download className="h-4 w-4" /> Exporter CSV
@@ -201,7 +246,7 @@ export default function UsersPage() {
           <Button variant="outline" className="gap-2" onClick={fetchUsers}>
             Actualiser
           </Button>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => setIsAddUserOpen(true)}>
             <UserPlus className="h-4 w-4" /> Ajouter un utilisateur
           </Button>
         </div>
@@ -217,7 +262,9 @@ export default function UsersPage() {
               <p className="text-muted-foreground text-sm font-medium tracking-tight">
                 Total Utilisateurs
               </p>
-              <h3 className="text-2xl font-bold">1,284</h3>
+              <h3 className="text-2xl font-bold">
+                {summary.total.toLocaleString()}
+              </h3>
             </div>
           </div>
         </Card>
@@ -230,20 +277,24 @@ export default function UsersPage() {
               <p className="text-muted-foreground text-sm font-medium tracking-tight">
                 Actifs
               </p>
-              <h3 className="text-2xl font-bold">1,150</h3>
+              <h3 className="text-2xl font-bold">
+                {summary.active.toLocaleString()}
+              </h3>
             </div>
           </div>
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-4">
-            <div className="rounded-lg bg-yellow-100 p-2">
-              <Clock className="h-5 w-5 text-yellow-600" />
+            <div className="rounded-lg bg-blue-100 p-2">
+              <Clock className="h-5 w-5 text-blue-600" />
             </div>
             <div>
               <p className="text-muted-foreground text-sm font-medium tracking-tight">
-                S&apos;inscrivent
+                Nouveaux (7j)
               </p>
-              <h3 className="text-2xl font-bold">84</h3>
+              <h3 className="text-2xl font-bold">
+                {summary.newlyJoined.toLocaleString()}
+              </h3>
             </div>
           </div>
         </Card>
@@ -254,9 +305,11 @@ export default function UsersPage() {
             </div>
             <div>
               <p className="text-muted-foreground text-sm font-medium tracking-tight">
-                Bannis
+                Suspendus
               </p>
-              <h3 className="text-2xl font-bold">12</h3>
+              <h3 className="text-2xl font-bold">
+                {summary.suspended.toLocaleString()}
+              </h3>
             </div>
           </div>
         </Card>
@@ -428,7 +481,15 @@ export default function UsersPage() {
                               l&apos;accès
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuItem className="cursor-not-allowed text-slate-500 opacity-50">
+                          <DropdownMenuItem
+                            className="cursor-pointer text-red-600 focus:bg-red-100 focus:text-red-700"
+                            onClick={() =>
+                              handleDeleteUser(
+                                user.id,
+                                `${user.prenom} ${user.nom}`
+                              )
+                            }
+                          >
                             <Shield className="mr-2 h-4 w-4" /> Supprimer
                             définitivement
                           </DropdownMenuItem>
@@ -447,7 +508,172 @@ export default function UsersPage() {
         userId={historyUserId}
         onClose={() => setHistoryUserId(null)}
       />
+
+      <AddUserDialog
+        open={isAddUserOpen}
+        onOpenChange={setIsAddUserOpen}
+        onSuccess={() => {
+          fetchUsers();
+          fetchSummary();
+        }}
+      />
     </div>
+  );
+}
+
+function AddUserDialog({
+  open,
+  onOpenChange,
+  onSuccess,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
+}) {
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    prenom: "",
+    nom: "",
+    email: "",
+    password: "",
+    role: "passager",
+    phone: "",
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      const result = await res.json();
+      if (result.success) {
+        toast.success("Utilisateur créé avec succès");
+        onOpenChange(false);
+        onSuccess();
+        setFormData({
+          prenom: "",
+          nom: "",
+          email: "",
+          password: "",
+          role: "passager",
+          phone: "",
+        });
+      } else {
+        toast.error(result.error || "Erreur lors de la création");
+      }
+    } catch {
+      toast.error("Erreur serveur");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Ajouter un utilisateur</DialogTitle>
+          <DialogDescription>
+            Créez un nouveau compte manuellement. L&apos;utilisateur pourra se
+            connecter immédiatement.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="prenom">Prénom</Label>
+              <Input
+                id="prenom"
+                required
+                value={formData.prenom}
+                onChange={(e) =>
+                  setFormData({ ...formData, prenom: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="nom">Nom</Label>
+              <Input
+                id="nom"
+                required
+                value={formData.nom}
+                onChange={(e) =>
+                  setFormData({ ...formData, nom: e.target.value })
+                }
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              required
+              value={formData.email}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Mot de passe provisoire</Label>
+            <Input
+              id="password"
+              type="password"
+              required
+              value={formData.password}
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
+              }
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="role">Rôle</Label>
+              <Select
+                value={formData.role}
+                onValueChange={(v) => setFormData({ ...formData, role: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="passager">Passager</SelectItem>
+                  <SelectItem value="conducteur">Conducteur</SelectItem>
+                  <SelectItem value="administrateur">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Téléphone</Label>
+              <Input
+                id="phone"
+                value={formData.phone}
+                onChange={(e) =>
+                  setFormData({ ...formData, phone: e.target.value })
+                }
+              />
+            </div>
+          </div>
+          <DialogFooter className="pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
+              Annuler
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? "Création..." : "Créer le compte"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 

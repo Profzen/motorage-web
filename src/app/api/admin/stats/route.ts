@@ -5,8 +5,10 @@ import {
   trajets,
   reservations,
   reports,
+  zones,
+  vehicules,
 } from "@/lib/db/schema";
-import { eq, sql, count } from "drizzle-orm";
+import { eq, sql, count, and, gte, lt } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
 import { authenticateAdmin } from "@/lib/auth";
 import { cookies } from "next/headers";
@@ -43,17 +45,6 @@ export async function GET(request: Request) {
       .from(users)
       .groupBy(users.role);
 
-    const userStats = {
-      total: userStatsRaw.reduce((acc, curr) => acc + curr.count, 0),
-      byRole: userStatsRaw.reduce(
-        (acc, curr) => {
-          acc[curr.role] = curr.count;
-          return acc;
-        },
-        {} as Record<string, number>
-      ),
-    };
-
     // 2. Demandes de conducteurs en attente
     const pendingOnboardings = await db
       .select({
@@ -65,59 +56,44 @@ export async function GET(request: Request) {
     // 3. Statistiques des trajets
     const today = new Date().toISOString().split("T")[0];
 
-    // Trajets aujourd'hui
-    const trajetsTodayRaw = await db
+    // Trajets aujourd'hui (total)
+    const trajetsToday = await db
       .select({
-        statut: trajets.statut,
         count: count(trajets.id),
       })
       .from(trajets)
-      .where(sql`date(${trajets.dateHeure}) = ${today}`)
-      .groupBy(trajets.statut);
+      .where(sql`date(${trajets.dateHeure}) = ${today}`);
 
-    // Total trajets historiques
-    const totalTrajetsCount = await db
+    // 4. Activité hebdomadaire (7 derniers jours)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const activityHistory = await db
       .select({
-        count: count(trajets.id),
-      })
-      .from(trajets);
-
-    const trajetsStats = {
-      today: trajetsTodayRaw.reduce((acc, curr) => acc + curr.count, 0),
-      todayByStatus: trajetsTodayRaw.reduce(
-        (acc, curr) => {
-          acc[curr.statut] = curr.count;
-          return acc;
-        },
-        {} as Record<string, number>
-      ),
-      total: totalTrajetsCount[0]?.count || 0,
-    };
-
-    // 4. Data for Chart (Last 7 days)
-    const chartData = await db
-      .select({
-        date: sql<string>`date(${trajets.dateHeure})`,
+        date: sql`date(${trajets.dateHeure})`,
         count: count(trajets.id),
       })
       .from(trajets)
-      .where(sql`date(${trajets.dateHeure}) >= date('now', '-7 days')`)
+      .where(
+        sql`date(${trajets.dateHeure}) >= ${sevenDaysAgo.toISOString().split("T")[0]}`
+      )
       .groupBy(sql`date(${trajets.dateHeure})`)
       .orderBy(sql`date(${trajets.dateHeure})`);
 
     // 5. Réservations
-    const reservationCount = await db
+    const reservationStats = await db
       .select({
-        count: count(reservations.id),
-      })
-      .from(reservations);
-
-    const pendingReservations = await db
-      .select({
+        statut: reservations.statut,
         count: count(reservations.id),
       })
       .from(reservations)
-      .where(eq(reservations.statut, "en_attente"));
+      .groupBy(reservations.statut);
+
+    const totalReservations = reservationStats.reduce(
+      (acc, curr) => acc + curr.count,
+      0
+    );
+    const pendingReservations =
+      reservationStats.find((s) => s.statut === "en_attente")?.count || 0;
 
     // 6. Litiges en attente
     const pendingReports = await db
@@ -127,21 +103,109 @@ export async function GET(request: Request) {
       .from(reports)
       .where(eq(reports.statut, "en_attente"));
 
+    // 7. Zones actives
+    const zonesCount = await db
+      .select({
+        count: count(zones.id),
+      })
+      .from(zones);
+
+    // 8. Véhicules en attente
+    const pendingVehicules = await db
+      .select({ count: count() })
+      .from(vehicules)
+      .where(eq(vehicules.statut, "en_attente"));
+
+    // 9. Taux de croissance (utilisateurs ce mois vs mois dernier)
+    const now = new Date();
+    const firstDayThisMonth = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      1
+    ).toISOString();
+    const firstDayLastMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() - 1,
+      1
+    ).toISOString();
+
+    const usersThisMonth = await db
+      .select({ count: count() })
+      .from(users)
+      .where(gte(users.createdAt, firstDayThisMonth));
+
+    const usersLastMonth = await db
+      .select({ count: count() })
+      .from(users)
+      .where(
+        and(
+          gte(users.createdAt, firstDayLastMonth),
+          lt(users.createdAt, firstDayThisMonth)
+        )
+      );
+
+    const countThisMonth = Number(usersThisMonth[0]?.count || 0);
+    const countLastMonth = Number(usersLastMonth[0]?.count || 0);
+
+    let growthRate = 0;
+    if (countLastMonth > 0) {
+      growthRate = Math.round(
+        ((countThisMonth - countLastMonth) / countLastMonth) * 100
+      );
+    } else if (countThisMonth > 0) {
+      growthRate = 100;
+    }
+
+    // Process activity history to fill missing days
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      return d.toISOString().split("T")[0];
+    }).reverse();
+
+    const filledActivity = last7Days.map((date) => {
+      const found = activityHistory.find((a) => a.date === date);
+      return {
+        date,
+        count: found ? Number(found.count) : 0,
+      };
+    });
+
     return successResponse({
-      users: userStats,
+      users: {
+        total: userStatsRaw.reduce((acc, curr) => acc + curr.count, 0),
+        byRole: {
+          conducteur:
+            userStatsRaw.find((s) => s.role === "conducteur")?.count || 0,
+          passager: userStatsRaw.find((s) => s.role === "passager")?.count || 0,
+        },
+        distribution: userStatsRaw,
+      },
       onboarding: {
         pending: pendingOnboardings[0]?.count || 0,
       },
       trajets: {
-        ...trajetsStats,
-        chartData,
+        today: trajetsToday[0]?.count || 0,
+        weekly: filledActivity,
       },
       reservations: {
-        total: reservationCount[0]?.count || 0,
-        pending: pendingReservations[0]?.count || 0,
+        total: totalReservations,
+        pending: pendingReservations,
+        byStatut: reservationStats,
       },
       reports: {
         pending: pendingReports[0]?.count || 0,
+      },
+      vehicules: {
+        pending: pendingVehicules[0]?.count || 0,
+      },
+      zones: {
+        count: zonesCount[0]?.count || 0,
+      },
+      growth: {
+        rate: growthRate,
+        thisMonth: countThisMonth,
+        lastMonth: countLastMonth,
       },
     });
   } catch (error) {

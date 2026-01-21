@@ -1,12 +1,14 @@
 import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
+import { users, auditLogs } from "@/lib/db/schema";
 import { sql, eq, and, or, like } from "drizzle-orm";
 import {
   paginatedResponse,
+  successResponse,
   ApiErrors,
   parsePaginationParams,
 } from "@/lib/api-response";
-import { authenticateAdmin } from "@/lib/auth";
+import { authenticateAdmin, hashPassword } from "@/lib/auth";
+import { userSchema } from "@/lib/validation";
 import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
 
@@ -122,6 +124,81 @@ export async function GET(request: NextRequest) {
     return paginatedResponse(allUsers, page, limit, total);
   } catch (error) {
     console.error("Error fetching users:", error);
+    return ApiErrors.serverError();
+  }
+}
+
+/**
+ * @openapi
+ * /admin/users:
+ *   post:
+ *     tags:
+ *       - Admin
+ *     summary: Créer un utilisateur (Admin)
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       201:
+ *         description: Utilisateur créé
+ */
+export async function POST(request: Request) {
+  try {
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get("token")?.value;
+    const authPayload = await authenticateAdmin(request, cookieToken);
+
+    if (!authPayload) {
+      return ApiErrors.unauthorized("Accès réservé aux administrateurs");
+    }
+
+    const body = await request.json();
+    const validatedData = userSchema.parse(body);
+
+    const existingUser = await db.query.users.findFirst({
+      where: eq(users.email, validatedData.email),
+    });
+
+    if (existingUser) {
+      return ApiErrors.badRequest("Cet email est déjà utilisé");
+    }
+
+    const hashedPassword = await hashPassword(validatedData.password);
+    const userId = crypto.randomUUID();
+
+    const newUser = await db
+      .insert(users)
+      .values({
+        id: userId,
+        nom: validatedData.nom,
+        prenom: validatedData.prenom,
+        email: validatedData.email,
+        password: hashedPassword,
+        role: validatedData.role || "passager",
+        statut: (validatedData.statut as "actif" | "suspendu") || "actif",
+        phone: validatedData.phone,
+        homeZoneId: validatedData.homeZoneId,
+      })
+      .returning();
+
+    // Log action
+    await db.insert(auditLogs).values({
+      userId: authPayload.userId,
+      targetId: userId,
+      action: "CREATE_USER_ADMIN",
+      details: `Création du compte ${validatedData.role} pour ${validatedData.email}`,
+    });
+
+    const {
+      password: _p,
+      refreshToken: _r,
+      ...userWithoutPassword
+    } = newUser[0];
+    void _p;
+    void _r;
+
+    return successResponse(userWithoutPassword);
+  } catch (error) {
+    console.error("Create User Error:", error);
     return ApiErrors.serverError();
   }
 }

@@ -21,10 +21,10 @@ import {
   CreditCard,
   Users,
   BarChart3,
-  FileWarning,
   ShieldAlert,
   ClipboardCheck,
   ArrowRightLeft,
+  Activity,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -32,7 +32,6 @@ import { useAuthStore, useSidebarStore } from "@/lib/store";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { NotificationBell } from "@/components/notifications/NotificationBell";
 import {
   Tooltip,
   TooltipContent,
@@ -53,85 +52,131 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Navigation pour les ADMINISTRATEURS
-const ADMIN_NAV_ITEMS = [
+const ADMIN_NAV_GROUPS = [
   {
-    title: "Vue d'ensemble",
-    icon: LayoutDashboard,
-    href: "/dashboard",
-    badge: null,
+    label: "Général",
+    items: [
+      {
+        title: "Vue d'ensemble",
+        icon: LayoutDashboard,
+        href: "/dashboard",
+        badge: null,
+      },
+      {
+        title: "Statistiques",
+        icon: BarChart3,
+        href: "/dashboard/stats",
+        badge: null,
+      },
+    ],
   },
   {
-    title: "Utilisateurs",
-    icon: Users,
-    href: "/dashboard/users",
-    badge: null,
+    label: "Gestion Profils",
+    items: [
+      {
+        title: "Utilisateurs",
+        icon: Users,
+        href: "/dashboard/users",
+        badge: null,
+      },
+      {
+        title: "Validation Conducteurs",
+        icon: ClipboardCheck,
+        href: "/dashboard/drivers",
+        badge: null,
+      },
+      {
+        title: "Véhicules",
+        icon: Car,
+        href: "/dashboard/vehicules",
+        badge: null,
+      },
+    ],
   },
   {
-    title: "Validation Conducteurs",
-    icon: ClipboardCheck,
-    href: "/dashboard/drivers",
-    badge: "12",
+    label: "Activité & Flux",
+    items: [
+      {
+        title: "Flux de Trajets",
+        icon: ArrowRightLeft,
+        href: "/dashboard/flux",
+        badge: null,
+      },
+      {
+        title: "Activité",
+        icon: Activity,
+        href: "/dashboard/activity",
+        badge: null,
+      },
+      {
+        title: "Signalements",
+        icon: ShieldAlert,
+        href: "/dashboard/reports",
+        badge: null,
+      },
+    ],
   },
   {
-    title: "Flux de Trajets",
-    icon: ArrowRightLeft,
-    href: "/dashboard/flux",
-    badge: "Live",
-  },
-  {
-    title: "Signalements",
-    icon: ShieldAlert,
-    href: "/dashboard/reports",
-    badge: "2",
-  },
-  {
-    title: "Statistiques",
-    icon: BarChart3,
-    href: "/dashboard/stats",
-    badge: null,
-  },
-  {
-    title: "Zones",
-    icon: MapPin,
-    href: "/admin/config",
-    badge: null,
-  },
-];
-
-// Navigation pour les UTILISATEURS LAMBDA (Passagers / Conducteurs)
-const USER_NAV_ITEMS = [
-  {
-    title: "Tableau de Bord",
-    icon: LayoutDashboard,
-    href: "/dashboard",
-    badge: null,
-  },
-  {
-    title: "Signaler un problème",
-    icon: FileWarning,
-    href: "/dashboard/report-issue",
-    badge: null,
-  },
-  {
-    title: "Mes Signalements",
-    icon: ShieldAlert,
-    href: "/dashboard/my-reports",
-    badge: null,
-  },
-  {
-    title: "Paramètres",
-    icon: Settings,
-    href: "/dashboard/settings",
-    badge: null,
+    label: "Configuration",
+    items: [
+      {
+        title: "Zones",
+        icon: MapPin,
+        href: "/dashboard/zones",
+        badge: null,
+      },
+    ],
   },
 ];
 
 // Fonction pour récupérer les items de navigation selon le rôle
-const getNavItems = (role: string | undefined) => {
-  if (role === "administrateur") {
-    return ADMIN_NAV_ITEMS;
+const getNavItems = (
+  role: string | undefined,
+  counters: {
+    reports: number;
+    onboarding: number;
+    activeTrajets: number;
+    vehicules: number;
   }
-  return USER_NAV_ITEMS;
+) => {
+  if (role === "administrateur") {
+    return ADMIN_NAV_GROUPS.map((group) => ({
+      ...group,
+      items: group.items.map((item) => {
+        if (item.title === "Validation Conducteurs") {
+          return {
+            ...item,
+            badge:
+              counters.onboarding > 0 ? counters.onboarding.toString() : null,
+          };
+        }
+        if (item.title === "Véhicules") {
+          return {
+            ...item,
+            badge:
+              counters.vehicules > 0 ? counters.vehicules.toString() : null,
+          };
+        }
+        if (item.title === "Signalements") {
+          return {
+            ...item,
+            badge: counters.reports > 0 ? counters.reports.toString() : null,
+          };
+        }
+        if (item.title === "Flux de Trajets") {
+          return {
+            ...item,
+            badge:
+              counters.activeTrajets > 0
+                ? `Live (${counters.activeTrajets})`
+                : "Live",
+          };
+        }
+        return item;
+      }),
+    }));
+  }
+  return []; // La plateforme web est réservée à l'administration
 };
 
 export function DashboardSidebar() {
@@ -141,10 +186,39 @@ export function DashboardSidebar() {
   const pathname = usePathname();
   const [searchFocused, setSearchFocused] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
+  const [counters, setCounters] = React.useState<{
+    reports: number;
+    onboarding: number;
+    activeTrajets: number;
+    vehicules: number;
+  }>({
+    reports: 0,
+    onboarding: 0,
+    activeTrajets: 0,
+    vehicules: 0,
+  });
+
+  const fetchCounters = React.useCallback(async () => {
+    if (user?.role !== "administrateur") return;
+    try {
+      const res = await fetch("/api/admin/sidebar-counters");
+      const result = await res.json();
+      if (result.success) {
+        setCounters(result.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch sidebar counters", error);
+    }
+  }, [user?.role]);
 
   React.useEffect(() => {
     setMounted(true);
-  }, []);
+    fetchCounters();
+
+    // Refresh counters every 2 minutes
+    const interval = setInterval(fetchCounters, 120000);
+    return () => clearInterval(interval);
+  }, [fetchCounters]);
 
   // Handle mobile resize
   React.useEffect(() => {
@@ -158,6 +232,8 @@ export function DashboardSidebar() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, [setCollapsed, setOpen]);
+
+  if (!mounted) return null;
 
   return (
     <>
@@ -207,21 +283,18 @@ export function DashboardSidebar() {
               </motion.span>
             )}
           </Link>
-          <div className="flex items-center gap-1">
-            {mounted && <NotificationBell />}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setCollapsed(!isCollapsed)}
-              className="hover:bg-primary/10 hover:text-primary hidden h-8 w-8 rounded-lg transition-all md:flex"
-            >
-              {isCollapsed ? (
-                <ChevronRight className="h-4 w-4" />
-              ) : (
-                <ChevronLeft className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setCollapsed(!isCollapsed)}
+            className="hover:bg-primary/10 hover:text-primary hidden h-8 w-8 rounded-lg transition-all md:flex"
+          >
+            {isCollapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
+          </Button>
         </div>
 
         {/* Search */}
@@ -247,14 +320,23 @@ export function DashboardSidebar() {
         </div>
 
         <ScrollArea className="flex-1 px-3">
-          <div className="space-y-1.5 py-2">
-            {getNavItems(user?.role).map((item) => (
-              <SidebarItem
-                key={item.title}
-                item={item}
-                isCollapsed={mounted ? isCollapsed : false}
-                isActive={pathname === item.href}
-              />
+          <div className="space-y-6 py-4">
+            {getNavItems(user?.role, counters).map((group) => (
+              <div key={group.label} className="space-y-1.5">
+                {!isCollapsed && (
+                  <h3 className="text-muted-foreground/50 px-3 pb-1 text-[10px] font-black tracking-widest uppercase">
+                    {group.label}
+                  </h3>
+                )}
+                {group.items.map((item) => (
+                  <SidebarItem
+                    key={item.title}
+                    item={item}
+                    isCollapsed={mounted ? isCollapsed : false}
+                    isActive={pathname === item.href}
+                  />
+                ))}
+              </div>
             ))}
           </div>
         </ScrollArea>
@@ -365,7 +447,7 @@ interface NavItem {
   title: string;
   icon: React.ElementType;
   href: string;
-  badge: string | null;
+  badge: string | number | null;
   children?: {
     title: string;
     href: string;
