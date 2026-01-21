@@ -1,13 +1,10 @@
 import { db } from "@/lib/db";
-import {
-  onboardingRequests,
-  users,
-  vehicules,
-  auditLogs,
-} from "@/lib/db/schema";
+import { onboardingRequests, users, vehicules } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
 import { authenticateAdmin } from "@/lib/auth";
+import { logAudit } from "@/lib/audit";
+import { deletePublicFile } from "@/lib/file-storage";
 import { createNotification } from "@/lib/notifications";
 import { cookies } from "next/headers";
 import { z } from "zod";
@@ -85,9 +82,9 @@ export async function PATCH(
       return ApiErrors.unauthorized("Accès réservé aux administrateurs");
     }
 
+    const { id } = await params;
     const body = await request.json();
     const { statut, commentaireAdmin } = validateSchema.parse(body);
-    const { id } = await params;
 
     // Get the application
     const application = await db.query.onboardingRequests.findFirst({
@@ -174,19 +171,41 @@ export async function PATCH(
       }
     });
 
-    // Log the admin action in audit logs
-    await db.insert(auditLogs).values({
+    await logAudit({
+      action: `onboarding_${statut}`,
       userId: authPayload.userId,
-      action: statut === "approuvé" ? "APPROVE_DRIVER" : "REJECT_DRIVER",
       targetId: application.userId,
-      details: `Validation dossier ${id}: ${statut}. Commentaire: ${commentaireAdmin || "Aucun"}`,
+      details: { onboardingId: id, commentaireAdmin },
+      ip:
+        request.headers.get("x-forwarded-for") ||
+        request.headers.get("x-real-ip"),
+      userAgent: request.headers.get("user-agent"),
     });
+
+    if (application.permisImage) {
+      try {
+        await deletePublicFile(application.permisImage);
+        await db
+          .update(onboardingRequests)
+          .set({ permisImage: null })
+          .where(eq(onboardingRequests.id, id));
+      } catch (error) {
+        console.warn("Could not delete file:", error);
+      }
+    }
 
     return successResponse({
       message: `Demande ${statut} avec succès.`,
       data: result,
     });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return ApiErrors.validationError(
+        "Données invalides",
+        undefined,
+        error.issues
+      );
+    }
     console.error("Validate driver application error:", error);
     return ApiErrors.serverError();
   }

@@ -1,9 +1,10 @@
 import { db } from "@/lib/db";
-import { users, auditLogs } from "@/lib/db/schema";
+import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
 import { userSchema } from "@/lib/validation";
 import { authenticateAdmin } from "@/lib/auth";
+import { logAudit } from "@/lib/audit";
 import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
 
@@ -86,16 +87,19 @@ export async function PATCH(
       return ApiErrors.notFound("Utilisateur");
     }
 
-    // Log update action
-    await db.insert(auditLogs).values({
+    await logAudit({
+      action: "admin_user_update",
       userId: authPayload.userId,
       targetId: id,
-      action: "UPDATE_USER_ADMIN",
-      details: `Changement : ${Object.keys(updateFields).join(", ")}`,
+      details: validatedData,
+      ip:
+        request.headers.get("x-forwarded-for") ||
+        request.headers.get("x-real-ip"),
+      userAgent: request.headers.get("user-agent"),
     });
 
-    const user = updated[0];
-    const { password: _p, refreshToken: _r, ...userWithoutPassword } = user;
+    const { password: _p, refreshToken: _r, ...userWithoutPassword } =
+      updated[0];
     void _p;
     void _r;
     return successResponse(userWithoutPassword);
@@ -148,15 +152,18 @@ export async function DELETE(
 
     const { id } = await params;
 
-    // Log before delete
-    await db.insert(auditLogs).values({
+    await db.delete(users).where(eq(users.id, id));
+
+    await logAudit({
+      action: "admin_user_delete",
       userId: authPayload.userId,
       targetId: id,
-      action: "DELETE_USER_ADMIN",
-      details: "Suppression définitive du compte par un administrateur",
+      ip:
+        request.headers.get("x-forwarded-for") ||
+        request.headers.get("x-real-ip"),
+      userAgent: request.headers.get("user-agent"),
     });
 
-    await db.delete(users).where(eq(users.id, id));
     return successResponse({ message: "Utilisateur supprimé avec succès" });
   } catch {
     return ApiErrors.serverError();

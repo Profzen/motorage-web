@@ -19,6 +19,7 @@ import {
   ExternalLink,
   ShieldCheck,
   KeyRound,
+  Car,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -135,6 +136,13 @@ export default function DashboardPage() {
                   ? `${onboardingCount} dossiers`
                   : "Aucun dossier"
                 : "..."}
+            </Button>
+            <Button
+              onClick={() => router.push("/dashboard/vehicules")}
+              variant="secondary"
+              className="h-11 rounded-xl px-6 font-bold"
+            >
+              <Car className="mr-2 h-4 w-4" /> Véhicules
             </Button>
             <Button
               variant="outline"

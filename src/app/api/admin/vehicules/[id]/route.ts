@@ -1,11 +1,12 @@
 import { db } from "@/lib/db";
-import { vehicules, auditLogs } from "@/lib/db/schema";
+import { vehicules } from "@/lib/db/schema";
 import { vehiculeAdminUpdateSchema } from "@/lib/validation";
 import { eq } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
 import { authenticateAdmin } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { createNotification } from "@/lib/notifications";
+import { logAudit } from "@/lib/audit";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 
@@ -97,12 +98,18 @@ export async function PATCH(
 
     if (result.error) return result.error as Response;
 
-    // Log the action
-    await db.insert(auditLogs).values({
+    await logAudit({
+      action: "vehicule_update",
       userId: authPayload.userId,
-      action: "UPDATE_VEHICLE_STATUS",
       targetId: id,
-      details: `Changement statut véhicule: ${validatedData.statut} (Commentaire: ${validatedData.commentaireAdmin || "Aucun"})`,
+      details: {
+        statut: validatedData.statut,
+        commentaireAdmin: validatedData.commentaireAdmin,
+      },
+      ip:
+        request.headers.get("x-forwarded-for") ||
+        request.headers.get("x-real-ip"),
+      userAgent: request.headers.get("user-agent"),
     });
 
     return successResponse(result.data);

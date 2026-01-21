@@ -1,15 +1,18 @@
 import { db } from "@/lib/db";
-import { users, auditLogs } from "@/lib/db/schema";
+import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { successResponse, ApiErrors } from "@/lib/api-response";
+import { ApiErrors, successResponse } from "@/lib/api-response";
 import { authenticateAdmin } from "@/lib/auth";
+import { logAudit } from "@/lib/audit";
 import { cookies } from "next/headers";
-import { NextRequest } from "next/server";
 import { z } from "zod";
+import { NextRequest } from "next/server";
 
 const suspendSchema = z.object({
-  reason: z.string().min(5, "Une raison de minimum 5 caractères est requise"),
-  durationInDays: z.number().optional().default(0), // 0 means permanent
+  statut: z.enum(["suspendu", "actif"]).default("suspendu"),
+  motif: z.string().optional(),
+  reason: z.string().optional(),
+  durationInDays: z.number().optional(),
 });
 
 /**
@@ -18,7 +21,9 @@ const suspendSchema = z.object({
  *   post:
  *     tags:
  *       - Admin
- *     summary: Suspendre ou bannir un utilisateur (Admin)
+<<<<<<< HEAD
+ *     summary: Suspendre ou réactiver un utilisateur
+ *     description: Permet à un administrateur de suspendre ou réactiver un compte utilisateur.
  */
 export async function POST(
   request: NextRequest,
@@ -27,49 +32,45 @@ export async function POST(
   try {
     const cookieStore = await cookies();
     const cookieToken = cookieStore.get("token")?.value;
-    const admin = await authenticateAdmin(request, cookieToken);
+    const authPayload = await authenticateAdmin(request, cookieToken);
 
-    if (!admin) {
-      return ApiErrors.unauthorized("Accès administratif requis");
+    if (!authPayload) {
+      return ApiErrors.unauthorized("Accès réservé aux administrateurs");
     }
 
-    const { id } = await params;
     const body = await request.json();
-    const { reason, durationInDays } = suspendSchema.parse(body);
+    const { statut, motif, reason, durationInDays } = suspendSchema.parse(body);
+    const { id } = await params;
 
-    const userToSuspend = await db.query.users.findFirst({
-      where: eq(users.id, id),
-    });
+    const existing = await db.query.users.findFirst({ where: eq(users.id, id) });
+    if (!existing) return ApiErrors.notFound("Utilisateur");
 
-    if (!userToSuspend) {
-      return ApiErrors.notFound("Utilisateur");
-    }
-
-    if (userToSuspend.role === "administrateur") {
+    if (existing.role === "administrateur" && statut === "suspendu") {
       return ApiErrors.badRequest("Impossible de suspendre un administrateur");
     }
 
-    // Update user status
-    await db.update(users).set({ statut: "suspendu" }).where(eq(users.id, id));
+    await db.update(users).set({ statut }).where(eq(users.id, id));
 
-    // Log the action
-    await db.insert(auditLogs).values({
-      userId: admin.userId,
+    await logAudit({
+      action: statut === "suspendu" ? "user_suspend" : "user_reactivate",
+      userId: authPayload.userId,
       targetId: id,
-      action: "SUSPEND_USER",
-      details: `Utilisateur suspendu. Raison: ${reason}${durationInDays > 0 ? ` pour ${durationInDays} jours` : " (Permanent)"}`,
+      details: { motif: motif || reason, statut, durationInDays },
+      ip:
+        request.headers.get("x-forwarded-for") ||
+        request.headers.get("x-real-ip"),
+      userAgent: request.headers.get("user-agent"),
     });
 
-    return successResponse({ message: "Utilisateur suspendu avec succès" });
+    return successResponse({ message: "Statut mis à jour" });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return ApiErrors.validationError(
-        "Validation failed",
+        "Corps de requête invalide",
         undefined,
         error.issues
       );
     }
-    console.error("Suspend user error:", error);
     return ApiErrors.serverError();
   }
 }

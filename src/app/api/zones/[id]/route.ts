@@ -3,6 +3,9 @@ import { zones } from "@/lib/db/schema";
 import { zoneSchema } from "@/lib/validation";
 import { eq } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
+import { authenticateRequest } from "@/lib/auth";
+import { cookies } from "next/headers";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 import { NextRequest } from "next/server";
 
@@ -144,6 +147,13 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get("token")?.value;
+    const authPayload = await authenticateRequest(request, cookieToken);
+    if (!authPayload || authPayload.role !== "administrateur") {
+      return ApiErrors.forbidden("Seul un administrateur peut modifier une zone");
+    }
+
     const { id } = await params;
     const body = await request.json();
     const validatedData = zoneSchema.partial().parse(body);
@@ -157,6 +167,13 @@ export async function PATCH(
     if (updated.length === 0) {
       return ApiErrors.notFound("Zone");
     }
+
+    await logAudit({
+      action: "zone_update",
+      userId: authPayload.userId,
+      targetId: id,
+      details: validatedData,
+    });
 
     return successResponse(updated[0]);
   } catch (error: unknown) {
@@ -176,12 +193,25 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get("token")?.value;
+    const authPayload = await authenticateRequest(request, cookieToken);
+    if (!authPayload || authPayload.role !== "administrateur") {
+      return ApiErrors.forbidden("Seul un administrateur peut supprimer une zone");
+    }
+
     const { id } = await params;
     const deleted = await db.delete(zones).where(eq(zones.id, id)).returning();
 
     if (deleted.length === 0) {
       return ApiErrors.notFound("Zone");
     }
+
+    await logAudit({
+      action: "zone_delete",
+      userId: authPayload.userId,
+      targetId: id,
+    });
 
     return successResponse({ message: "Zone supprimée avec succès" });
   } catch {

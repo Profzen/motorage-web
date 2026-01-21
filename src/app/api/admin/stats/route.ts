@@ -53,23 +53,30 @@ export async function GET(request: Request) {
       .from(onboardingRequests)
       .where(eq(onboardingRequests.statut, "en_attente"));
 
-    // 3. Statistiques des trajets
+    // 3. Statistiques des trajets (Aujourd'hui + total)
     const today = new Date().toISOString().split("T")[0];
-
-    // Trajets aujourd'hui (total)
-    const trajetsToday = await db
+    
+    const trajetStatsToday = await db
       .select({
         count: count(trajets.id),
       })
       .from(trajets)
       .where(sql`date(${trajets.dateHeure}) = ${today}`);
 
-    // 4. Activité hebdomadaire (7 derniers jours)
+    const trajetStatsTotal = await db
+      .select({
+        statut: trajets.statut,
+        count: count(trajets.id),
+      })
+      .from(trajets)
+      .groupBy(trajets.statut);
+
+    // 3b. Trajets - évolution 7 derniers jours (par date)
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const activityHistory = await db
+    const trajetsLast7Days = await db
       .select({
-        date: sql`date(${trajets.dateHeure})`,
+        date: sql<string>`date(${trajets.dateHeure})`,
         count: count(trajets.id),
       })
       .from(trajets)
@@ -79,7 +86,7 @@ export async function GET(request: Request) {
       .groupBy(sql`date(${trajets.dateHeure})`)
       .orderBy(sql`date(${trajets.dateHeure})`);
 
-    // 5. Réservations
+    // 4. Réservations
     const reservationStats = await db
       .select({
         statut: reservations.statut,
@@ -88,6 +95,14 @@ export async function GET(request: Request) {
       .from(reservations)
       .groupBy(reservations.statut);
 
+    const reservationCount = await db
+      .select({
+        count: count(reservations.id),
+      })
+      .from(reservations);
+
+    const reservationByStatus = reservationStats;
+
     const totalReservations = reservationStats.reduce(
       (acc, curr) => acc + curr.count,
       0
@@ -95,7 +110,7 @@ export async function GET(request: Request) {
     const pendingReservations =
       reservationStats.find((s) => s.statut === "en_attente")?.count || 0;
 
-    // 6. Litiges en attente
+    // 5. Litiges en attente
     const pendingReports = await db
       .select({
         count: count(reports.id),
@@ -164,7 +179,7 @@ export async function GET(request: Request) {
     }).reverse();
 
     const filledActivity = last7Days.map((date) => {
-      const found = activityHistory.find((a) => a.date === date);
+      const found = trajetsLast7Days.find((a) => a.date === date);
       return {
         date,
         count: found ? Number(found.count) : 0,
@@ -185,13 +200,18 @@ export async function GET(request: Request) {
         pending: pendingOnboardings[0]?.count || 0,
       },
       trajets: {
-        today: trajetsToday[0]?.count || 0,
+        today: trajetStatsToday[0]?.count || 0,
         weekly: filledActivity,
+        chartData: filledActivity,
       },
+      trajetsToday: trajetStatsToday,
+      trajetsTotal: trajetStatsTotal,
+      trajetsLast7Days,
       reservations: {
         total: totalReservations,
         pending: pendingReservations,
         byStatut: reservationStats,
+        byStatus: reservationByStatus,
       },
       reports: {
         pending: pendingReports[0]?.count || 0,

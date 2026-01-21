@@ -5,6 +5,7 @@ import { successResponse, ApiErrors } from "@/lib/api-response";
 import { authenticateRequest } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { z } from "zod";
+import { logAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
@@ -100,6 +101,13 @@ export async function POST(request: Request) {
         description: validatedData.description,
       })
       .returning();
+
+    await logAudit({
+      action: "zone_create",
+      userId: authPayload.userId,
+      targetId: newZone[0]?.id,
+      details: validatedData,
+    });
 
     return successResponse(newZone[0], undefined, 201);
   } catch (error: unknown) {

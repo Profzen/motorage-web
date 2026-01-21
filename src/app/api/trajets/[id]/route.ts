@@ -7,6 +7,7 @@ import { authenticateRequest } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { NextRequest } from "next/server";
+import { logAudit } from "@/lib/audit";
 
 /**
  * @openapi
@@ -227,6 +228,15 @@ export async function PUT(
 
     if (!updated) return ApiErrors.serverError("Échec de la mise à jour");
 
+    await logAudit({
+      action: "trajet_update",
+      userId: authPayload.userId,
+      targetId: id,
+      details: validatedData,
+      ip: request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip"),
+      userAgent: request.headers.get("user-agent"),
+    });
+
     return successResponse(updated);
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
@@ -266,6 +276,14 @@ export async function DELETE(
     }
 
     await db.delete(trajets).where(eq(trajets.id, id));
+
+    await logAudit({
+      action: "trajet_delete",
+      userId: authPayload.userId,
+      targetId: id,
+      ip: request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip"),
+      userAgent: request.headers.get("user-agent"),
+    });
 
     return successResponse({ message: "Trajet supprimé avec succès" });
   } catch {
