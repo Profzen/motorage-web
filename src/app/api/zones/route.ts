@@ -6,6 +6,8 @@ import { authenticateRequest } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { z } from "zod";
 
+export const dynamic = "force-dynamic";
+
 /**
  * @openapi
  * /zones:

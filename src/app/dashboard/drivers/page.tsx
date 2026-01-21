@@ -84,7 +84,7 @@ export default function DriversValidationPage() {
       const res = await fetch(url.toString());
       const result = await res.json();
       if (result.success) {
-        setRequests(result.data);
+        setRequests(result.data || []);
       }
     } catch (error) {
       console.error("Failed to fetch requests", error);

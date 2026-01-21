@@ -9,6 +9,10 @@ import {
   MessageSquare,
   User,
   MapPin,
+  Trash2,
+  AlertCircle,
+  CheckCircle2,
+  RefreshCcw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -43,6 +47,7 @@ import { toast } from "sonner";
 interface Report {
   id: string;
   type: string;
+  titre: string;
   description: string;
   statut: "en_attente" | "en_cours" | "resolu" | "rejete";
   createdAt: string;
@@ -187,6 +192,23 @@ export default function ReportsPage() {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    if (!confirm("Voulez-vous vraiment supprimer ce signalement ?")) return;
+
+    try {
+      const res = await fetch(`/api/admin/reports/${id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Signalement supprimé");
+        fetchReports();
+      }
+    } catch {
+      toast.error("Erreur lors de la suppression");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -198,6 +220,67 @@ export default function ReportsPage() {
             Gérez les plaintes et assurez la sécurité de la plateforme.
           </p>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <Card className="p-4">
+          <div className="flex items-center gap-4">
+            <div className="rounded-lg bg-yellow-100 p-2 text-yellow-600">
+              <AlertCircle className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-muted-foreground text-xs font-medium uppercase tracking-tight">
+                En attente
+              </p>
+              <h3 className="text-xl font-bold">
+                {reports.filter((r) => r.statut === "en_attente").length}
+              </h3>
+            </div>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center gap-4">
+            <div className="rounded-lg bg-blue-100 p-2 text-blue-600">
+              <RefreshCcw className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-muted-foreground text-xs font-medium uppercase tracking-tight">
+                En cours
+              </p>
+              <h3 className="text-xl font-bold">
+                {reports.filter((r) => r.statut === "en_cours").length}
+              </h3>
+            </div>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center gap-4">
+            <div className="rounded-lg bg-green-100 p-2 text-green-600">
+              <CheckCircle2 className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-muted-foreground text-xs font-medium uppercase tracking-tight">
+                Résolus
+              </p>
+              <h3 className="text-xl font-bold">
+                {reports.filter((r) => r.statut === "resolu").length}
+              </h3>
+            </div>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center gap-4">
+            <div className="rounded-lg bg-slate-100 p-2 text-slate-600">
+              <ShieldAlert className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-muted-foreground text-xs font-medium uppercase tracking-tight">
+                Total
+              </p>
+              <h3 className="text-xl font-bold">{reports.length}</h3>
+            </div>
+          </div>
+        </Card>
       </div>
 
       <Card>
@@ -252,6 +335,7 @@ export default function ReportsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Date</TableHead>
+                <TableHead>Sujet</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Signaleur</TableHead>
                 <TableHead>Accusé</TableHead>
@@ -265,7 +349,7 @@ export default function ReportsPage() {
                   .fill(0)
                   .map((_, i) => (
                     <TableRow key={i}>
-                      <TableCell colSpan={6} className="h-12 text-center">
+                      <TableCell colSpan={7} className="h-12 text-center">
                         Chargement...
                       </TableCell>
                     </TableRow>
@@ -273,7 +357,7 @@ export default function ReportsPage() {
               ) : reports.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={6}
+                    colSpan={7}
                     className="text-muted-foreground h-24 text-center"
                   >
                     Aucun signalement trouvé.
@@ -282,8 +366,11 @@ export default function ReportsPage() {
               ) : (
                 reports.map((report) => (
                   <TableRow key={report.id}>
-                    <TableCell>
+                    <TableCell className="text-xs">
                       {new Date(report.createdAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {report.titre}
                     </TableCell>
                     <TableCell>{getTypeBadge(report.type)}</TableCell>
                     <TableCell>
@@ -308,13 +395,26 @@ export default function ReportsPage() {
                     </TableCell>
                     <TableCell>{getStatusBadge(report.statut)}</TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedReport(report)}
-                      >
-                        <Eye className="mr-2 h-4 w-4" /> Détails
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedReport(report);
+                            setAdminNote(report.commentaireAdmin || "");
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                          onClick={() => handleDelete(report.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -332,7 +432,7 @@ export default function ReportsPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ShieldAlert className="h-5 w-5 text-red-500" />
-              Détails du Signalement
+              {selectedReport?.titre || "Détails du Signalement"}
             </DialogTitle>
             <DialogDescription>
               Examen des faits rapportés le{" "}

@@ -37,16 +37,30 @@ import {
 } from "recharts";
 
 interface StatsData {
-  users: { role: string; count: number }[];
+  users: {
+    total: number;
+    byRole: { conducteur: number; passager: number };
+    distribution: { role: string; count: number }[];
+  };
   onboarding: { pending: number };
-  trajetsToday: { statut: string; count: number }[];
-  reservations: { total: number };
+  trajets: {
+    today: number;
+    weekly: { date: string; count: number }[];
+  };
+  reservations: {
+    total: number;
+    pending: number;
+    byStatut: { statut: string; count: number }[];
+  };
   reports: { pending: number };
+  zones: { count: number };
+  growth: { rate: number; thisMonth: number; lastMonth: number };
 }
 
 export default function StatisticsPage() {
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   const fetchStats = async () => {
     try {
@@ -64,33 +78,36 @@ export default function StatisticsPage() {
   };
 
   useEffect(() => {
+    setMounted(true);
     fetchStats();
   }, []);
 
   const userRolesData =
-    stats?.users.map((u) => ({
+    stats?.users.distribution.map((u: any) => ({
       name:
         u.role === "passager"
           ? "Passagers"
           : u.role === "conducteur"
             ? "Conducteurs"
-            : "Admins",
+            : u.role === "administrateur"
+              ? "Administrateurs"
+              : "Autres",
       value: u.count,
     })) || [];
 
-  const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444"];
+  const COLORS = ["#3b82f6", "#10b981", "#8b5cf6", "#f59e0b"];
 
   const kpis = [
     {
       title: "Taux de croissance",
-      value: "+24%",
+      value: `${stats?.growth.rate > 0 ? "+" : ""}${stats?.growth.rate}%`,
       sub: "Inscriptions mensuelles",
       icon: TrendingUp,
       color: "text-green-500",
     },
     {
       title: "Zones actives",
-      value: "8",
+      value: stats?.zones.count.toString() || "0",
       sub: "Points d'arrêt campus",
       icon: MapPin,
       color: "text-blue-500",
@@ -107,7 +124,7 @@ export default function StatisticsPage() {
     },
   ];
 
-  if (loading) {
+  if (!mounted || loading) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-40">
         <Loader2 className="text-primary h-12 w-12 animate-spin" />
@@ -184,34 +201,36 @@ export default function StatisticsPage() {
               <Users className="text-muted-foreground h-5 w-5" />
             </div>
           </CardHeader>
-          <CardContent className="h-75">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={userRolesData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {userRolesData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: "12px",
-                    border: "none",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+          <CardContent className="h-[300px]">
+            {mounted && (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={userRolesData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {userRolesData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: "12px",
+                      border: "none",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
             <div className="mt-4 flex justify-center gap-6">
               {userRolesData.map((entry, index) => (
                 <div key={index} className="flex items-center gap-2">
@@ -226,44 +245,53 @@ export default function StatisticsPage() {
           </CardContent>
         </Card>
 
-        {/* Trajets du jour */}
+        {/* Activité Hebdomadaire */}
         <Card className="bg-card/50 border-0 shadow-sm backdrop-blur-sm">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-xl font-black">
-                  Activité Quotidienne
+                  Activité Hebdomadaire
                 </CardTitle>
                 <CardDescription>
-                  Flux de trajets du 17 Janvier 2026
+                  Volume de trajets sur les 7 derniers jours
                 </CardDescription>
               </div>
               <Zap className="h-5 w-5 text-amber-500" />
             </div>
           </CardHeader>
-          <CardContent className="h-75">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats?.trajetsToday || []}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                  stroke="rgba(0,0,0,0.05)"
-                />
-                <XAxis
-                  dataKey="statut"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 12, fontWeight: 600 }}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 12 }}
-                />
-                <Tooltip cursor={{ fill: "rgba(0,0,0,0.02)" }} />
-                <Bar dataKey="count" fill="#3b82f6" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <CardContent className="h-[300px]">
+            {mounted && (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats?.trajets.weekly || []}>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="rgba(0,0,0,0.05)"
+                  />
+                  <XAxis
+                    dataKey="date"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 10, fontWeight: 600 }}
+                    tickFormatter={(str) => {
+                      const date = new Date(str);
+                      return date.toLocaleDateString("fr-FR", { weekday: 'short', day: 'numeric' });
+                    }}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <Tooltip 
+                    cursor={{ fill: "rgba(0,0,0,0.02)" }}
+                    labelFormatter={(label) => new Date(label).toLocaleDateString("fr-FR", { dateStyle: 'long' })}
+                  />
+                  <Bar dataKey="count" fill="#3b82f6" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -272,15 +300,15 @@ export default function StatisticsPage() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Card className="bg-card/30 border-dashed">
           <CardContent className="flex items-center gap-4 p-4">
-            <div className="bg-primary/10 text-primary rounded-lg p-2">
-              <Calendar className="h-4 w-4" />
+            <div className="rounded-lg bg-blue-500/10 p-2 text-blue-600">
+              <Users className="h-4 w-4" />
             </div>
             <div>
               <p className="text-muted-foreground text-[10px] font-black uppercase">
                 Demandes Conducteurs
               </p>
               <p className="text-lg font-bold">
-                {stats?.onboarding.pending} en attente
+                {stats?.onboarding.pending} attente
               </p>
             </div>
           </CardContent>
@@ -295,6 +323,32 @@ export default function StatisticsPage() {
                 Réservations Totales
               </p>
               <p className="text-lg font-bold">{stats?.reservations.total}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-card/30 border-dashed">
+          <CardContent className="flex items-center gap-4 p-4">
+            <div className="rounded-lg bg-yellow-500/10 p-2 text-yellow-600">
+              <Calendar className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-muted-foreground text-[10px] font-black uppercase">
+                Réservations Attente
+              </p>
+              <p className="text-lg font-bold">{stats?.reservations.pending}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-card/30 border-dashed">
+          <CardContent className="flex items-center gap-4 p-4">
+            <div className="rounded-lg bg-purple-500/10 p-2 text-purple-600">
+              <ShieldAlert className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-muted-foreground text-[10px] font-black uppercase">
+                Litiges Ouverts
+              </p>
+              <p className="text-lg font-bold">{stats?.reports.pending}</p>
             </div>
           </CardContent>
         </Card>

@@ -22,6 +22,9 @@ import {
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 import {
   AreaChart,
   Area,
@@ -41,9 +44,8 @@ interface DashboardStats {
     };
   };
   trajets: {
-    total: number;
     today: number;
-    chartData: Array<{ date: string; count: number }>;
+    weekly: Array<{ date: string; count: number }>;
   };
   onboarding: {
     pending: number;
@@ -67,24 +69,41 @@ interface Activity {
   };
 }
 
+interface DriverApplication {
+  id: string;
+  user: {
+    nom: string;
+    prenom: string;
+  };
+  vehiculeType: string;
+  statut: string;
+  createdAt: string;
+}
+
 export function AdminDashboard() {
   const [data, setData] = useState<DashboardStats | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [pendingDrivers, setPendingDrivers] = useState<DriverApplication[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const fetchData = async () => {
       try {
-        const [statsRes, activityRes] = await Promise.all([
+        const [statsRes, activityRes, driversRes] = await Promise.all([
           fetch("/api/admin/stats"),
           fetch("/api/admin/activity"),
+          fetch("/api/admin/driver-applications?statut=en_attente&limit=5"),
         ]);
 
         const stats = await statsRes.json();
         const activity = await activityRes.json();
+        const drivers = await driversRes.json();
 
         if (stats.success) setData(stats.data);
         if (activity.success) setActivities(activity.data);
+        if (drivers.success) setPendingDrivers(drivers.data);
       } catch (error) {
         console.error("Dashboard fetch error:", error);
       } finally {
@@ -95,7 +114,7 @@ export function AdminDashboard() {
     fetchData();
   }, []);
 
-  if (loading) {
+  if (!mounted || loading) {
     return (
       <div className="flex h-64 items-center justify-center">
         <Loader2 className="text-primary h-8 w-8 animate-spin" />
@@ -120,7 +139,7 @@ export function AdminDashboard() {
       icon: ArrowRightLeft,
       color: "text-green-600",
       bg: "bg-green-100",
-      trend: data?.trajets?.total ? `Total: ${data.trajets.total}` : "Actif",
+      trend: "Flux Actif",
     },
     {
       title: "Validations en attente",
@@ -188,7 +207,7 @@ export function AdminDashboard() {
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
-                data={data?.trajets?.chartData || []}
+                data={data?.trajets?.weekly || []}
                 margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
               >
                 <defs>
@@ -217,9 +236,7 @@ export function AdminDashboard() {
                   tickLine={false}
                   tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
                   tickFormatter={(str) =>
-                    new Date(str).toLocaleDateString("fr-FR", {
-                      weekday: "short",
-                    })
+                    format(new Date(str), "EEE", { locale: fr })
                   }
                 />
                 <YAxis
@@ -310,9 +327,12 @@ export function AdminDashboard() {
             </div>
             <Button
               variant="ghost"
+              asChild
               className="text-primary mt-6 w-full text-xs font-bold tracking-widest uppercase"
             >
-              Voir tout le flux
+              <Link href="/dashboard/activity">
+                Voir tout le flux
+              </Link>
             </Button>
           </CardContent>
         </Card>
@@ -327,25 +347,39 @@ export function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="bg-muted/30 flex items-center gap-3 rounded-xl p-3"
-                >
-                  <div className="bg-background flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold">
-                    MK
+              {pendingDrivers.length > 0 ? (
+                pendingDrivers.map((app) => (
+                  <div
+                    key={app.id}
+                    className="bg-muted/30 flex items-center gap-3 rounded-xl p-3"
+                  >
+                    <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold uppercase transition-colors hover:bg-primary hover:text-white">
+                      {app.user.prenom[0]}
+                      {app.user.nom[0]}
+                    </div>
+                    <div className="min-w-0 grow">
+                      <p className="truncate text-xs font-bold">
+                        {app.user.prenom} {app.user.nom}
+                      </p>
+                      <p className="text-muted-foreground text-[10px]">
+                        Véhicule : {app.vehiculeType}
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      asChild
+                      className="h-7 rounded-lg px-2 text-[10px]"
+                    >
+                      <Link href="/dashboard/drivers">Détails</Link>
+                    </Button>
                   </div>
-                  <div className="min-w-0 grow">
-                    <p className="truncate text-xs font-bold">Marc Koffi</p>
-                    <p className="text-muted-foreground text-[10px]">
-                      Permis A + Assurance
-                    </p>
-                  </div>
-                  <Button size="sm" className="h-7 rounded-lg px-2 text-[10px]">
-                    Vérifier
-                  </Button>
+                ))
+              ) : (
+                <div className="text-muted-foreground flex h-32 flex-col items-center justify-center gap-2 text-sm italic">
+                  <UserCheck className="h-8 w-8 opacity-20" />
+                  Aucune demande en attente
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>

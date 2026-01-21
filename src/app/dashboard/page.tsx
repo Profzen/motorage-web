@@ -71,6 +71,19 @@ export default function DashboardPage() {
     }
   }, [user, router, mounted]);
 
+  const [onboardingCount, setOnboardingCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (user?.role === "administrateur") {
+      fetch("/api/admin/sidebar-counters")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) setOnboardingCount(data.data.onboarding);
+        })
+        .catch(console.error);
+    }
+  }, [user?.role]);
+
   if (!user || !mounted) return null;
 
   const handleUpdateProfile = (e: React.FormEvent) => {
@@ -116,7 +129,12 @@ export default function DashboardPage() {
               onClick={() => router.push("/dashboard/drivers")}
               className="h-11 rounded-xl border-0 bg-amber-500 px-6 font-bold text-white shadow-lg shadow-amber-500/20 hover:bg-amber-600"
             >
-              <ClipboardCheck className="mr-2 h-4 w-4" /> 12 dossiers
+              <ClipboardCheck className="mr-2 h-4 w-4" />{" "}
+              {onboardingCount !== null
+                ? onboardingCount > 0
+                  ? `${onboardingCount} dossiers`
+                  : "Aucun dossier"
+                : "..."}
             </Button>
             <Button
               variant="outline"
