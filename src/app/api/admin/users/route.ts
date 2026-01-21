@@ -71,14 +71,9 @@ export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const cookieToken = cookieStore.get("token")?.value;
-<<<<<<< HEAD
     const authPayload = await authenticateAdmin(request, cookieToken);
 
     if (!authPayload) {
-=======
-    const authPayload = await authenticateRequest(request, cookieToken);
-    if (!authPayload || authPayload.role !== "administrateur") {
->>>>>>> 81c075a (feat: Implementation complete du backlog SCRUM)
       return ApiErrors.unauthorized("Accès réservé aux administrateurs");
     }
 
