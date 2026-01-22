@@ -10,6 +10,16 @@ interface AuditInput {
   userAgent?: string | null;
 }
 
+function safeStringify(value: unknown): string | null {
+  if (value === undefined || value === null) return null;
+  try {
+    return JSON.stringify(value);
+  } catch (error) {
+    // Fallback minimal description when circular/BigInt/etc.
+    return `unserializable_details: ${String(error)}`;
+  }
+}
+
 export async function logAudit({
   action,
   userId,
@@ -23,11 +33,23 @@ export async function logAudit({
       action,
       userId: userId || null,
       targetId: targetId || null,
-      details: details ? JSON.stringify(details) : null,
+      details: safeStringify(details),
       ip: ip || null,
       userAgent: userAgent || null,
     });
   } catch (error) {
-    console.error("Audit log error", error);
+    const cause = (error as { cause?: unknown })?.cause as
+      | { status?: number; message?: string }
+      | undefined;
+    const status = cause?.status;
+    const message = (error as Error)?.message || "Unknown audit error";
+    console.error("Audit log error", {
+      action,
+      userId,
+      targetId,
+      status,
+      message,
+      cause,
+    });
   }
 }

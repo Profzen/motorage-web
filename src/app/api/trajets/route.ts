@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { trajets, vehicules, users, auditLogs } from "@/lib/db/schema";
+import { trajets, vehicules, users } from "@/lib/db/schema";
 import { sql, and, or, eq, like } from "drizzle-orm";
 import { trajetSchema } from "@/lib/validation";
 import { autoClosePastTrips } from "@/lib/trips";
@@ -9,6 +9,7 @@ import {
   ApiErrors,
   parsePaginationParams,
 } from "@/lib/api-response";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
 /**
@@ -292,7 +293,7 @@ export async function POST(request: Request) {
       .returning();
 
     // Log activity
-    await db.insert(auditLogs).values({
+    await logAudit({
       userId: validatedData.conducteurId,
       action: "CREATE_TRAJET",
       details: `Nouveau trajet de ${validatedData.pointDepart} vers ${validatedData.destination}`,

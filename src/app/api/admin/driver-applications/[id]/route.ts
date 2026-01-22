@@ -99,77 +99,68 @@ export async function PATCH(
       return ApiErrors.badRequest("Cette demande a déjà été traitée");
     }
 
-    const result = await db.transaction(async (tx) => {
-      // 1. Update Application Status
-      await tx
-        .update(onboardingRequests)
-        .set({ statut, commentaireAdmin, updatedAt: new Date().toISOString() })
-        .where(eq(onboardingRequests.id, id));
+    // 1. Update Application Status
+    await db
+      .update(onboardingRequests)
+      .set({ statut, commentaireAdmin, updatedAt: new Date().toISOString() })
+      .where(eq(onboardingRequests.id, id));
 
-      if (statut === "approuvé") {
-        // 2. Update User Role
-        await tx
-          .update(users)
-          .set({ role: "conducteur" })
-          .where(eq(users.id, application.userId));
+    if (statut === "approuvé") {
+      // 2. Update User Role
+      await db
+        .update(users)
+        .set({ role: "conducteur" })
+        .where(eq(users.id, application.userId));
 
-        // 3. Create or Update Vehicule entry
-        // We check if a vehicle for this app already exists (it shouldn't but safe check)
-        const existingVehicle = await tx.query.vehicules.findFirst({
-          where: eq(
-            vehicules.immatriculation,
-            application.vehiculeImmatriculation
-          ),
-        });
+      // 3. Create or Update Vehicule entry
+      const existingVehicle = await db.query.vehicules.findFirst({
+        where: eq(
+          vehicules.immatriculation,
+          application.vehiculeImmatriculation
+        ),
+      });
 
-        if (existingVehicle) {
-          await tx
-            .update(vehicules)
-            .set({
-              statut: "approuvé",
-              proprietaireId: application.userId,
-            })
-            .where(eq(vehicules.id, existingVehicle.id));
-        } else {
-          await tx.insert(vehicules).values({
-            type: application.vehiculeType || "moto",
-            marque: application.vehiculeMarque,
-            modele: application.vehiculeModele,
-            immatriculation: application.vehiculeImmatriculation,
-            proprietaireId: application.userId,
-            disponibilite: true,
+      if (existingVehicle) {
+        await db
+          .update(vehicules)
+          .set({
             statut: "approuvé",
-          });
-        }
-
-        // 4. Send Notification
-        await createNotification({
-          userId: application.userId,
-          type: "onboarding",
-          title: "Demande approuvée !",
-          message:
-            "Félicitations, vous êtes désormais conducteur sur Miyi Ðekae.",
-          data: { onboardingId: id },
-        });
-
-        return {
-          success: true,
-          message: "Utilisateur promu conducteur et véhicule validé",
-        };
+            proprietaireId: application.userId,
+          })
+          .where(eq(vehicules.id, existingVehicle.id));
       } else {
-        // Send Rejection Notification
-        await createNotification({
-          userId: application.userId,
-          type: "onboarding",
-          title: "Demande refusée",
-          message:
-            commentaireAdmin ||
-            "Votre demande pour devenir conducteur a été rejetée.",
-          data: { onboardingId: id },
+        await db.insert(vehicules).values({
+          type: application.vehiculeType || "moto",
+          marque: application.vehiculeMarque,
+          modele: application.vehiculeModele,
+          immatriculation: application.vehiculeImmatriculation,
+          proprietaireId: application.userId,
+          disponibilite: true,
+          statut: "approuvé",
         });
-        return { success: true, message: "Demande rejetée" };
       }
-    });
+
+      // 4. Send Notification
+      await createNotification({
+        userId: application.userId,
+        type: "onboarding",
+        title: "Demande approuvée !",
+        message:
+          "Félicitations, vous êtes désormais conducteur sur Miyi Ðekae.",
+        data: { onboardingId: id },
+      });
+    } else {
+      // Send Rejection Notification
+      await createNotification({
+        userId: application.userId,
+        type: "onboarding",
+        title: "Demande refusée",
+        message:
+          commentaireAdmin ||
+          "Votre demande pour devenir conducteur a été rejetée.",
+        data: { onboardingId: id },
+      });
+    }
 
     await logAudit({
       action: `onboarding_${statut}`,
@@ -196,7 +187,6 @@ export async function PATCH(
 
     return successResponse({
       message: `Demande ${statut} avec succès.`,
-      data: result,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

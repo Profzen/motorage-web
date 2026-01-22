@@ -11,6 +11,8 @@ import { authenticateAdmin, hashPassword } from "@/lib/auth";
 import { userSchema } from "@/lib/validation";
 import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
+import { logAudit } from "@/lib/audit";
+import { z } from "zod";
 
 /**
  * @openapi
@@ -181,10 +183,10 @@ export async function POST(request: Request) {
       .returning();
 
     // Log action
-    await db.insert(auditLogs).values({
+    await logAudit({
+      action: "CREATE_USER_ADMIN",
       userId: authPayload.userId,
       targetId: userId,
-      action: "CREATE_USER_ADMIN",
       details: `Création du compte ${validatedData.role} pour ${validatedData.email}`,
     });
 
@@ -198,6 +200,13 @@ export async function POST(request: Request) {
 
     return successResponse(userWithoutPassword);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return ApiErrors.validationError(
+        "Validation échouée",
+        undefined,
+        error.issues
+      );
+    }
     console.error("Create User Error:", error);
     return ApiErrors.serverError();
   }

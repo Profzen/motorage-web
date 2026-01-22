@@ -59,44 +59,42 @@ export async function PATCH(
     const body = await request.json();
     const validatedData = vehiculeAdminUpdateSchema.parse(body);
 
-    const result = await db.transaction(async (tx) => {
-      const existing = await tx.query.vehicules.findFirst({
-        where: eq(vehicules.id, id),
-      });
-
-      if (!existing) {
-        return { error: ApiErrors.notFound("Véhicule") };
-      }
-
-      const updated = await tx
-        .update(vehicules)
-        .set({
-          statut: validatedData.statut,
-          commentaireAdmin: validatedData.commentaireAdmin,
-        })
-        .where(eq(vehicules.id, id))
-        .returning();
-
-      // Notify the owner
-      const statusLabel =
-        validatedData.statut === "approuvé" ? "validé" : "refusé";
-
-      await createNotification({
-        userId: existing.proprietaireId,
-        type: "system",
-        title: `Véhicule ${statusLabel}`,
-        message: `Votre véhicule ${existing.marque} ${existing.modele} (${existing.immatriculation}) a été ${statusLabel} par l'administration.${
-          validatedData.commentaireAdmin
-            ? ` Motif : ${validatedData.commentaireAdmin}`
-            : ""
-        }`,
-        data: { vehiculeId: id, statut: validatedData.statut },
-      });
-
-      return { data: updated[0] };
+    // Fetch existing vehicle
+    const existing = await db.query.vehicules.findFirst({
+      where: eq(vehicules.id, id),
     });
 
-    if (result.error) return result.error as Response;
+    if (!existing) {
+      return ApiErrors.notFound("Véhicule");
+    }
+
+    // Update vehicle (no transaction due to LibSQL limitations)
+    const updated = await db
+      .update(vehicules)
+      .set({
+        statut: validatedData.statut,
+        commentaireAdmin: validatedData.commentaireAdmin,
+      })
+      .where(eq(vehicules.id, id))
+      .returning();
+
+    // Notify the owner
+    const statusLabel =
+      validatedData.statut === "approuvé" ? "validé" : "refusé";
+
+    await createNotification({
+      userId: existing.proprietaireId,
+      type: "system",
+      title: `Véhicule ${statusLabel}`,
+      message: `Votre véhicule ${existing.marque} ${existing.modele} (${existing.immatriculation}) a été ${statusLabel} par l'administration.${
+        validatedData.commentaireAdmin
+          ? ` Motif : ${validatedData.commentaireAdmin}`
+          : ""
+      }`,
+      data: { vehiculeId: id, statut: validatedData.statut },
+    });
+
+    const result = updated[0];
 
     await logAudit({
       action: "vehicule_update",
@@ -112,7 +110,7 @@ export async function PATCH(
       userAgent: request.headers.get("user-agent"),
     });
 
-    return successResponse(result.data);
+    return successResponse(result);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return ApiErrors.validationError(

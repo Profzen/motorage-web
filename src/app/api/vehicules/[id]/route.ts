@@ -203,69 +203,57 @@ export async function PUT(
       validatedData.statut = "en_attente";
     }
 
-    const result = await db.transaction(async (tx) => {
-      // 1. Update vehicle
-      const updated = await tx
-        .update(vehicules)
-        .set(validatedData)
-        .where(eq(vehicules.id, id))
-        .returning();
+    const updated = await db
+      .update(vehicules)
+      .set(validatedData)
+      .where(eq(vehicules.id, id))
+      .returning();
 
-      if (updated.length === 0) {
-        return { error: ApiErrors.notFound("Véhicule") };
-      }
+    if (updated.length === 0) {
+      return ApiErrors.notFound("Véhicule");
+    }
 
-      const vehicule = updated[0];
+    const vehicule = updated[0];
 
-      // 2. If vehicle becomes unavailable, cancel related trips
-      if (validatedData.disponibilite === false) {
-        const affectedTrajets = await tx.query.trajets.findMany({
-          where: and(
-            eq(trajets.vehiculeId, id),
-            or(eq(trajets.statut, "ouvert"), eq(trajets.statut, "plein"))
-          ),
-          with: {
-            reservations: {
-              where: eq(reservations.statut, "confirmé"),
-            },
+    if (validatedData.disponibilite === false) {
+      const affectedTrajets = await db.query.trajets.findMany({
+        where: and(
+          eq(trajets.vehiculeId, id),
+          or(eq(trajets.statut, "ouvert"), eq(trajets.statut, "plein"))
+        ),
+        with: {
+          reservations: {
+            where: eq(reservations.statut, "confirmé"),
           },
-        });
+        },
+      });
 
-        if (affectedTrajets.length > 0) {
-          // Cancel trips
-          await tx
-            .update(trajets)
-            .set({ statut: "annulé" })
-            .where(
-              and(
-                eq(trajets.vehiculeId, id),
-                or(eq(trajets.statut, "ouvert"), eq(trajets.statut, "plein"))
-              )
-            );
+      if (affectedTrajets.length > 0) {
+        await db
+          .update(trajets)
+          .set({ statut: "annulé" })
+          .where(
+            and(
+              eq(trajets.vehiculeId, id),
+              or(eq(trajets.statut, "ouvert"), eq(trajets.statut, "plein"))
+            )
+          );
 
-          // Prepare notifications for each cancelled trip's confirmed passengers
-          for (const trajet of affectedTrajets) {
-            for (const res of trajet.reservations) {
-              await createNotification({
-                userId: res.etudiantId,
-                type: "trajet",
-                title: "Trajet annulé",
-                message: `Le trajet "${trajet.pointDepart} → ${trajet.destination}" a été annulé car le véhicule est indisponible.`,
-                data: { trajetId: trajet.id, reservationId: res.id },
-              });
-            }
+        for (const trajet of affectedTrajets) {
+          for (const res of trajet.reservations) {
+            await createNotification({
+              userId: res.etudiantId,
+              type: "trajet",
+              title: "Trajet annulé",
+              message: `Le trajet "${trajet.pointDepart} → ${trajet.destination}" a été annulé car le véhicule est indisponible.`,
+              data: { trajetId: trajet.id, reservationId: res.id },
+            });
           }
         }
       }
-
-      return { data: vehicule };
-    });
-
-    if (result.error) {
-      return result.error as Response;
     }
 
-    return successResponse(result.data);
+    return successResponse(vehicule);
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return ApiErrors.validationError(

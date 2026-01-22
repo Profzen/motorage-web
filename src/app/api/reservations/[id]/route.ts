@@ -107,73 +107,60 @@ export async function PATCH(
       return ApiErrors.validationError("Statut is required", "statut");
     }
 
-    const result = await db.transaction(async (tx) => {
-      const reservation = await tx.query.reservations.findFirst({
-        where: eq(reservations.id, id),
-        with: {
-          trajet: true,
-        },
-      });
-
-      if (!reservation) {
-        return { error: ApiErrors.notFound("Réservation") };
-      }
-
-      // Permissions check
-      if (
-        reservation.trajet.conducteurId !== authPayload.userId &&
-        authPayload.role !== "administrateur"
-      ) {
-        return {
-          error: ApiErrors.forbidden(
-            "Seul le conducteur peut modifier le statut"
-          ),
-        };
-      }
-
-      // Logic for confirming: decrement placesDisponibles
-      if (statut === "confirmé" && reservation.statut !== "confirmé") {
-        if (reservation.trajet.placesDisponibles <= 0) {
-          return {
-            error: ApiErrors.validationError(
-              "Plus de places disponibles",
-              undefined
-            ),
-          };
-        }
-
-        // Update trajet places
-        await tx
-          .update(trajets)
-          .set({ placesDisponibles: reservation.trajet.placesDisponibles - 1 })
-          .where(eq(trajets.id, reservation.trajetId));
-      }
-
-      // Logic for cancelling/refusing after confirmation: increment placesDisponibles
-      if (
-        (statut === "refusé" || statut === "annulé") &&
-        reservation.statut === "confirmé"
-      ) {
-        await tx
-          .update(trajets)
-          .set({ placesDisponibles: reservation.trajet.placesDisponibles + 1 })
-          .where(eq(trajets.id, reservation.trajetId));
-      }
-
-      const updated = await tx
-        .update(reservations)
-        .set({ statut })
-        .where(eq(reservations.id, id))
-        .returning();
-
-      return { data: updated[0] };
+    const reservation = await db.query.reservations.findFirst({
+      where: eq(reservations.id, id),
+      with: {
+        trajet: true,
+      },
     });
 
-    if (result.error) {
-      return result.error as Response;
+    if (!reservation) {
+      return ApiErrors.notFound("Réservation");
     }
 
-    return successResponse(result.data);
+    // Permissions check
+    if (
+      reservation.trajet.conducteurId !== authPayload.userId &&
+      authPayload.role !== "administrateur"
+    ) {
+      return ApiErrors.forbidden(
+        "Seul le conducteur peut modifier le statut"
+      );
+    }
+
+    // Logic for confirming: decrement placesDisponibles
+    if (statut === "confirmé" && reservation.statut !== "confirmé") {
+      if (reservation.trajet.placesDisponibles <= 0) {
+        return ApiErrors.validationError(
+          "Plus de places disponibles",
+          undefined
+        );
+      }
+
+      await db
+        .update(trajets)
+        .set({ placesDisponibles: reservation.trajet.placesDisponibles - 1 })
+        .where(eq(trajets.id, reservation.trajetId));
+    }
+
+    // Logic for cancelling/refusing after confirmation: increment placesDisponibles
+    if (
+      (statut === "refusé" || statut === "annulé") &&
+      reservation.statut === "confirmé"
+    ) {
+      await db
+        .update(trajets)
+        .set({ placesDisponibles: reservation.trajet.placesDisponibles + 1 })
+        .where(eq(trajets.id, reservation.trajetId));
+    }
+
+    const updated = await db
+      .update(reservations)
+      .set({ statut })
+      .where(eq(reservations.id, id))
+      .returning();
+
+    return successResponse(updated[0]);
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return ApiErrors.validationError(
@@ -199,44 +186,37 @@ export async function DELETE(
 
     if (!authPayload) return ApiErrors.unauthorized();
 
-    const result = await db.transaction(async (tx) => {
-      const reservation = await tx.query.reservations.findFirst({
-        where: eq(reservations.id, id),
-        with: {
-          trajet: true,
-        },
-      });
-
-      if (!reservation) {
-        return { error: ApiErrors.notFound("Réservation") };
-      }
-
-      // Permissions check: student, driver, or admin
-      if (
-        reservation.etudiantId !== authPayload.userId &&
-        reservation.trajet.conducteurId !== authPayload.userId &&
-        authPayload.role !== "administrateur"
-      ) {
-        return {
-          error: ApiErrors.forbidden(
-            "Vous n'êtes pas autorisé à annuler cette réservation"
-          ),
-        };
-      }
-
-      if (reservation.statut === "confirmé") {
-        // Re-increment places if it was confirmed
-        await tx
-          .update(trajets)
-          .set({ placesDisponibles: reservation.trajet.placesDisponibles + 1 })
-          .where(eq(trajets.id, reservation.trajetId));
-      }
-
-      await tx.delete(reservations).where(eq(reservations.id, id));
-      return { success: true };
+    const reservation = await db.query.reservations.findFirst({
+      where: eq(reservations.id, id),
+      with: {
+        trajet: true,
+      },
     });
 
-    if (result.error) return result.error as Response;
+    if (!reservation) {
+      return ApiErrors.notFound("Réservation");
+    }
+
+    // Permissions check: student, driver, or admin
+    if (
+      reservation.etudiantId !== authPayload.userId &&
+      reservation.trajet.conducteurId !== authPayload.userId &&
+      authPayload.role !== "administrateur"
+    ) {
+      return ApiErrors.forbidden(
+        "Vous n'êtes pas autorisé à annuler cette réservation"
+      );
+    }
+
+    if (reservation.statut === "confirmé") {
+      // Re-increment places if it was confirmed
+      await db
+        .update(trajets)
+        .set({ placesDisponibles: reservation.trajet.placesDisponibles + 1 })
+        .where(eq(trajets.id, reservation.trajetId));
+    }
+
+    await db.delete(reservations).where(eq(reservations.id, id));
 
     return successResponse({ message: "Réservation annulée" });
   } catch (error) {

@@ -2,10 +2,11 @@ import { loginSchema } from "@/lib/validation";
 import { comparePassword, signJWT, signRefreshToken } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
-import { users, auditLogs } from "@/lib/db/schema";
+import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { successResponse, ApiErrors } from "@/lib/api-response";
 import { rateLimit } from "@/lib/rate-limit";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
 /**
@@ -129,7 +130,7 @@ export async function POST(request: Request) {
     });
 
     // Log activity
-    await db.insert(auditLogs).values({
+    await logAudit({
       userId: user.id,
       action: "LOGIN",
       details: `${user.nom} s'est connecté`,

@@ -542,6 +542,12 @@ function AddUserDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if ((formData.password || "").length < 8) {
+      toast.error("Mot de passe trop court", {
+        description: "Le mot de passe doit contenir au moins 8 caractères",
+      });
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch("/api/admin/users", {
@@ -563,7 +569,11 @@ function AddUserDialog({
           phone: "",
         });
       } else {
-        toast.error(result.error || "Erreur lors de la création");
+        const validationMsg =
+          result?.errors?.[0]?.message ||
+          result?.error ||
+          "Erreur lors de la création";
+        toast.error(validationMsg);
       }
     } catch {
       toast.error("Erreur serveur");

@@ -58,47 +58,39 @@ export async function POST(request: Request) {
     const body = await request.json();
     const validatedData = reservationSchema.parse(body);
 
-    const result = await db.transaction(async (tx) => {
-      // Check if trajet exists
-      const trajet = await tx.query.trajets.findFirst({
-        where: eq(trajets.id, validatedData.trajetId),
-      });
-
-      if (!trajet) {
-        return { error: ApiErrors.notFound("Trajet") };
-      }
-
-      if (trajet.placesDisponibles <= 0) {
-        return { error: ApiErrors.badRequest("Plus de places disponibles") };
-      }
-
-      // Create reservation
-      const newReservation = await tx
-        .insert(reservations)
-        .values({
-          trajetId: validatedData.trajetId,
-          etudiantId: authPayload.userId,
-          statut: "en_attente",
-        })
-        .returning();
-
-      return { data: newReservation[0], trajet };
+    // Check if trajet exists
+    const trajet = await db.query.trajets.findFirst({
+      where: eq(trajets.id, validatedData.trajetId),
     });
 
-    if (result.error) {
-      return result.error as Response;
+    if (!trajet) {
+      return ApiErrors.notFound("Trajet");
     }
+
+    if (trajet.placesDisponibles <= 0) {
+      return ApiErrors.badRequest("Plus de places disponibles");
+    }
+
+    // Create reservation
+    const newReservation = await db
+      .insert(reservations)
+      .values({
+        trajetId: validatedData.trajetId,
+        etudiantId: authPayload.userId,
+        statut: "en_attente",
+      })
+      .returning();
 
     // Send notification to conductor
     await createNotification({
-      userId: result.trajet!.conducteurId,
+      userId: trajet.conducteurId,
       type: "reservation",
       title: "Nouvelle demande",
       message: "Un étudiant souhaite réserver une place sur votre trajet.",
-      data: { reservationId: result.data!.id, trajetId: result.trajet!.id },
+      data: { reservationId: newReservation[0].id, trajetId: trajet.id },
     });
 
-    return successResponse(result.data, undefined, 201);
+    return successResponse(newReservation[0], undefined, 201);
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return ApiErrors.validationError(
